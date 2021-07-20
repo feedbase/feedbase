@@ -17,15 +17,15 @@ contract Feedbase {
   );
 
   function read(bytes32 label, address source) public view returns (bytes32 value, uint64 ttl) {
-    Value v = _feeds[label][source];
+    Value memory v = _feeds[label][source];
     return (v.val, v.ttl);
   }
 
   function push(bytes32 label, bytes32 value, uint64 ttl) public {
-    Value v;
+    Value memory v;
     v.val = value;
     v.ttl = ttl;
     _feeds[label][msg.sender] = v;
-    emit Update(label, msg.sender, v.val, v.tll);
+    emit Update(label, msg.sender, v.val, v.ttl);
   }
 }

@@ -9,10 +9,10 @@ contract OracleFactory {
   constructor(Feedbase feedbase) {
     fb = feedbase;
   }
-  function create() returns (Oracle) {
+  function create() public returns (Oracle) {
     Oracle o = new Oracle(fb);
-    builtHere[o] = true;
-    emit CreateOracle(o);
+    builtHere[address(o)] = true;
+    emit CreateOracle(address(o));
     return new Oracle(fb);
   }
 }
@@ -63,7 +63,7 @@ contract Oracle {
   }
 
   // e.g. setConfig('url', 'https://.....');
-  function setConfig(bytes32 key, string value) {
+  function setConfig(bytes32 key, string calldata value) public {
     require(msg.sender == owner, 'oracle-setSigner-bad-owner');
     config[key] = value;
   }
