@@ -2,6 +2,21 @@ pragma solidity ^0.8.1;
 
 import './Feedbase.sol';
 
+contract OracleFactory {
+  Feedbase fb;
+  mapping(address=>bool) builtHere;
+  event CreateOracle(address indexed oracle);
+  constructor(Feedbase feedbase) {
+    fb = feedbase;
+  }
+  function create() returns (Oracle) {
+    Oracle o = new Oracle(fb);
+    builtHere[o] = true;
+    emit CreateOracle(o);
+    return new Oracle(fb);
+  }
+}
+
 contract Oracle {
   struct Update {
     bytes32 key;
