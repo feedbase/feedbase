@@ -1,56 +1,69 @@
+// SPDX-License-Identifier: GPL-v3.0
+
 pragma solidity ^0.8.1;
 
 import './Feedbase.sol';
 
 contract OracleFactory {
-  Feedbase fb;
-  mapping(address=>bool) builtHere;
+  Feedbase public feedbase;
+  mapping(address=>bool) public builtHere;
+
   event CreateOracle(address indexed oracle);
-  constructor(Feedbase feedbase) {
-    fb = feedbase;
-  }
-  function create() public returns (Oracle) {
-    Oracle o = new Oracle(fb);
-    builtHere[address(o)] = true;
-    emit CreateOracle(address(o));
-    return new Oracle(fb);
-  }
-}
-
-contract Oracle {
-  struct Update {
-    bytes32 key;
-    bytes32 value;
-    uint64  ttl;
-  }
-
-  Feedbase               public feedbase;
-  address                public owner;
-  mapping(address=>uint) public signerTTL; // isSigner
-
-  mapping(bytes32=>string) public config;
 
   constructor(Feedbase fb) {
     feedbase = fb;
   }
 
-  // caller grabs signed message from url
-  function relay(Update calldata update, uint v, uint r, uint s) public {
+  function create() public returns (Oracle) {
+    Oracle o = new Oracle(feedbase);
+    builtHere[address(o)] = true;
+    emit CreateOracle(address(o));
+    return o;
+  }
+}
+
+contract Oracle {
+  Feedbase                 public feedbase;
+  address                  public owner;
+  mapping(address=>uint)   public signerTTL; // isSigner
+
+  mapping(bytes32=>string) public meta;
+
+  event OwnerUpdate(address indexed oldOwner, address indexed newOwner);
+  event SignerUpdate(address indexed signer, uint signerTTL);
+
+  event Relay(
+      address indexed signer
+    , address indexed relayer
+    , bytes32 indexed tag
+    , bytes32         val
+    , uint64          ttl
+  );
+
+  constructor(Feedbase fb) {
+    feedbase = fb;
+    owner = msg.sender;
+  }
+
+  // caller grabs signed message from meta['url']
+  function relay(bytes32 tag, bytes32 val, uint64 ttl, uint8 v, bytes32 r, bytes32 s) public {
     // ecrecover
     // verify signer key is live for this signer/ttl
-    require(block.timestamp < update.ttl, 'oracle-push-bad-msg-ttl');
+    require(block.timestamp < ttl, 'oracle-push-bad-msg-ttl');
 
     // TODO EIP712 compliant
-    bytes32 digest = keccak256(abi.encode(update));
-    address signer = ecrecover(digest, 0, 0, 0);
+    bytes32 digest = keccak256(abi.encode(tag, val, ttl));
+    address signer = ecrecover(digest, v, r, s);
     uint sttl = signerTTL[signer];
     require(block.timestamp < sttl, 'oracle-push-bad-key-ttl');
 
-    feedbase.push(update.key, update.value, update.ttl);
+    emit Relay(signer, msg.sender, tag, val, ttl);
+    feedbase.push(tag, val, ttl);
   }
 
   function setOwner(address newOwner) public {
     require(msg.sender == owner, 'oracle-give-bad-owner');
+    OwnerUpdate(owner, newOwner);
     owner = newOwner;
   }
 
@@ -62,10 +75,10 @@ contract Oracle {
     return block.timestamp < signerTTL[who];
   }
 
-  // e.g. setConfig('url', 'https://.....');
-  function setConfig(bytes32 key, string calldata value) public {
-    require(msg.sender == owner, 'oracle-setSigner-bad-owner');
-    config[key] = value;
+  // e.g. setMeta('url', 'https://.....');
+  function setMeta(bytes32 metaKey, string calldata metaVal) public {
+    require(msg.sender == owner, 'oracle-setMeta-bad-owner');
+    meta[metaKey] = metaVal;
   }
 }
 
