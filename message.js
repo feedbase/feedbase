@@ -1,4 +1,5 @@
 const debug = require('debug')('feedbase:message')
+const { ethers } = require("hardhat")
 
 const { TypedDataUtils } = require('ethers-eip712')
 
@@ -15,13 +16,13 @@ module.exports = {
           {name: "chainId", type: "uint256"},
           {name: "verifyingContract", type: "address"},
         ],
-        Relay: [
+        Submit: [
           {name: "tag", type: "bytes32"},
           {name: "val", type: "bytes32"},  
           {name: "ttl", type: "uint64"},
         ]
       },
-      primaryType: 'Relay',
+      primaryType: 'Submit',
       domain: {
         name: 'Feedbase',
         version: '1',

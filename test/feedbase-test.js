@@ -53,7 +53,7 @@ describe('feedbase', ()=>{
     });
     debug(`digest: ${Buffer.from(digest).toString('hex')}`);
 
-    const signature = await signers[0].signMessage(ethers.utils.hexlify(digest));
+    const signature = await signers[0].signMessage(digest);
     debug(signature)
     const sig = ethers.utils.splitSignature(signature);
     debug(sig);
