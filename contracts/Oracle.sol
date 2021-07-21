@@ -47,8 +47,8 @@ contract Oracle {
     , uint64          ttl
   );
 
-  // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(uint256 tag,uint256 val,uint256 ttl)");
-  bytes32 public constant SUBMIT_TYPEHASH = 0x01383e2717f2f89382ed7c1861448f727a0f088adef583f883b9e76325da7f3c;
+  // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(bytes32 tag,bytes32 val,uint64 ttl)");
+  bytes32 public constant SUBMIT_TYPEHASH = 0x3005660f386f3c7f3f011a623eab9559cb5863bb2534dceadd07ab706b69edfd;
 
   constructor(Feedbase fb, address owner_, uint chainId_) {
     feedbase = fb;
@@ -82,9 +82,11 @@ contract Oracle {
           ttl
         ))
     ));
-    console.log("submit digest in EVM:");
-    console.logBytes32(digest);
-    address signer = ecrecover(digest, v, r, s);
+
+    string memory header = "\x19Ethereum Signed Message:\n32";
+    bytes32 check = keccak256(abi.encodePacked(header, digest));
+
+    address signer = ecrecover(check, v, r, s);
 
     uint sttl = signerTTL[signer];
     require(block.timestamp < sttl, 'oracle-submit-bad-signer');
