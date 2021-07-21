@@ -4,6 +4,8 @@ pragma solidity ^0.8.1;
 
 import './Feedbase.sol';
 
+import "hardhat/console.sol";
+
 contract OracleFactory {
   uint public chainId;
   Feedbase public feedbase;
@@ -37,20 +39,22 @@ contract Oracle {
   event OwnerUpdate(address indexed oldOwner, address indexed newOwner);
   event SignerUpdate(address indexed signer, uint signerTTL);
 
-  event Relay(
-      address indexed relayer
+  event Submit(
+      address indexed submiter
     , address indexed signer
     , bytes32 indexed tag
     , bytes32         val
     , uint64          ttl
   );
 
-  // bytes32 public constant RELAY_TYPEHASH = keccak256("Relay(uint256 tag,uint256 val,uint256 ttl)");
-  bytes32 public constant RELAY_TYPEHASH = 0x01383e2717f2f89382ed7c1861448f727a0f088adef583f883b9e76325da7f3c;
+  // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(uint256 tag,uint256 val,uint256 ttl)");
+  bytes32 public constant SUBMIT_TYPEHASH = 0x01383e2717f2f89382ed7c1861448f727a0f088adef583f883b9e76325da7f3c;
 
   constructor(Feedbase fb, address owner_, uint chainId_) {
     feedbase = fb;
     owner = owner_;
+
+    // EIP712
     chainId = chainId_;
     string memory version = "1";
     DOMAIN_SEPARATOR = keccak256(abi.encode(
@@ -62,28 +66,35 @@ contract Oracle {
     ));
   }
 
-  // caller grabs signed message from meta['url']
-  function relay(bytes32 tag, bytes32 val, uint64 ttl, uint8 v, bytes32 r, bytes32 s) public {
-    // ecrecover
+  function submit(bytes32 tag, bytes32 val, uint64 ttl, uint8 v, bytes32 r, bytes32 s) public {
     // verify signer key is live for this signer/ttl
-    require(block.timestamp < ttl, 'oracle-push-bad-msg-ttl');
+    require(block.timestamp < ttl, 'oracle-submit-msg-ttl');
 
+    // EIP712 digest
     bytes32 digest =
       keccak256(abi.encodePacked(
         "\x19\x01",
         DOMAIN_SEPARATOR,
-        keccak256(abi.encode(RELAY_TYPEHASH, tag, val, ttl))
+        keccak256(abi.encode(
+          SUBMIT_TYPEHASH, 
+          tag, 
+          val,
+          ttl
+        ))
     ));
+    console.log("submit digest in EVM:");
+    console.logBytes32(digest);
     address signer = ecrecover(digest, v, r, s);
-    uint sttl = signerTTL[signer];
-    require(block.timestamp < sttl, 'oracle-push-bad-key-ttl');
 
-    emit Relay(msg.sender, signer, tag, val, ttl);
+    uint sttl = signerTTL[signer];
+    require(block.timestamp < sttl, 'oracle-submit-bad-signer');
+
+    emit Submit(msg.sender, signer, tag, val, ttl);
     feedbase.push(tag, val, ttl);
   }
 
   function setOwner(address newOwner) public {
-    require(msg.sender == owner, 'oracle-give-bad-owner');
+    require(msg.sender == owner, 'oracle-setOwner-bad-owner');
     OwnerUpdate(owner, newOwner);
     owner = newOwner;
   }
