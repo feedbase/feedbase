@@ -1,13 +1,17 @@
-const { ethers } = require('hardhat');
+const hre = require('hardhat')
 
 // Deploy function
 async function deploy() {
-   [account] = await ethers.getSigners();
+   [account] = await hre.ethers.getSigners();
    deployerAddress = account.address;
    console.log(`Deploying contracts using ${deployerAddress}`);
 
+   const chainId = hre.network.config.chainId;
+   console.log("Network chainId: ", chainId);
+
+
    //Deploy Feedbase
-   const Feedbase = await ethers.getContractFactory("Feedbase");
+   const Feedbase = await hre.ethers.getContractFactory("Feedbase");
    const feedbase = await Feedbase.deploy();
 
    await feedbase.deployed();
@@ -15,8 +19,8 @@ async function deploy() {
    console.log(`Feedbase deployed to : `, feedbase.address);
 
    //Deploy OracleFactory
-   const OracleFactory = await ethers.getContractFactory("OracleFactory");
-   const oracleFactory = await OracleFactory.deploy(feedbase.address);
+   const OracleFactory = await hre.ethers.getContractFactory("OracleFactory");
+   const oracleFactory = await OracleFactory.deploy(feedbase.address, chainId);
 
    await oracleFactory.deployed();
 
