@@ -97,7 +97,7 @@ contract Oracle {
 
   function setOwner(address newOwner) public {
     require(msg.sender == owner, 'oracle-setOwner-bad-owner');
-    OwnerUpdate(owner, newOwner);
+    emit OwnerUpdate(owner, newOwner);
     owner = newOwner;
   }
 

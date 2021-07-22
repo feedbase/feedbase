@@ -5,36 +5,33 @@ const Feedbase = require('../artifacts/contracts/Feedbase.sol/Feedbase.json')
 const OracleFactory = require('../artifacts/contracts/Oracle.sol/OracleFactory.json')
 const Oracle = require('../artifacts/contracts/Oracle.sol/Oracle.json')
 
-const { ethers, waffle } = require('hardhat')
+const { ethers, network, waffle } = require('hardhat')
 
 const { makeUpdateDigest } = require('../message.js');
 
 describe('feedbase', ()=>{
   it('basics', async ()=>{
     let FeedbaseFactory = await ethers.getContractFactory("Feedbase")
-    //debug(FeedbaseFactory);
     const fb = await FeedbaseFactory.deploy() 
-    //debug(fb);
   });
 
   it('oracle relay', async()=>{
+    const { chainId } = network.config;
+    debug("chainId: ", chainId);
+
     let signers = await ethers.getSigners();
     debug(signers[0])
     let FeedbaseFactory = await ethers.getContractFactory("Feedbase")
     const fb = await FeedbaseFactory.deploy() 
     let OracleFactoryFactory = await ethers.getContractFactory("OracleFactory");
-    const factory = await OracleFactoryFactory.deploy(fb.address, 1);
-    //debug(factory);
+    const factory = await OracleFactoryFactory.deploy(fb.address, chainId);
 
     const tx = await factory.create();
     debug('create', tx)
     const res = await tx.wait();
-//    debug(res);
-//    debug(res.events[0].args[0]);
     const oracleAddr = res.events[0].args[0]
 
     const oracle = await new ethers.Contract(oracleAddr, Oracle.abi, signers[0]);
-//    debug(oracle);
     const tx2 = await oracle.setSigner(signers[0].address, 1000000000000);
     await tx2.wait()
 
@@ -48,7 +45,7 @@ describe('feedbase', ()=>{
       tag, 
       val,
       ttl,
-      chainId: "1",
+      chainId: chainId,
       receiver: oracle.address
     });
     debug(`digest: ${Buffer.from(digest).toString('hex')}`);
