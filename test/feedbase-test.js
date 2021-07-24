@@ -24,7 +24,7 @@ describe('feedbase', ()=>{
     let FeedbaseFactory = await ethers.getContractFactory("Feedbase")
     const fb = await FeedbaseFactory.deploy() 
     let OracleFactoryFactory = await ethers.getContractFactory("OracleFactory");
-    const factory = await OracleFactoryFactory.deploy(fb.address, chainId);
+    const factory = await OracleFactoryFactory.deploy(fb.address);
 
     const tx = await factory.create();
     debug('create', tx)
@@ -37,6 +37,11 @@ describe('feedbase', ()=>{
 
     const sttl = await oracle.signerTTL(signers[0].address);
     debug(`sttl: ${sttl}`)
+
+    const oracleChainId = await oracle.chainId();
+    debug(`oracleChainId: ${oracleChainId}`);
+    want(chainId).equal(oracleChainId);
+    
 
     const tag = Buffer.from('USDETH'.padStart(32, '\0'));
     const val = Buffer.from('11'.repeat(32), 'hex');

@@ -7,19 +7,17 @@ import './Feedbase.sol';
 import "hardhat/console.sol";
 
 contract OracleFactory {
-  uint public chainId;
   Feedbase public feedbase;
   mapping(address=>bool) public builtHere;
 
   event CreateOracle(address indexed oracle);
 
-  constructor(Feedbase fb, uint chainId_) {
+  constructor(Feedbase fb) {
     feedbase = fb;
-    chainId = chainId_;
   }
 
   function create() public returns (Oracle) {
-    Oracle o = new Oracle(feedbase, msg.sender, chainId);
+    Oracle o = new Oracle(feedbase, msg.sender);
     builtHere[address(o)] = true;
     emit CreateOracle(address(o));
     return o;
@@ -33,7 +31,6 @@ contract Oracle {
 
   mapping(bytes32=>string) public meta;
 
-  uint256                  public chainId;
   bytes32                  public DOMAIN_SEPARATOR;
 
   event OwnerUpdate(address indexed oldOwner, address indexed newOwner);
@@ -50,20 +47,23 @@ contract Oracle {
   // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(bytes32 tag,bytes32 val,uint64 ttl)");
   bytes32 public constant SUBMIT_TYPEHASH = 0x3005660f386f3c7f3f011a623eab9559cb5863bb2534dceadd07ab706b69edfd;
 
-  constructor(Feedbase fb, address owner_, uint chainId_) {
+  constructor(Feedbase fb, address owner_) {
     feedbase = fb;
     owner = owner_;
 
     // EIP712
-    chainId = chainId_;
     string memory version = "1";
     DOMAIN_SEPARATOR = keccak256(abi.encode(
       keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
       keccak256("Feedbase"),
       keccak256(bytes(version)),
-      chainId_,
+      chainId(),
       address(this)
     ));
+  }
+
+  function chainId() public view returns (uint256) {
+    return block.chainid;
   }
 
   function submit(bytes32 tag, bytes32 val, uint64 ttl, uint8 v, bytes32 r, bytes32 s) public {
