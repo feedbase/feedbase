@@ -34,7 +34,7 @@ const privKey = DEPLOYER_PRIVATE_KEY ?? Buffer.alloc(32).toString("hex");
 
     }
   },
-  solidity: '0.8.3',
+  solidity: '0.8.4',
 };
 
 module.exports = config;

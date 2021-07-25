@@ -1,6 +1,8 @@
 const debug = require('debug')('feedbase:message')
 const { ethers } = require("hardhat")
 
+const BN = require('bn.js')
+
 const { TypedDataUtils } = require('ethers-eip712')
 
 // makeUpdateDigest({
@@ -8,6 +10,7 @@ const { TypedDataUtils } = require('ethers-eip712')
 // });
 module.exports = {
   makeUpdateDigest: (obj) => {
+    debug(obj);
     const typedData = {
       types: {
         EIP712Domain: [
@@ -18,8 +21,10 @@ module.exports = {
         ],
         Submit: [
           {name: "tag", type: "bytes32"},
-          {name: "val", type: "bytes32"},  
+          {name: "seq", type: "uint64"},
+          {name: "sec", type: "uint64"},
           {name: "ttl", type: "uint64"},
+          {name: "val", type: "bytes"},  
         ]
       },
       primaryType: 'Submit',
@@ -31,8 +36,10 @@ module.exports = {
       },
       message: {
         'tag': obj.tag,
+        'seq': obj.seq,
+        'sec': obj.sec,
+        'ttl': obj.ttl,
         'val': obj.val,
-        'ttl': obj.ttl
       }
     }
     const digest = TypedDataUtils.encodeDigest(typedData)

@@ -10,16 +10,17 @@ contract OracleFactory {
   Feedbase public feedbase;
   mapping(address=>bool) public builtHere;
 
-  event CreateOracle(address indexed oracle);
+  event BuiltOracle(address indexed oracle);
 
   constructor(Feedbase fb) {
     feedbase = fb;
   }
 
-  function create() public returns (Oracle) {
-    Oracle o = new Oracle(feedbase, msg.sender);
+  function build() public returns (Oracle) {
+    Oracle o = new Oracle(feedbase);
     builtHere[address(o)] = true;
-    emit CreateOracle(address(o));
+    emit BuiltOracle(address(o));
+    o.setOwner(msg.sender);
     return o;
   }
 }
@@ -40,16 +41,18 @@ contract Oracle {
       address indexed submiter
     , address indexed signer
     , bytes32 indexed tag
-    , bytes32         val
+    , uint64          seq
+    , uint64          sec
     , uint64          ttl
+    , bytes           val
   );
 
   // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(bytes32 tag,bytes32 val,uint64 ttl)");
   bytes32 public constant SUBMIT_TYPEHASH = 0x3005660f386f3c7f3f011a623eab9559cb5863bb2534dceadd07ab706b69edfd;
 
-  constructor(Feedbase fb, address owner_) {
+  constructor(Feedbase fb) {
     feedbase = fb;
-    owner = owner_;
+    owner = msg.sender;
 
     // EIP712
     string memory version = "1";
@@ -66,33 +69,42 @@ contract Oracle {
     return block.chainid;
   }
 
-  function submit(bytes32 tag, bytes32 val, uint64 ttl, uint8 v, bytes32 r, bytes32 s) public {
+  function submit(
+    bytes32 tag,
+    uint64 seq,
+    uint64 sec,
+    uint64 ttl,
+    bytes calldata val,
+    uint8 v, bytes32 r, bytes32 s
+  ) public
+  {
     // verify signer key is live for this signer/ttl
     require(block.timestamp < ttl, 'oracle-submit-msg-ttl');
 
     // EIP712 digest
-    bytes32 digest =
+    string memory header = "\x19Ethereum Signed Message:\n32";
+    bytes32 digest = keccak256(abi.encodePacked(header, 
       keccak256(abi.encodePacked(
         "\x19\x01",
         DOMAIN_SEPARATOR,
         keccak256(abi.encode(
           SUBMIT_TYPEHASH, 
           tag, 
-          val,
-          ttl
+          seq,
+          sec,
+          ttl,
+          val
         ))
+      ))
     ));
 
-    string memory header = "\x19Ethereum Signed Message:\n32";
-    bytes32 check = keccak256(abi.encodePacked(header, digest));
-
-    address signer = ecrecover(check, v, r, s);
+    address signer = ecrecover(digest, v, r, s);
 
     uint sttl = signerTTL[signer];
     require(block.timestamp < sttl, 'oracle-submit-bad-signer');
 
-    emit Submit(msg.sender, signer, tag, val, ttl);
-    feedbase.push(tag, val, ttl);
+    emit Submit(msg.sender, signer, tag, seq, sec, ttl, val);
+    feedbase.push(tag, seq, sec, ttl, val);
   }
 
   function setOwner(address newOwner) public {
