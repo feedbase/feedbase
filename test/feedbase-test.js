@@ -46,8 +46,8 @@ describe('feedbase', ()=>{
     
 
     const tag = Buffer.from('USDETH'.padStart(32, '\0'));
-    const seq = 0
-    const sec = Date.now()
+    const seq = 1;
+    const sec = Math.floor(Date.now() / 1000);
     const ttl = 10000000000000
     const val = Buffer.from('11'.repeat(32), 'hex');
     debug(tag, seq, sec, ttl, val);
