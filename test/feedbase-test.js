@@ -1,6 +1,8 @@
 const debug = require('debug')('feedbase:test')
 const want = require('chai').expect
 
+const BN = require('bn.js')
+
 const Feedbase = require('../artifacts/contracts/Feedbase.sol/Feedbase.json')
 const OracleFactory = require('../artifacts/contracts/Oracle.sol/OracleFactory.json')
 const Oracle = require('../artifacts/contracts/Oracle.sol/Oracle.json')
@@ -26,7 +28,7 @@ describe('feedbase', ()=>{
     let OracleFactoryFactory = await ethers.getContractFactory("OracleFactory");
     const factory = await OracleFactoryFactory.deploy(fb.address);
 
-    const tx = await factory.create();
+    const tx = await factory.build();
     debug('create', tx)
     const res = await tx.wait();
     const oracleAddr = res.events[0].args[0]
@@ -44,12 +46,17 @@ describe('feedbase', ()=>{
     
 
     const tag = Buffer.from('USDETH'.padStart(32, '\0'));
+    const seq = 0
+    const sec = Date.now()
+    const ttl = 10000000000000
     const val = Buffer.from('11'.repeat(32), 'hex');
-    const ttl = 10000000000000;
+    debug(tag, seq, sec, ttl, val);
     const digest = makeUpdateDigest({
       tag, 
-      val,
-      ttl,
+      val: val,
+      seq: seq,
+      sec: sec,
+      ttl: ttl,
       chainId: chainId,
       receiver: oracle.address
     });
@@ -59,7 +66,7 @@ describe('feedbase', ()=>{
     debug(signature)
     const sig = ethers.utils.splitSignature(signature);
     debug(sig);
-    const tx3 = await oracle.submit(tag, val, ttl, sig.v, sig.r, sig.s);
+    const tx3 = await oracle.submit(tag, seq, sec, ttl, val, sig.v, sig.r, sig.s);
     
   });
 });

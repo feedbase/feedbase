@@ -27,9 +27,9 @@ contract Feedbase {
   event Update(
       address indexed src
     , bytes32 indexed tag
-    , uint64          ttl
-    , uint64          sec
     , uint64          seq
+    , uint64          sec
+    , uint64          ttl
     , bytes           val
   );
 
@@ -38,7 +38,7 @@ contract Feedbase {
     return (f.val, f.ttl);
   }
 
-  function push(bytes32 tag, uint64 ttl, uint64 sec, uint64 seq, bytes calldata val) public {
+  function push(bytes32 tag, uint64 seq, uint64 sec, uint64 ttl, bytes calldata val) public {
     Feed storage feed = _feeds[id(msg.sender, tag)];
     Feed storage self = _feeds[id(address(this), tag)];
 
@@ -49,12 +49,12 @@ contract Feedbase {
     feed.paid -= feed.cost;
     self.paid += feed.cost;
 
-    feed.val = val;
-    feed.ttl = ttl;
-    feed.sec = sec;
     feed.seq = seq;
+    feed.sec = sec;
+    feed.ttl = ttl;
+    feed.val = val;
 
-    emit Update(msg.sender, tag, ttl, sec, seq, val);
+    emit Update(msg.sender, tag, seq, sec, ttl, val);
   }
 
   function request(address src, bytes32 tag, uint amt) public {

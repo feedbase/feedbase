@@ -10,16 +10,16 @@ contract OracleFactory {
   Feedbase public feedbase;
   mapping(address=>bool) public builtHere;
 
-  event CreateOracle(address indexed oracle);
+  event BuiltOracle(address indexed oracle);
 
   constructor(Feedbase fb) {
     feedbase = fb;
   }
 
-  function create() public returns (Oracle) {
+  function build() public returns (Oracle) {
     Oracle o = new Oracle(feedbase);
     builtHere[address(o)] = true;
-    emit CreateOracle(address(o));
+    emit BuiltOracle(address(o));
     o.setOwner(msg.sender);
     return o;
   }
@@ -41,9 +41,9 @@ contract Oracle {
       address indexed submiter
     , address indexed signer
     , bytes32 indexed tag
-    , uint64          ttl
-    , uint64          sec
     , uint64          seq
+    , uint64          sec
+    , uint64          ttl
     , bytes           val
   );
 
@@ -69,7 +69,15 @@ contract Oracle {
     return block.chainid;
   }
 
-  function submit(bytes32 tag, uint64 ttl, uint64 sec, uint64 seq, uint8 v, bytes32 r, bytes32 s, bytes calldata val) public {
+  function submit(
+    bytes32 tag,
+    uint64 seq,
+    uint64 sec,
+    uint64 ttl,
+    bytes calldata val,
+    uint8 v, bytes32 r, bytes32 s
+  ) public
+  {
     // verify signer key is live for this signer/ttl
     require(block.timestamp < ttl, 'oracle-submit-msg-ttl');
 
@@ -82,9 +90,9 @@ contract Oracle {
         keccak256(abi.encode(
           SUBMIT_TYPEHASH, 
           tag, 
-          ttl,
-          sec,
           seq,
+          sec,
+          ttl,
           val
         ))
       ))
@@ -95,8 +103,8 @@ contract Oracle {
     uint sttl = signerTTL[signer];
     require(block.timestamp < sttl, 'oracle-submit-bad-signer');
 
-    emit Submit(msg.sender, signer, tag, ttl, sec, seq, val);
-    feedbase.push(tag, ttl, sec, seq, val);
+    emit Submit(msg.sender, signer, tag, seq, sec, ttl, val);
+    feedbase.push(tag, seq, sec, ttl, val);
   }
 
   function setOwner(address newOwner) public {
