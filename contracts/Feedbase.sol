@@ -6,8 +6,10 @@ contract Feedbase {
   struct Feed {
     // config
     IERC20 cash;
-    string desc;
     uint   cost;
+    string desc;
+
+    // Balance
     uint   paid;
 
     // update
@@ -74,6 +76,13 @@ contract Feedbase {
     Feed storage feed = _feeds[fid];
     feed.paid -= amt;
     feed.cash.transfer(msg.sender, amt);
+  }
+
+  function config(bytes32 tag, IERC20 cash, uint256 cost, string calldata desc) public {
+    Feed storage feed = _feeds[id(msg.sender, tag)];
+    feed.cash = cash;
+    feed.cost = cost;
+    feed.desc = desc;
   }
 }
 
