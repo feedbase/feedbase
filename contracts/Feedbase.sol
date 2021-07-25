@@ -29,7 +29,7 @@ contract Feedbase {
   event Push(
       address indexed src
     , bytes32 indexed tag
-    , uint64          seq
+    , uint64  indexed seq
     , uint64          sec
     , uint64          ttl
     , bytes           val
