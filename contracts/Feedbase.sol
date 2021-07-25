@@ -85,9 +85,9 @@ contract Feedbase {
     feed.cash.transfer(msg.sender, amt);
   }
 
-  function config(bytes32 tag, IERC20 cash, uint256 cost, string calldata desc) public {
+  function config(bytes32 tag, address cash, uint256 cost, string calldata desc) public {
     Feed storage feed = _feeds[fid(msg.sender, tag)];
-    feed.cash = cash;
+    feed.cash = IERC20(cash);
     feed.cost = cost;
     feed.desc = desc;
   }
