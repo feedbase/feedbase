@@ -47,8 +47,8 @@ contract Oracle {
     , bytes           val
   );
 
-  // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(bytes32 tag,bytes32 val,uint64 ttl)");
-  bytes32 public constant SUBMIT_TYPEHASH = 0x3005660f386f3c7f3f011a623eab9559cb5863bb2534dceadd07ab706b69edfd;
+  // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(bytes32 tag,uint64 seq,uint64 sec,uint64 ttl,bytes val)");
+  bytes32 public constant SUBMIT_TYPEHASH = 0xdfa52e6a623d10ed1fca316f9b63ebce6ae0d73a5b7d160596cf2eede243171a;
 
   constructor(Feedbase fb) {
     feedbase = fb;
@@ -93,7 +93,7 @@ contract Oracle {
           seq,
           sec,
           ttl,
-          val
+          keccak256(val)
         ))
       ))
     ));
