@@ -40,7 +40,7 @@ contract Oracle {
       address indexed submiter
     , address indexed signer
     , bytes32 indexed tag
-    , bytes32         val
+    , bytes           val
     , uint64          ttl
   );
 
@@ -66,7 +66,7 @@ contract Oracle {
     return block.chainid;
   }
 
-  function submit(bytes32 tag, bytes32 val, uint64 ttl, uint8 v, bytes32 r, bytes32 s) public {
+  function submit(bytes32 tag, bytes calldata val, uint64 ttl, uint8 v, bytes32 r, bytes32 s) public {
     // verify signer key is live for this signer/ttl
     require(block.timestamp < ttl, 'oracle-submit-msg-ttl');
 

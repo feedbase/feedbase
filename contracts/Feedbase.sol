@@ -5,22 +5,20 @@ pragma solidity ^0.8.4;
 contract Feedbase {
   struct Feed {
     // config
-    IERC20 gem;
+    IERC20 cash;
     string desc;
     uint   cost;
-    uint   demand;
+    uint   paid;
 
     // value
-    bytes32 val;
+    bytes val;
     uint64  ttl;
 
     uint64  sec;
     uint64  seq;
   }
 
-  // who -> bal
-  mapping(address=>uint256)                        _bals;
-  // fid -> demand
+  // fid -> paid
   mapping(bytes32 => uint256) _fees;
   // id -> Feed
   mapping(bytes32=>Feed) _feeds;
@@ -32,27 +30,27 @@ contract Feedbase {
   event Update(
       bytes32 indexed tag
     , address indexed src
-    , bytes32         val
+    , bytes         val
     , uint64          ttl
     , uint64          sec
     , uint64          seq
   );
 
-  function read(bytes32 tag, address src) public view returns (bytes32 value, uint64 ttl) {
+  function read(bytes32 tag, address src) public view returns (bytes memory val, uint64 ttl) {
     Feed storage f = _feeds[id(tag, src)];
     return (f.val, f.ttl);
   }
 
-  function push(bytes32 tag, bytes32 val, uint64 ttl, uint64 sec, uint64 seq) public {
+  function push(bytes32 tag, bytes calldata val, uint64 ttl, uint64 sec, uint64 seq) public {
     bytes32 fid = id(tag, msg.sender);
     Feed storage feed = _feeds[fid];
 
-    require(feed.demand >= feed.cost);
+    require(feed.paid >= feed.cost);
     require(seq > feed.seq, 'ERR_PUSH_SEQ');
     require(sec <= block.timestamp, 'ERR_PUSH_SEC');
 
-    _fees[fid]        -= feed.cost;
-    _bals[msg.sender] += feed.cost;
+    _fees[fid]                     -= feed.cost;
+    _fees[id(tag, address(this))]  += feed.cost;
 
     _feeds[fid].val = val;
     _feeds[fid].ttl = ttl;
@@ -63,18 +61,22 @@ contract Feedbase {
   }
 
   function request(bytes32 tag, address src, uint amt) public {
-    _bals[msg.sender] -= amt;
-    _fees[id(tag, src)] += amt;
+    _fees[id(tag, msg.sender)]  -= amt;
+    _fees[id(tag, src)]         += amt;
   }
 
-  function topUp(IERC20 gem, uint amt) public {
-    gem.transferFrom(msg.sender, address(this), amt);
-    _bals[msg.sender] += amt;
+  function topUp(bytes32 tag, uint amt) public {
+    bytes32 fid = id(tag, msg.sender);
+    Feed storage feed = _feeds[fid];
+    feed.cash.transferFrom(msg.sender, address(this), amt);
+    _fees[id(tag, msg.sender)] += amt;
   }
 
-  function cashout(IERC20 gem, uint amt) public {
-    _bals[msg.sender] -= amt;
-    gem.transfer(msg.sender, amt);
+  function cashout(bytes32 tag, uint amt) public {
+    bytes32 fid = id(tag, msg.sender);
+    Feed storage feed = _feeds[fid];
+    _fees[id(tag, msg.sender)] -= amt;
+    feed.cash.transfer(msg.sender, amt);
   }
 }
 
