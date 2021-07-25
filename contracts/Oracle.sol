@@ -92,7 +92,7 @@ contract Oracle {
     require(block.timestamp < sttl, 'oracle-submit-bad-signer');
 
     emit Submit(msg.sender, signer, tag, val, ttl);
-    feedbase.push(tag, val, ttl);
+    feedbase.push(tag, val, ttl, 1, 1);
   }
 
   function setOwner(address newOwner) public {
