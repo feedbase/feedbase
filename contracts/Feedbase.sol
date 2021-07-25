@@ -3,14 +3,21 @@
 pragma solidity ^0.8.4;
 
 contract Feedbase {
+  // id -> Feed
+  mapping(bytes32=>Feed) _feeds;
+
+  function fid(address src, bytes32 tag) internal pure returns (bytes32) {
+    return keccak256(abi.encode(bytes32(bytes20(src)), tag));
+  }
+
   struct Feed {
     // config
-    IERC20 cash;
-    uint   cost;
-    string desc;
+    string  desc;
+    IERC20  cash;
+    uint256 cost;
 
-    // Balance
-    uint   paid;
+    // balance
+    uint256 paid;
 
     // update
     uint64  seq;
@@ -19,14 +26,7 @@ contract Feedbase {
     bytes   val;
   }
 
-  // id -> Feed
-  mapping(bytes32=>Feed)     _feeds;
-
-  function id(address src, bytes32 tag) internal pure returns (bytes32) {
-    return keccak256(abi.encode(bytes32(bytes20(src)), tag));
-  }
-
-  event Update(
+  event Push(
       address indexed src
     , bytes32 indexed tag
     , uint64          seq
@@ -35,18 +35,27 @@ contract Feedbase {
     , bytes           val
   );
 
-  function read(address src, bytes32 tag) public view returns (bytes memory val, uint64 ttl) {
-    Feed storage f = _feeds[id(src,tag)];
-    return (f.val, f.ttl);
+  function read(address src, bytes32 tag) public view returns (bytes memory val) {
+    Feed storage feed = _feeds[fid(src, tag)];
+    require(feed.sec >= block.timestamp, 'ERR_READ_EARLY');
+    require(feed.ttl <  block.timestamp, 'ERR_READ_LATE');
+    return feed.val;
+  }
+
+  function readFull(address src, bytes32 tag) public view returns (Feed memory) {
+    Feed storage feed = _feeds[fid(src, tag)];
+    require(feed.sec >= block.timestamp, 'ERR_READ_EARLY');
+    require(feed.ttl <  block.timestamp, 'ERR_READ_LATE');
+    return feed;
   }
 
   function push(bytes32 tag, uint64 seq, uint64 sec, uint64 ttl, bytes calldata val) public {
-    Feed storage feed = _feeds[id(msg.sender, tag)];
-    Feed storage self = _feeds[id(address(this), tag)];
+    Feed storage feed = _feeds[fid(msg.sender, tag)];
+    Feed storage self = _feeds[fid(address(this), tag)];
 
     require(feed.paid >= feed.cost);
     require(seq > feed.seq, 'ERR_PUSH_SEQ');
-    require(sec <= block.timestamp, 'ERR_PUSH_SEC');
+    require(sec >= feed.sec, 'ERR_PUSH_SEC');
 
     feed.paid -= feed.cost;
     self.paid += feed.cost;
@@ -56,30 +65,28 @@ contract Feedbase {
     feed.ttl = ttl;
     feed.val = val;
 
-    emit Update(msg.sender, tag, seq, sec, ttl, val);
+    emit Push(msg.sender, tag, seq, sec, ttl, val);
   }
 
   function request(address src, bytes32 tag, uint amt) public {
-    _feeds[id(msg.sender, tag)].paid  -= amt;
-    _feeds[id(src, tag)].paid         += amt;
+    _feeds[fid(msg.sender, tag)].paid  -= amt;
+    _feeds[fid(src, tag)].paid         += amt;
   }
 
   function topUp(bytes32 tag, uint amt) public {
-    bytes32 fid = id(msg.sender, tag);
-    Feed storage feed = _feeds[fid];
+    Feed storage feed = _feeds[fid(msg.sender, tag)];
     feed.cash.transferFrom(msg.sender, address(this), amt);
     feed.paid += amt;
   }
 
   function cashout(bytes32 tag, uint amt) public {
-    bytes32 fid = id(msg.sender, tag);
-    Feed storage feed = _feeds[fid];
+    Feed storage feed = _feeds[fid(msg.sender, tag)];
     feed.paid -= amt;
     feed.cash.transfer(msg.sender, amt);
   }
 
   function config(bytes32 tag, IERC20 cash, uint256 cost, string calldata desc) public {
-    Feed storage feed = _feeds[id(msg.sender, tag)];
+    Feed storage feed = _feeds[fid(msg.sender, tag)];
     feed.cash = cash;
     feed.cost = cost;
     feed.desc = desc;
