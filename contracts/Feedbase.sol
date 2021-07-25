@@ -20,27 +20,27 @@ contract Feedbase {
   // id -> Feed
   mapping(bytes32=>Feed)     _feeds;
 
-  function id(bytes32 tag, address src) internal pure returns (bytes32) {
-    return keccak256(abi.encode(bytes32(tag), bytes32(bytes20(src))));
+  function id(address src, bytes32 tag) internal pure returns (bytes32) {
+    return keccak256(abi.encode(bytes32(bytes20(src)), tag));
   }
 
   event Update(
-      bytes32 indexed tag
-    , address indexed src
-    , bytes         val
+      address indexed src
+    , bytes32 indexed tag
     , uint64          ttl
     , uint64          sec
     , uint64          seq
+    , bytes           val
   );
 
-  function read(bytes32 tag, address src) public view returns (bytes memory val, uint64 ttl) {
-    Feed storage f = _feeds[id(tag, src)];
+  function read(address src, bytes32 tag) public view returns (bytes memory val, uint64 ttl) {
+    Feed storage f = _feeds[id(src,tag)];
     return (f.val, f.ttl);
   }
 
-  function push(bytes32 tag, bytes calldata val, uint64 ttl, uint64 sec, uint64 seq) public {
-    Feed storage feed = _feeds[id(tag, msg.sender)];
-    Feed storage self = _feeds[id(tag, address(this))];
+  function push(bytes32 tag, uint64 ttl, uint64 sec, uint64 seq, bytes calldata val) public {
+    Feed storage feed = _feeds[id(msg.sender, tag)];
+    Feed storage self = _feeds[id(address(this), tag)];
 
     require(feed.paid >= feed.cost);
     require(seq > feed.seq, 'ERR_PUSH_SEQ');
@@ -54,23 +54,23 @@ contract Feedbase {
     feed.sec = sec;
     feed.seq = seq;
 
-    emit Update(tag, msg.sender, val, ttl, sec, seq);
+    emit Update(msg.sender, tag, ttl, sec, seq, val);
   }
 
-  function request(bytes32 tag, address src, uint amt) public {
-    _feeds[id(tag, msg.sender)].paid  -= amt;
-    _feeds[id(tag, src)].paid         += amt;
+  function request(address src, bytes32 tag, uint amt) public {
+    _feeds[id(msg.sender, tag)].paid  -= amt;
+    _feeds[id(src, tag)].paid         += amt;
   }
 
   function topUp(bytes32 tag, uint amt) public {
-    bytes32 fid = id(tag, msg.sender);
+    bytes32 fid = id(msg.sender, tag);
     Feed storage feed = _feeds[fid];
     feed.cash.transferFrom(msg.sender, address(this), amt);
     feed.paid += amt;
   }
 
   function cashout(bytes32 tag, uint amt) public {
-    bytes32 fid = id(tag, msg.sender);
+    bytes32 fid = id(msg.sender, tag);
     Feed storage feed = _feeds[fid];
     feed.paid -= amt;
     feed.cash.transfer(msg.sender, amt);
