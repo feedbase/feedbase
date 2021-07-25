@@ -41,11 +41,8 @@ contract Oracle {
       address indexed submiter
     , address indexed signer
     , bytes32 indexed tag
-    , uint64          seq
-    , uint64          sec
-    , uint64          ttl
-    , bytes           val
-  );
+    , uint64  indexed seq
+  ) anonymous ;
 
   // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(bytes32 tag,uint64 seq,uint64 sec,uint64 ttl,bytes val)");
   bytes32 public constant SUBMIT_TYPEHASH = 0xdfa52e6a623d10ed1fca316f9b63ebce6ae0d73a5b7d160596cf2eede243171a;
@@ -103,8 +100,13 @@ contract Oracle {
     uint sttl = signerTTL[signer];
     require(block.timestamp < sttl, 'oracle-submit-bad-signer');
 
-    emit Submit(msg.sender, signer, tag, seq, sec, ttl, val);
+    emit Submit(msg.sender, signer, tag, seq);
     feedbase.push(tag, seq, sec, ttl, val);
+  }
+
+  function configFeed(bytes32 tag, address cash, uint cost, string calldata desc) public {
+    require(msg.sender == owner, 'oracle-configFeed-bad-owner');
+    feedbase.config(tag, cash, cost, desc);
   }
 
   function setOwner(address newOwner) public {
