@@ -10,18 +10,15 @@ contract Feedbase {
     uint   cost;
     uint   paid;
 
-    // value
-    bytes val;
-    uint64  ttl;
-
-    uint64  sec;
+    // update
     uint64  seq;
+    uint64  sec;
+    uint64  ttl;
+    bytes   val;
   }
 
-  // fid -> paid
-  mapping(bytes32 => uint256) _fees;
   // id -> Feed
-  mapping(bytes32=>Feed) _feeds;
+  mapping(bytes32=>Feed)     _feeds;
 
   function id(bytes32 tag, address src) internal pure returns (bytes32) {
     return keccak256(abi.encode(bytes32(tag), bytes32(bytes20(src))));
@@ -42,40 +39,40 @@ contract Feedbase {
   }
 
   function push(bytes32 tag, bytes calldata val, uint64 ttl, uint64 sec, uint64 seq) public {
-    bytes32 fid = id(tag, msg.sender);
-    Feed storage feed = _feeds[fid];
+    Feed storage feed = _feeds[id(tag, msg.sender)];
+    Feed storage self = _feeds[id(tag, address(this))];
 
     require(feed.paid >= feed.cost);
     require(seq > feed.seq, 'ERR_PUSH_SEQ');
     require(sec <= block.timestamp, 'ERR_PUSH_SEC');
 
-    _fees[fid]                     -= feed.cost;
-    _fees[id(tag, address(this))]  += feed.cost;
+    feed.paid -= feed.cost;
+    self.paid += feed.cost;
 
-    _feeds[fid].val = val;
-    _feeds[fid].ttl = ttl;
-    _feeds[fid].sec = sec;
-    _feeds[fid].seq = seq;
+    feed.val = val;
+    feed.ttl = ttl;
+    feed.sec = sec;
+    feed.seq = seq;
 
     emit Update(tag, msg.sender, val, ttl, sec, seq);
   }
 
   function request(bytes32 tag, address src, uint amt) public {
-    _fees[id(tag, msg.sender)]  -= amt;
-    _fees[id(tag, src)]         += amt;
+    _feeds[id(tag, msg.sender)].paid  -= amt;
+    _feeds[id(tag, src)].paid         += amt;
   }
 
   function topUp(bytes32 tag, uint amt) public {
     bytes32 fid = id(tag, msg.sender);
     Feed storage feed = _feeds[fid];
     feed.cash.transferFrom(msg.sender, address(this), amt);
-    _fees[id(tag, msg.sender)] += amt;
+    feed.paid += amt;
   }
 
   function cashout(bytes32 tag, uint amt) public {
     bytes32 fid = id(tag, msg.sender);
     Feed storage feed = _feeds[fid];
-    _fees[id(tag, msg.sender)] -= amt;
+    feed.paid -= amt;
     feed.cash.transfer(msg.sender, amt);
   }
 }
