@@ -35,17 +35,17 @@ contract Feedbase {
     , bytes           val
   );
 
-  function read(address src, bytes32 tag) public view returns (bytes memory val) {
+  function read(address src, bytes32 tag) public view returns (uint64 ttl, bytes memory val) {
     Feed storage feed = _feeds[fid(src, tag)];
-    require(feed.sec >= block.timestamp, 'ERR_READ_EARLY');
-    require(feed.ttl <  block.timestamp, 'ERR_READ_LATE');
-    return feed.val;
+    require(feed.sec <= block.timestamp, 'ERR_READ_EARLY');
+    require(feed.ttl >  block.timestamp, 'ERR_READ_LATE');
+    return (feed.ttl, feed.val);
   }
 
   function readFull(address src, bytes32 tag) public view returns (Feed memory) {
     Feed storage feed = _feeds[fid(src, tag)];
-    require(feed.sec >= block.timestamp, 'ERR_READ_EARLY');
-    require(feed.ttl <  block.timestamp, 'ERR_READ_LATE');
+    require(feed.sec <= block.timestamp, 'ERR_READ_EARLY');
+    require(feed.ttl >  block.timestamp, 'ERR_READ_LATE');
     return feed;
   }
 

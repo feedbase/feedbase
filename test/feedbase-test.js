@@ -12,12 +12,12 @@ const { ethers, network, waffle } = require('hardhat')
 const { makeUpdateDigest } = require('../message.js');
 
 describe('feedbase', ()=>{
-  it('basics', async ()=>{
+  it('basics', async function() {
     let FeedbaseFactory = await ethers.getContractFactory("Feedbase")
     const fb = await FeedbaseFactory.deploy() 
   });
 
-  it('oracle relay', async()=>{
+  it('oracle relay', async function() {
     const { chainId } = network.config;
     debug("chainId: ", chainId);
 
@@ -69,4 +69,26 @@ describe('feedbase', ()=>{
     const tx3 = await oracle.submit(tag, seq, sec, ttl, val, sig.v, sig.r, sig.s);
     
   });
+
+  it("ttl on read", async function() {
+    const signers = await ethers.getSigners();
+    debug(signers[0]);
+
+    const FeedbaseFactory = await ethers.getContractFactory("Feedbase");
+    const fb = await FeedbaseFactory.deploy();
+
+    const tag = Buffer.from('USDETH'.padStart(32, '\0'));
+    const seq = 1;
+    const sec = Math.floor(Date.now() / 1000);
+    const ttl = 10000000000000
+    const val = Buffer.from('11'.repeat(32), 'hex');
+    debug(tag, seq, sec, ttl, val);
+
+    const push = await fb.push(tag, seq, sec, ttl, val);
+    const read = await fb.read(signers[0].address, tag);
+    debug(read);
+
+    want(read.ttl).equal(ttl);
+    want(read.val).equal("0x" + val.toString("hex"));
+  })
 });
