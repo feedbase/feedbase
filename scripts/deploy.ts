@@ -65,7 +65,7 @@ async function deploy() {
    objects["feedbase"].addresses[name] = feedbase.address;
 
    let ans = { types, objects };
-   fs.writeFileSync("pack.js", JSON.stringify(ans));
+   fs.writeFileSync("pack.json", JSON.stringify(ans));
 
    console.log("pack\n", JSON.stringify(ans, null, 2));
 }

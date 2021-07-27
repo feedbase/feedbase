@@ -1,18 +1,1 @@
-{
-  "objects": [
-    {
-      "name": "feedbase",
-      "artifacts": "QmX6iabQB6YWSVLi2a8kATStaq68KbiEJZA1dycfQNk887",
-      "addresses": {
-        "ropsten": "0xb901C647f4F8d5D4fA9FF23f95d91d6fC46C52Ff"
-      }
-    },
-    {
-      "name": "oracle_factory",
-      "artifacts": "QmTbbamu2NaURTNP6YkweuL9Qcsi4jwrRB5uhbhhyY1rmP",
-      "addresses": {
-        "ropsten": "0x8d0523bDF6F8e12Cf257557754d858649bB696fA"
-      }
-    }
-  ]
-}
+{"types":{"Oracle":{"artifacts":"Qmdq9xoHr8Q1N8KqXuPJKsNS1ErMLyzKYd7mUuDd9LmQL1"},"OracleFactory":{"artifacts":"QmewWrAQyryjNdFAZFv4QNh1yCpyFVFzk21JJ5R9J2ynEA"},"Feedbase":{"artifacts":"QmTKusyQMDguNNyccw2wFz1xeVsP2k1iSHGgJGiWJPEKBn"}},"objects":{"oracleFactory":{"typename":"OracleFactory","artifacts":"QmewWrAQyryjNdFAZFv4QNh1yCpyFVFzk21JJ5R9J2ynEA","addresses":{"ropsten":"0x462DB3380e547E40D5bae46A312F2Da7bE12E27e"}},"feedbase":{"typename":"Feedbase","artifacts":"QmTKusyQMDguNNyccw2wFz1xeVsP2k1iSHGgJGiWJPEKBn","addresses":{"ropsten":"0x6B2d044E2083Ac2f75271B357375a8c296a8e038"}}}}
