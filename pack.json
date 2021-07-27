@@ -1,0 +1,23 @@
+{
+  "types": {
+    "Oracle": { "artifacts": "Qmdq9xoHr8Q1N8KqXuPJKsNS1ErMLyzKYd7mUuDd9LmQL1" },
+    "OracleFactory": {
+      "artifacts": "QmewWrAQyryjNdFAZFv4QNh1yCpyFVFzk21JJ5R9J2ynEA"
+    },
+    "Feedbase": {
+      "artifacts": "QmTKusyQMDguNNyccw2wFz1xeVsP2k1iSHGgJGiWJPEKBn"
+    }
+  },
+  "objects": {
+    "oracleFactory": {
+      "typename": "OracleFactory",
+      "artifacts": "QmewWrAQyryjNdFAZFv4QNh1yCpyFVFzk21JJ5R9J2ynEA",
+      "addresses": { "ropsten": "0x462DB3380e547E40D5bae46A312F2Da7bE12E27e" }
+    },
+    "feedbase": {
+      "typename": "Feedbase",
+      "artifacts": "QmTKusyQMDguNNyccw2wFz1xeVsP2k1iSHGgJGiWJPEKBn",
+      "addresses": { "ropsten": "0x6B2d044E2083Ac2f75271B357375a8c296a8e038" }
+    }
+  }
+}
