@@ -1,4 +1,5 @@
 const { ethers, network } = require("hardhat");
+const fs = require("fs");
 
 // Deploy function
 async function deploy() {
@@ -18,10 +19,19 @@ async function deploy() {
 
    //Deploy OracleFactory
    const OracleFactory = await ethers.getContractFactory("OracleFactory");
-   const oracleFactory = await OracleFactory.deploy(feedbase.address, chainId);
+   const oracleFactory = await OracleFactory.deploy(feedbase.address);
    await oracleFactory.deployed();
 
    console.log(`OracleFactory deployed to : `, oracleFactory.address);
+
+   const data = {
+      feedbase: feedbase.address,
+      oracleFactory: oracleFactory.address,
+   };
+
+   fs.writeFileSync(`deployed.json`, JSON.stringify(data, null, 4), (err) =>
+      console.err(err)
+   );
 }
 
 deploy()
