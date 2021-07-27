@@ -6,7 +6,8 @@ const BN = require('bn.js')
 const { TypedDataUtils } = require('ethers-eip712')
 
 // makeUpdateDigest({
-//  tag, val, ttl, chainId, receiver
+//  chainId, receiver,
+//  tag, seq, sec, ttl, val
 // });
 module.exports = {
   makeUpdateDigest: (obj) => {
