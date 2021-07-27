@@ -1,8 +1,4 @@
 module.exports = {
-  "types": {
-    "FeedbaseV1": "QmX6iabQB6YWSVLi2a8kATStaq68KbiEJZA1dycfQNk887",
-    "OracleFactoryV1": "QmTbbamu2NaURTNP6YkweuL9Qcsi4jwrRB5uhbhhyY1rmP",
-  },
   "objects": [
     {
       name: "feedbase",
