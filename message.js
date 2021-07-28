@@ -1,5 +1,4 @@
 const debug = require('debug')('feedbase:message')
-const { ethers } = require("hardhat")
 
 const BN = require('bn.js')
 
