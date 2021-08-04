@@ -7,6 +7,8 @@ const FeedbaseJson = require("../artifacts/contracts/Feedbase.sol/Feedbase.json"
 const OracleFactoryJson = require("../artifacts/contracts/Oracle.sol/OracleFactory.json");
 const OracleJson = require("../artifacts/contracts/Oracle.sol/Oracle.json");
 
+const { create } = require("../../lib/packer");
+
 // Deploy function
 async function deploy() {
    const { name } = network;
@@ -30,46 +32,32 @@ async function deploy() {
    console.log(`OracleFactory deployed to : `, oracleFactory.address);
 
 
-   /**** create pack file ****/
-   const node = await IPFS.create();
+   // create pack file
+   console.log("creating pack file...")
+   await create("pack.json", async (mutator: any) => {
+      await mutator.addType(OracleJson.contractName, OracleJson);
+      await mutator.addType(OracleFactoryJson.contractName, OracleFactoryJson);
+      await mutator.addType(FeedbaseJson.contractName, FeedbaseJson);
 
-   // construct `type` object
-   const artifacts = [OracleJson, OracleFactoryJson, FeedbaseJson];
-   let types: any = {};
+      const oracleFactoryAddr = {};
+      oracleFactoryAddr[name] = oracleFactory.address;
+      await mutator.addObject(
+         "oracleFactory",
+         oracleFactoryAddr,
+         OracleFactoryJson.contractName,
+         OracleFactoryJson,
+      )
+      const feedbaseAddr = {};
+      feedbaseAddr[name] = feedbase.address;
+      await mutator.addObject(
+         "feedbase",
+         feedbaseAddr,
+         FeedbaseJson.contractName,
+         FeedbaseJson,
+      )
+      return mutator.working;
+   })
 
-   let cids = [];
-   for (let i = 0; i < artifacts.length; i++) {
-      const str = JSON.stringify(artifacts[i]);
-      const { cid } = await node.add(str);
-      cids.push(cid.toString());
-   }
-   for (let i = 0; i < cids.length; i++) {
-      types[artifacts[i].contractName] = { "artifacts": cids[i] };
-   }
-
-   // construct `object` object
-   const objects: any = {
-      "oracleFactory": {
-         typename: OracleFactoryJson.contractName,
-         artifacts: cids[1],
-         addresses: {},
-      },
-      "feedbase": {
-         typename: FeedbaseJson.contractName,
-         artifacts: cids[2],
-         addresses: {},
-      }
-   }
-
-   objects["oracleFactory"].addresses[name] = oracleFactory.address;
-   objects["feedbase"].addresses[name] = feedbase.address;
-
-   let ans = { types, objects };
-   let str = JSON.stringify(ans, null, 2);
-
-   fs.writeFileSync("pack.json", str);
-
-   console.log(str);
 }
 
 deploy()
