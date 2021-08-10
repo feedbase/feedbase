@@ -11,9 +11,6 @@ contract Feedbase {
   }
 
   struct Feed {
-    // config
-    string  desc;
-
     // update
     uint64  seq;
     uint64  sec;
@@ -103,11 +100,6 @@ contract Feedbase {
   function setCost(address cash, bytes32 tag, uint256 cost) public {
     _fees[fid(msg.sender, tag)][cash].cost = cost;
   }
-
-  function setDesc(bytes32 tag, string calldata desc) public {
-    _feeds[fid(msg.sender, tag)].desc = desc;
-  }
-
 
 }
 

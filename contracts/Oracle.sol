@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-pragma solidity ^0.8.1;
+pragma solidity ^0.8.6;
 
 import './Feedbase.sol';
 
@@ -29,8 +29,6 @@ contract Oracle {
   Feedbase                 public feedbase;
   address                  public owner;
   mapping(address=>uint)   public signerTTL; // isSigner
-
-  mapping(bytes32=>string) public meta;
 
   bytes32                  public DOMAIN_SEPARATOR;
 
@@ -104,10 +102,9 @@ contract Oracle {
     feedbase.push(tag, seq, sec, ttl, val);
   }
 
-  function configFeed(bytes32 tag, address cash, uint cost, string calldata desc) public {
-    require(msg.sender == owner, 'oracle-configFeed-bad-owner');
+  function setCost(bytes32 tag, address cash, uint cost) public {
+    require(msg.sender == owner, 'oracle-setCost-bad-owner');
     feedbase.setCost(cash, tag, cost);
-    feedbase.setDesc(tag, desc);
   }
 
   function setOwner(address newOwner) public {
@@ -124,11 +121,4 @@ contract Oracle {
     return block.timestamp < signerTTL[who];
   }
 
-  // e.g. setMeta('url', 'https://.....');
-  function setMeta(bytes32 metaKey, string calldata metaVal) public {
-    require(msg.sender == owner, 'oracle-setMeta-bad-owner');
-    meta[metaKey] = metaVal;
-  }
 }
-
-
