@@ -106,7 +106,8 @@ contract Oracle {
 
   function configFeed(bytes32 tag, address cash, uint cost, string calldata desc) public {
     require(msg.sender == owner, 'oracle-configFeed-bad-owner');
-    feedbase.config(tag, cash, cost, desc);
+    feedbase.setCost(cash, tag, cost);
+    feedbase.setDesc(tag, desc);
   }
 
   function setOwner(address newOwner) public {

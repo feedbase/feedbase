@@ -44,8 +44,8 @@ describe('pay flow', ()=>{
 
     use(0);
 
-    const tx_config = await fb.config(TAG, cash.address, 100, '');
-    await tx_config.wait();
+    const tx_setCost = await fb.setCost(cash.address, TAG, 100);
+    await tx_setCost.wait();
   });
 
   it('topUp request push', async () => {
@@ -54,25 +54,21 @@ describe('pay flow', ()=>{
     const bal = await cash.balanceOf(signers[1].address);
     want(bal.toNumber()).equals(1000);
 
-    // NOTE need for this is shit api
-    const tx_config = await fb.config(TAG, cash.address, 0, '');
-    await tx_config.wait();
-
-    const tx_topUp = await fb.topUp(TAG, 500);
+    const tx_topUp = await fb.topUp(cash.address, TAG, 500);
     await tx_topUp.wait();
 
-    const fbal0 = await fb.feedDemand(signers[1].address, TAG);
+    const fbal0 = await fb.feedDemand(cash.address, signers[1].address, TAG);
     want(fbal0.toNumber()).equals(500);
     debug(`fbal0 ${fbal0}`);
     const bal2 = await cash.balanceOf(signers[1].address);
     want(bal2.toNumber()).equals(500);
 
-    const tx_request = await fb.request(signers[0].address, TAG, 100);
+    const tx_request = await fb.request(cash.address, signers[0].address, TAG, 100);
     await tx_request.wait();
 
-    const fbal1 = await fb.feedDemand(signers[1].address, TAG);
+    const fbal1 = await fb.feedDemand(cash.address, signers[1].address, TAG);
     want(fbal1.toNumber()).equals(400);
-    const fbal2 = await fb.feedDemand(signers[0].address, TAG);
+    const fbal2 = await fb.feedDemand(cash.address, signers[0].address, TAG);
     want(fbal2.toNumber()).equals(100);
 
     use(0)
@@ -81,20 +77,21 @@ describe('pay flow', ()=>{
     let sec = Math.floor(Date.now() / 1000);
     let ttl = 10**10;
     let val = Buffer.from('ff'.repeat(32), 'hex')
-    const tx_push = await fb.push(TAG, seq, sec, ttl, val);
+
+    const tx_push = await fb.pushPaid(cash.address, TAG, seq, sec, ttl, val);
     await tx_push.wait()
 
-    const fbal3 = await fb.feedDemand(signers[0].address, TAG);
+    const fbal3 = await fb.feedDemand(cash.address, signers[0].address, TAG);
     want(fbal3.toNumber()).equals(0);
-    const fees = await fb.feedCollected(signers[0].address, TAG);
+    const fees = await fb.feedCollected(cash.address, signers[0].address, TAG);
     want(fees.toNumber()).equals(100);
 
     const pre = await cash.balanceOf(signers[0].address);
-    const tx_cashOut = await fb.cashOut(TAG, 100);
+    const tx_cashOut = await fb.cashOut(cash.address, TAG, 100);
     await tx_cashOut.wait();
     const post = await cash.balanceOf(signers[0].address);
     want(post.sub(pre).toNumber()).equals(100);
-    const fees2 = await fb.feedCollected(signers[0].address, TAG);
+    const fees2 = await fb.feedCollected(cash.address, signers[0].address, TAG);
     want(fees2.toNumber()).equals(0);
     
   });

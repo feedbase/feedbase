@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.6;
 
 contract Feedbase {
   // id -> Feed
@@ -13,17 +13,21 @@ contract Feedbase {
   struct Feed {
     // config
     string  desc;
-    IERC20  cash;
-    uint256 cost;
-
-    uint256 paid; // request
-    uint256 fees; // collected
 
     // update
     uint64  seq;
     uint64  sec;
     uint64  ttl;
     bytes   val;
+  }
+
+  // fid -> cash -> payConfig
+  mapping(bytes32=>mapping(address=>PayConfig)) _fees;
+  struct PayConfig {
+    bool    live;
+    uint256 cost;
+    uint256 paid;
+    uint256 fees;
   }
 
   event Push(
@@ -49,15 +53,20 @@ contract Feedbase {
     return feed;
   }
 
+  function pushPaid(IERC20 cash, bytes32 tag, uint64 seq, uint64 sec, uint64 ttl, bytes calldata val) public {
+    PayConfig storage conf = _fees[fid(msg.sender, tag)][address(cash)];
+
+    conf.paid -= conf.cost;
+    conf.fees += conf.cost;
+
+    push(tag, seq, sec, ttl, val);
+  }
+
   function push(bytes32 tag, uint64 seq, uint64 sec, uint64 ttl, bytes calldata val) public {
     Feed storage feed = _feeds[fid(msg.sender, tag)];
 
-    require(feed.paid >= feed.cost);
     require(seq > feed.seq, 'ERR_PUSH_SEQ');
     require(sec >= feed.sec, 'ERR_PUSH_SEC');
-
-    feed.paid -= feed.cost;
-    feed.fees += feed.cost;
 
     feed.seq = seq;
     feed.sec = sec;
@@ -67,37 +76,39 @@ contract Feedbase {
     emit Push(msg.sender, tag, seq, sec, ttl, val);
   }
 
-  function feedDemand(address src, bytes32 tag) public view returns (uint256) {
-    return _feeds[fid(src, tag)].paid;
+  function feedDemand(IERC20 cash, address src, bytes32 tag) public view returns (uint256) {
+    return _fees[fid(src, tag)][address(cash)].paid;
   }
 
-  function feedCollected(address src, bytes32 tag) public view returns (uint256) {
-    return _feeds[fid(src, tag)].fees;
+  function feedCollected(IERC20 cash, address src, bytes32 tag) public view returns (uint256) {
+    return _fees[fid(src, tag)][address(cash)].fees;
   }
 
-  function request(address src, bytes32 tag, uint amt) public {
-    _feeds[fid(msg.sender, tag)].paid  -= amt;
-    _feeds[fid(src, tag)].paid         += amt;
+  function request(IERC20 cash, address src, bytes32 tag, uint amt) public {
+    _fees[fid(msg.sender, tag)][address(cash)].paid -= amt;
+    _fees[fid(src, tag)][address(cash)].paid += amt;
   }
 
-  function topUp(bytes32 tag, uint amt) public {
-    Feed storage feed = _feeds[fid(msg.sender, tag)];
-    feed.cash.transferFrom(msg.sender, address(this), amt);
-    feed.paid += amt;
+  function topUp(IERC20 cash, bytes32 tag, uint amt) public {
+    PayConfig storage conf = _fees[fid(msg.sender, tag)][address(cash)];
+    cash.transferFrom(msg.sender, address(this), amt);
+    conf.paid += amt;
   }
 
-  function cashOut(bytes32 tag, uint amt) public {
-    Feed storage feed = _feeds[fid(msg.sender, tag)];
-    feed.fees -= amt;
-    feed.cash.transfer(msg.sender, amt);
+  function cashOut(IERC20 cash, bytes32 tag, uint amt) public {
+    _fees[fid(msg.sender, tag)][address(cash)].fees -= amt;
+    cash.transfer(msg.sender, amt);
   }
 
-  function config(bytes32 tag, address cash, uint256 cost, string calldata desc) public {
-    Feed storage feed = _feeds[fid(msg.sender, tag)];
-    feed.cash = IERC20(cash);
-    feed.cost = cost;
-    feed.desc = desc;
+  function setCost(address cash, bytes32 tag, uint256 cost) public {
+    _fees[fid(msg.sender, tag)][cash].cost = cost;
   }
+
+  function setDesc(bytes32 tag, string calldata desc) public {
+    _feeds[fid(msg.sender, tag)].desc = desc;
+  }
+
+
 }
 
 interface IERC20 {
