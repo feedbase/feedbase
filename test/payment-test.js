@@ -78,7 +78,7 @@ describe('pay flow', ()=>{
     let ttl = 10**10;
     let val = Buffer.from('ff'.repeat(32), 'hex')
 
-    const tx_push = await fb.pushPaid(cash.address, TAG, seq, sec, ttl, val);
+    const tx_push = await fb.pushPaid(cash.address, TAG, ttl, val);
     await tx_push.wait()
 
     const fbal3 = await fb.feedDemand(cash.address, signers[0].address, TAG);

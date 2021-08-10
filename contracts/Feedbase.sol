@@ -12,8 +12,6 @@ contract Feedbase {
 
   struct Feed {
     // update
-    uint64  seq;
-    uint64  sec;
     uint64  ttl;
     bytes   val;
   }
@@ -30,47 +28,38 @@ contract Feedbase {
   event Push(
       address indexed src
     , bytes32 indexed tag
-    , uint64  indexed seq
-    , uint64          sec
     , uint64          ttl
     , bytes           val
   );
 
   function read(address src, bytes32 tag) public view returns (uint64 ttl, bytes memory val) {
     Feed storage feed = _feeds[fid(src, tag)];
-    require(feed.sec <= block.timestamp, 'ERR_READ_EARLY');
     require(feed.ttl >  block.timestamp, 'ERR_READ_LATE');
     return (feed.ttl, feed.val);
   }
 
   function readFull(address src, bytes32 tag) public view returns (Feed memory) {
     Feed storage feed = _feeds[fid(src, tag)];
-    require(feed.sec <= block.timestamp, 'ERR_READ_EARLY');
     require(feed.ttl >  block.timestamp, 'ERR_READ_LATE');
     return feed;
   }
 
-  function pushPaid(IERC20 cash, bytes32 tag, uint64 seq, uint64 sec, uint64 ttl, bytes calldata val) public {
+  function pushPaid(IERC20 cash, bytes32 tag, uint64 ttl, bytes calldata val) public {
     PayConfig storage conf = _fees[fid(msg.sender, tag)][address(cash)];
 
     conf.paid -= conf.cost;
     conf.fees += conf.cost;
 
-    push(tag, seq, sec, ttl, val);
+    push(tag, ttl, val);
   }
 
-  function push(bytes32 tag, uint64 seq, uint64 sec, uint64 ttl, bytes calldata val) public {
+  function push(bytes32 tag, uint64 ttl, bytes calldata val) public {
     Feed storage feed = _feeds[fid(msg.sender, tag)];
 
-    require(seq > feed.seq, 'ERR_PUSH_SEQ');
-    require(sec >= feed.sec, 'ERR_PUSH_SEC');
-
-    feed.seq = seq;
-    feed.sec = sec;
     feed.ttl = ttl;
     feed.val = val;
 
-    emit Push(msg.sender, tag, seq, sec, ttl, val);
+    emit Push(msg.sender, tag, ttl, val);
   }
 
   function feedDemand(IERC20 cash, address src, bytes32 tag) public view returns (uint256) {

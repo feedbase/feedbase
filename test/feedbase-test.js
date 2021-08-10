@@ -84,7 +84,7 @@ describe('feedbase', ()=>{
     const val = Buffer.from('11'.repeat(32), 'hex');
     debug(tag, seq, sec, ttl, val);
 
-    const push = await fb.push(tag, seq, sec, ttl, val);
+    const push = await fb.push(tag, ttl, val);
     const read = await fb.read(signers[0].address, tag);
     debug(read);
 

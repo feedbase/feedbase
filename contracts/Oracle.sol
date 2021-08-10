@@ -29,6 +29,7 @@ contract Oracle {
   Feedbase                 public feedbase;
   address                  public owner;
   mapping(address=>uint)   public signerTTL; // isSigner
+  mapping(address=>uint)   public signerSeq;
 
   bytes32                  public DOMAIN_SEPARATOR;
 
@@ -98,8 +99,12 @@ contract Oracle {
     uint sttl = signerTTL[signer];
     require(block.timestamp < sttl, 'oracle-submit-bad-signer');
 
+    require(seq > signerSeq[signer], 'oracle-submit-seq');
+    require(block.timestamp >= sec, 'oracle-submit-sec');
+    require(block.timestamp <  ttl, 'oracle-submit-ttl');
+
     emit Submit(msg.sender, signer, tag, seq);
-    feedbase.push(tag, seq, sec, ttl, val);
+    feedbase.push(tag, ttl, val);
   }
 
   function setCost(bytes32 tag, address cash, uint cost) public {

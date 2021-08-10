@@ -21,27 +21,28 @@ contract FixedSelectorProvider is SelectorProvider {
 }
 
 contract ThresholdCombinator {
-  uint public quorum;
-  address[] public sources;
   SelectorProvider public gov;
   Feedbase public fb;
 
   function poke(bytes32 tag, bytes memory hint) public {
-    (quorum, sources) = gov.getSelectors();
+    (uint256 quorum, address[] memory sources) = gov.getSelectors();
     require(quorum > sources.length / 2, 'ERR_QUORUM');
 
     uint256 count;
     uint64 minttl = type(uint64).max;
     for( uint i = 0; i < sources.length; i++ ) {
       (uint64 ttl, bytes memory val) = fb.read(sources[i], tag);
+      if (ttl < block.timestamp) {
+        continue;
+      }
       if (ttl < minttl) {
         minttl = ttl;
       }
       if (true) { // if val == hint
         count++;
         if (count >= quorum) {
-          fb.push(tag, 1, uint64(block.timestamp), minttl, val);
-          break;
+          fb.push(tag, minttl, val);
+          return;
         }
       }
     }
