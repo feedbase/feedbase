@@ -2,7 +2,7 @@
   "name": "feedbase",
   "scripts": {
     "build": "DEBUG=feedbase:* yarn run hardhat compile",
-    "test": "DEBUG=feedbase:* mocha test"
+    "test": "DEBUG=feedbase:* yarn build && mocha test"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",

@@ -6,8 +6,8 @@ contract MockToken {
     modifier auth() { _; }
 
     // safemath included
-    function add(uint a, uint b) internal returns (uint) { return a+b; }
-    function sub(uint a, uint b) internal returns (uint) { return a-b; }
+    function add(uint a, uint b) internal pure returns (uint) { return a+b; }
+    function sub(uint a, uint b) internal pure returns (uint) { return a-b; }
 
     bool                                              public  stopped;
     uint256                                           public  totalSupply;
@@ -18,7 +18,7 @@ contract MockToken {
     string                                            public  name = "";     // Optional token name
 
 
-    constructor(string memory symbol_) public {
+    constructor(string memory symbol_) {
         symbol = symbol_;
     }
 

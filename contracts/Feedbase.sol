@@ -16,8 +16,8 @@ contract Feedbase {
     IERC20  cash;
     uint256 cost;
 
-    // balance
-    uint256 paid;
+    uint256 paid; // request
+    uint256 fees; // collected
 
     // update
     uint64  seq;
@@ -51,14 +51,13 @@ contract Feedbase {
 
   function push(bytes32 tag, uint64 seq, uint64 sec, uint64 ttl, bytes calldata val) public {
     Feed storage feed = _feeds[fid(msg.sender, tag)];
-    Feed storage self = _feeds[fid(address(this), tag)];
 
     require(feed.paid >= feed.cost);
     require(seq > feed.seq, 'ERR_PUSH_SEQ');
     require(sec >= feed.sec, 'ERR_PUSH_SEC');
 
     feed.paid -= feed.cost;
-    self.paid += feed.cost;
+    feed.fees += feed.cost;
 
     feed.seq = seq;
     feed.sec = sec;
@@ -66,6 +65,14 @@ contract Feedbase {
     feed.val = val;
 
     emit Push(msg.sender, tag, seq, sec, ttl, val);
+  }
+
+  function feedDemand(address src, bytes32 tag) public view returns (uint256) {
+    return _feeds[fid(src, tag)].paid;
+  }
+
+  function feedCollected(address src, bytes32 tag) public view returns (uint256) {
+    return _feeds[fid(src, tag)].fees;
   }
 
   function request(address src, bytes32 tag, uint amt) public {
@@ -79,9 +86,9 @@ contract Feedbase {
     feed.paid += amt;
   }
 
-  function cashout(bytes32 tag, uint amt) public {
+  function cashOut(bytes32 tag, uint amt) public {
     Feed storage feed = _feeds[fid(msg.sender, tag)];
-    feed.paid -= amt;
+    feed.fees -= amt;
     feed.cash.transfer(msg.sender, amt);
   }
 
