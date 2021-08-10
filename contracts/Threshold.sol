@@ -38,7 +38,7 @@ contract ThresholdCombinator {
       if (ttl < minttl) {
         minttl = ttl;
       }
-      if (true) { // if val == hint
+      if (keccak256(val) == keccak256(hint)) {
         count++;
         if (count >= quorum) {
           fb.push(tag, minttl, val);
