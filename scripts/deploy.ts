@@ -39,7 +39,7 @@ async function deploy() {
       await mutator.addType(OracleFactoryJson.contractName, OracleFactoryJson);
       await mutator.addType(FeedbaseJson.contractName, FeedbaseJson);
 
-      const oracleFactoryAddr = {};
+      const oracleFactoryAddr: any = {};
       oracleFactoryAddr[name] = oracleFactory.address;
       await mutator.addObject(
          "oracleFactory",
@@ -47,7 +47,7 @@ async function deploy() {
          OracleFactoryJson.contractName,
          OracleFactoryJson,
       )
-      const feedbaseAddr = {};
+      const feedbaseAddr: any = {};
       feedbaseAddr[name] = feedbase.address;
       await mutator.addObject(
          "feedbase",
