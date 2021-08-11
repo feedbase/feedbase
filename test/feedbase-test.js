@@ -7,7 +7,7 @@ const Feedbase = require('../artifacts/contracts/Feedbase.sol/Feedbase.json')
 const OracleFactory = require('../artifacts/contracts/Oracle.sol/OracleFactory.json')
 const Oracle = require('../artifacts/contracts/Oracle.sol/Oracle.json')
 
-const { ethers, network, waffle } = require('hardhat')
+const { ethers, network } = require('hardhat')
 
 const { makeUpdateDigest } = require('../message.js');
 
@@ -84,7 +84,7 @@ describe('feedbase', ()=>{
     const val = Buffer.from('11'.repeat(32), 'hex');
     debug(tag, seq, sec, ttl, val);
 
-    const push = await fb.push(tag, seq, sec, ttl, val);
+    const push = await fb.push(tag, ttl, val);
     const read = await fb.read(signers[0].address, tag);
     debug(read);
 
