@@ -10,7 +10,7 @@ const OracleFactoryJson = require('../artifacts/contracts/Oracle.sol/OracleFacto
 const OracleJson = require('../artifacts/contracts/Oracle.sol/Oracle.json');
 const MockTokenJson = require('../artifacts/contracts/MockToken.sol/MockToken.json');
 
-const { create } = require('../../lib/packer');
+const { mutate } = require('../../lib/packer');
 
 // Deploy function
 async function deploy() {
@@ -34,7 +34,7 @@ async function deploy() {
 
   // create pack file
   console.log('creating pack file...');
-  await create('pack.json', async (mutator: any) => {
+  await mutate('pack.json', 'pack.json', async (mutator: any) => {
     await mutator.addType(MockTokenJson.contractName, MockTokenJson);
     await mutator.addType(OracleJson.contractName, OracleJson);
     await mutator.addType(OracleFactoryJson.contractName, OracleFactoryJson);
