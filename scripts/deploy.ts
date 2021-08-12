@@ -1,3 +1,5 @@
+const debug = require('debug')('feedbase:deploy');
+
 const { ethers, network } = require('hardhat');
 const fs = require('fs');
 
@@ -9,6 +11,21 @@ const OracleJson = require('../artifacts/contracts/Oracle.sol/Oracle.json');
 
 const { create } = require('../../lib/packer');
 
+let fb: any;
+let of: any;
+let cash: any;
+
+async function deployMockToken() {
+  const TokenDeployer = await ethers.getContractFactory('MockToken');
+  cash = await TokenDeployer.deploy('CASH');
+  debug(cash.address);
+
+  const tx_mint = await cash.functions['mint(uint256)'](1000);
+  await tx_mint.wait();
+  const tx_approve = await cash.functions['approve(address)'](fb.address);
+  await tx_approve.wait();
+}
+
 // Deploy function
 async function deploy() {
   const [account] = await ethers.getSigners();
@@ -17,17 +34,17 @@ async function deploy() {
 
   //Deploy Feedbase
   const Feedbase = await ethers.getContractFactory('Feedbase');
-  const feedbase = await Feedbase.deploy();
-  await feedbase.deployed();
+  fb = await Feedbase.deploy();
+  await fb.deployed();
 
-  console.log(`Feedbase deployed to : `, feedbase.address);
+  console.log(`Feedbase deployed to : `, fb.address);
 
   //Deploy OracleFactory
   const OracleFactory = await ethers.getContractFactory('OracleFactory');
-  const oracleFactory = await OracleFactory.deploy(feedbase.address);
-  await oracleFactory.deployed();
+  of = await OracleFactory.deploy(fb.address);
+  await of.deployed();
 
-  console.log(`OracleFactory deployed to : `, oracleFactory.address);
+  console.log(`OracleFactory deployed to : `, of.address);
 
   // create pack file
   console.log('creating pack file...');
@@ -38,19 +55,23 @@ async function deploy() {
 
     await mutator.addObject(
       'oracleFactory',
-      oracleFactory.address,
+      of.address,
       network.name,
       OracleFactoryJson.contractName,
       OracleFactoryJson
     );
     await mutator.addObject(
       'feedbase',
-      feedbase.address,
+      fb.address,
       network.name,
       FeedbaseJson.contractName,
       FeedbaseJson
     );
   });
+
+  if (network.name !== 'mainnet') {
+    await deployMockToken();
+  }
 }
 
 deploy()
