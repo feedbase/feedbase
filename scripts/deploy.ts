@@ -22,16 +22,20 @@ async function deploy() {
   const Feedbase = await ethers.getContractFactory('Feedbase');
   const fb = await Feedbase.deploy();
   await fb.deployed();
-
   console.log(`Feedbase deployed to : `, fb.address);
 
   //Deploy OracleFactory
   const OracleFactory = await ethers.getContractFactory('OracleFactory');
   const of = await OracleFactory.deploy(fb.address);
   await of.deployed();
-
   console.log(`OracleFactory deployed to : `, of.address);
 
+  //Deploy MockToken
+  const MockToken = await ethers.getContractFactory('MockToken');
+  const mt = await MockToken.deploy('CASH');
+  await mt.deployed();
+  console.log('MockToken Deployed to:', mt.address);
+  
   // create pack file
   console.log('creating pack file...');
   await mutate('pack.json', 'pack.json', async (mutator: any) => {
@@ -54,6 +58,13 @@ async function deploy() {
       FeedbaseJson.contractName,
       FeedbaseJson
     );
+    await mutator.addObject(
+      'mockToken',
+      mt.address,
+      network.name,
+      MockTokenJson.contractName,
+      MockTokenJson
+    )
   });
 }
 
