@@ -8,6 +8,7 @@ const IPFS = require('ipfs-core');
 const FeedbaseJson = require('../artifacts/contracts/Feedbase.sol/Feedbase.json');
 const OracleFactoryJson = require('../artifacts/contracts/Oracle.sol/OracleFactory.json');
 const OracleJson = require('../artifacts/contracts/Oracle.sol/Oracle.json');
+const MockTokenJson = require('../artifacts/contracts/MockToken.sol/MockToken.json');
 
 const { create } = require('../../lib/packer');
 
@@ -49,6 +50,7 @@ async function deploy() {
   // create pack file
   console.log('creating pack file...');
   await create('pack.json', async (mutator: any) => {
+    await mutator.addType(MockTokenJson.contractName, MockTokenJson);
     await mutator.addType(OracleJson.contractName, OracleJson);
     await mutator.addType(OracleFactoryJson.contractName, OracleFactoryJson);
     await mutator.addType(FeedbaseJson.contractName, FeedbaseJson);
