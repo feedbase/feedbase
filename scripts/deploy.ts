@@ -12,21 +12,6 @@ const MockTokenJson = require('../artifacts/contracts/MockToken.sol/MockToken.js
 
 const { create } = require('../../lib/packer');
 
-let fb: any;
-let of: any;
-let cash: any;
-
-async function deployMockToken() {
-  const TokenDeployer = await ethers.getContractFactory('MockToken');
-  cash = await TokenDeployer.deploy('CASH');
-  debug(cash.address);
-
-  const tx_mint = await cash.functions['mint(uint256)'](1000);
-  await tx_mint.wait();
-  const tx_approve = await cash.functions['approve(address)'](fb.address);
-  await tx_approve.wait();
-}
-
 // Deploy function
 async function deploy() {
   const [account] = await ethers.getSigners();
@@ -35,14 +20,14 @@ async function deploy() {
 
   //Deploy Feedbase
   const Feedbase = await ethers.getContractFactory('Feedbase');
-  fb = await Feedbase.deploy();
+  const fb = await Feedbase.deploy();
   await fb.deployed();
 
   console.log(`Feedbase deployed to : `, fb.address);
 
   //Deploy OracleFactory
   const OracleFactory = await ethers.getContractFactory('OracleFactory');
-  of = await OracleFactory.deploy(fb.address);
+  const of = await OracleFactory.deploy(fb.address);
   await of.deployed();
 
   console.log(`OracleFactory deployed to : `, of.address);
@@ -70,10 +55,6 @@ async function deploy() {
       FeedbaseJson
     );
   });
-
-  if (network.name !== 'mainnet') {
-    await deployMockToken();
-  }
 }
 
 deploy()
