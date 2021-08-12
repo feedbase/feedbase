@@ -28,7 +28,7 @@
         "/": "QmNaUtwTwFyfgwogR7AdyEQjuoyZCkimXDk3vrZGyZVKyL"
       },
       "addresses": {
-        "ropsten": "0xAb60eCc75ade765776F48c84e2286b4208C1f34E"
+        "ropsten": "0x10641cD9122EA0e90e137ca38D04a4E39F06f0F6"
       }
     },
     "feedbase": {
@@ -37,7 +37,7 @@
         "/": "QmcHAE9LcJHWzAj1khigjJrZVxDicmvmiykzeyFGDWwBfe"
       },
       "addresses": {
-        "ropsten": "0x4F0AD1Ba98458A4d8F8B1362b163be195CD74D3f"
+        "ropsten": "0x0919AC42bf744f9A329C5cAE4f716d9989B2ecf6"
       }
     },
     "mockToken": {
@@ -46,7 +46,7 @@
         "/": "QmZ4JF1jibpHQbJFffjzPjwXFkCnhzpyD3ZuGb4zz46y1S"
       },
       "addresses": {
-        "ropsten": "0xb2047440504934d133AA841f7f9cbD479AFA21EB"
+        "ropsten": "0x22Ef64DFBC55B70Abc308Ea43f62AE322F274136"
       }
     }
   }
