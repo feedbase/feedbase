@@ -32,6 +32,13 @@ contract Feedbase {
     , bytes           val
   );
 
+  event Paid(
+      address indexed cash
+    , address indexed src
+    , address indexed dst
+    , uint256 amt
+  );
+
   function read(address src, bytes32 tag) public view returns (uint64 ttl, bytes memory val) {
     Feed storage feed = _feeds[fid(src, tag)];
     require(feed.ttl >  block.timestamp, 'ERR_READ_LATE');
@@ -49,7 +56,7 @@ contract Feedbase {
 
     conf.paid -= conf.cost;
     conf.fees += conf.cost;
-
+    
     push(tag, ttl, val);
   }
 
@@ -73,6 +80,7 @@ contract Feedbase {
   function request(IERC20 cash, address src, bytes32 tag, uint amt) public {
     _fees[fid(msg.sender, tag)][address(cash)].paid -= amt;
     _fees[fid(src, tag)][address(cash)].paid += amt;
+    emit Paid(address(cash), msg.sender, src, amt);
   }
 
   function topUp(IERC20 cash, bytes32 tag, uint amt) public {
