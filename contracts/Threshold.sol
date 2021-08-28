@@ -32,21 +32,21 @@ contract ThresholdCombinator {
     }
   }
 
-  function push(bytes32 tag, bytes memory hint) public {
+  function push(bytes32 tag, bytes32 hint) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
     require(quorum > sources.length / 2, 'ERR_QUORUM');
 
     uint256 count;
     uint64 minttl = type(uint64).max;
     for( uint i = 0; i < sources.length; i++ ) {
-      (uint64 ttl, bytes memory val) = fb.read(sources[i], tag);
+      (uint64 ttl, bytes32 val) = fb.read(sources[i], tag);
       if (ttl < block.timestamp) {
         continue;
       }
       if (ttl < minttl) {
         minttl = ttl;
       }
-      if (keccak256(val) == keccak256(hint)) {
+      if (val == hint) {
         count++;
         if (count >= quorum) {
           fb.push(tag, minttl, val);

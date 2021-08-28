@@ -22,14 +22,14 @@ describe('feedbase', ()=>{
     debug("chainId: ", chainId);
 
     let signers = await ethers.getSigners();
-    debug(signers[0])
+    //debug(signers[0])
     let FeedbaseFactory = await ethers.getContractFactory("Feedbase")
     const fb = await FeedbaseFactory.deploy() 
     let OracleFactoryFactory = await ethers.getContractFactory("OracleFactory");
     const factory = await OracleFactoryFactory.deploy(fb.address);
 
     const tx = await factory.build();
-    debug('create', tx)
+    //debug('create', tx)
     const res = await tx.wait();
     const oracleAddr = res.events[0].args[0]
 
@@ -63,16 +63,16 @@ describe('feedbase', ()=>{
     debug(`digest: ${Buffer.from(digest).toString('hex')}`);
 
     const signature = await signers[0].signMessage(digest);
-    debug(signature)
+    debug(`signature ${signature}`)
     const sig = ethers.utils.splitSignature(signature);
-    debug(sig);
+    //debug(sig);
     const tx3 = await oracle.submit(tag, seq, sec, ttl, val, sig.v, sig.r, sig.s);
     
   });
 
   it("ttl on read", async function() {
     const signers = await ethers.getSigners();
-    debug(signers[0]);
+    //debug(signers[0]);
 
     const FeedbaseFactory = await ethers.getContractFactory("Feedbase");
     const fb = await FeedbaseFactory.deploy();
@@ -86,7 +86,7 @@ describe('feedbase', ()=>{
 
     const push = await fb.push(tag, ttl, val);
     const read = await fb.read(signers[0].address, tag);
-    debug(read);
+    debug(`read result ${read}`);
 
     want(read.ttl).equal(ttl);
     want(read.val).equal("0x" + val.toString("hex"));

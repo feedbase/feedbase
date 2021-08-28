@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.6;
 
+import "./IERC20.sol";
+
 contract Feedbase {
   // id -> Feed
   mapping(bytes32=>Feed) _feeds;
@@ -13,7 +15,7 @@ contract Feedbase {
   struct Feed {
     // update
     uint64  ttl;
-    bytes   val;
+    bytes32 val;
   }
 
   // fid -> cash -> payConfig
@@ -29,7 +31,7 @@ contract Feedbase {
       address indexed src
     , bytes32 indexed tag
     , uint64          ttl
-    , bytes           val
+    , bytes32         val
   );
 
   event Paid(
@@ -39,7 +41,7 @@ contract Feedbase {
     , uint256 amt
   );
 
-  function read(address src, bytes32 tag) public view returns (uint64 ttl, bytes memory val) {
+  function read(address src, bytes32 tag) public view returns (uint64 ttl, bytes32 val) {
     Feed storage feed = _feeds[fid(src, tag)];
     require(feed.ttl >  block.timestamp, 'ERR_READ_LATE');
     return (feed.ttl, feed.val);
@@ -51,7 +53,7 @@ contract Feedbase {
     return feed;
   }
 
-  function pushPaid(IERC20 cash, bytes32 tag, uint64 ttl, bytes calldata val) public {
+  function pushPaid(IERC20 cash, bytes32 tag, uint64 ttl, bytes32 val) public {
     PayConfig storage conf = _fees[fid(msg.sender, tag)][address(cash)];
 
     conf.paid -= conf.cost;
@@ -60,7 +62,7 @@ contract Feedbase {
     push(tag, ttl, val);
   }
 
-  function push(bytes32 tag, uint64 ttl, bytes calldata val) public {
+  function push(bytes32 tag, uint64 ttl, bytes32 val) public {
     Feed storage feed = _feeds[fid(msg.sender, tag)];
 
     feed.ttl = ttl;
@@ -98,21 +100,6 @@ contract Feedbase {
     _fees[fid(msg.sender, tag)][cash].cost = cost;
   }
 
-}
-
-interface IERC20 {
-    function totalSupply() external view returns (uint);
-    function balanceOf(address guy) external view returns (uint);
-    function allowance(address src, address guy) external view returns (uint);
-
-    function approve(address guy, uint wad) external returns (bool);
-    function transfer(address dst, uint wad) external returns (bool);
-    function transferFrom(
-        address src, address dst, uint wad
-    ) external returns (bool);
-
-    event Approval(address indexed src, address indexed guy, uint wad);
-    event Transfer(address indexed src, address indexed dst, uint wad);
 }
 
 

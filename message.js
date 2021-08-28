@@ -24,7 +24,7 @@ module.exports = {
           {name: "seq", type: "uint64"},
           {name: "sec", type: "uint64"},
           {name: "ttl", type: "uint64"},
-          {name: "val", type: "bytes"},  
+          {name: "val", type: "bytes32"},  
         ]
       },
       primaryType: 'Submit',
