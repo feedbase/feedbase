@@ -1,0 +1,53 @@
+{
+  "types": {
+    "MockToken": {
+      "artifacts": {
+        "/": "QmZ4JF1jibpHQbJFffjzPjwXFkCnhzpyD3ZuGb4zz46y1S"
+      }
+    },
+    "Oracle": {
+      "artifacts": {
+        "/": "QmWC1x2F9sEEzz7JvrvtAVcunNko28zSq9ztGmKbZjLhBa"
+      }
+    },
+    "OracleFactory": {
+      "artifacts": {
+        "/": "QmQVARUasHiZMyGS5dTweh3soqKtomhvECEHmgwV6nRiEf"
+      }
+    },
+    "Feedbase": {
+      "artifacts": {
+        "/": "QmZNXEuT7w49k4mh9Qt4T4EE7D95FpWG7mHK39A8cGvVSw"
+      }
+    }
+  },
+  "objects": {
+    "oracleFactory": {
+      "typename": "OracleFactory",
+      "artifacts": {
+        "/": "QmQVARUasHiZMyGS5dTweh3soqKtomhvECEHmgwV6nRiEf"
+      },
+      "addresses": {
+        "ropsten": "0xaB78C197Eaef75CcF37fc80602A198aEf5238ca7"
+      }
+    },
+    "feedbase": {
+      "typename": "Feedbase",
+      "artifacts": {
+        "/": "QmZNXEuT7w49k4mh9Qt4T4EE7D95FpWG7mHK39A8cGvVSw"
+      },
+      "addresses": {
+        "ropsten": "0xD001E7EABBC0225DA5629579BF40Ba1e8375022C"
+      }
+    },
+    "mockToken": {
+      "typename": "MockToken",
+      "artifacts": {
+        "/": "QmZ4JF1jibpHQbJFffjzPjwXFkCnhzpyD3ZuGb4zz46y1S"
+      },
+      "addresses": {
+        "ropsten": "0x79cf14d2eDd236aDe421b50A7d5c46da3aBe9d37"
+      }
+    }
+  }
+}
