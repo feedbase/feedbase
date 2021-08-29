@@ -26,7 +26,6 @@ contract Feedbase {
     bool    live;
     uint256 cost;
     uint256 paid;
-    uint256 fees;
   }
 
   event Push(
@@ -59,7 +58,7 @@ contract Feedbase {
     PayConfig storage conf = _fees[fid(msg.sender, tag)][address(cash)];
 
     conf.paid -= conf.cost;
-    conf.fees += conf.cost;
+    _bals[msg.sender][address(cash)] += conf.cost;
     
     push(tag, ttl, val);
   }
@@ -77,25 +76,24 @@ contract Feedbase {
     return _fees[fid(src, tag)][address(cash)].paid;
   }
 
-  function feedCollected(IERC20 cash, address src, bytes32 tag) public view returns (uint256) {
-    return _fees[fid(src, tag)][address(cash)].fees;
-  }
-
   function request(IERC20 cash, address src, bytes32 tag, uint amt) public {
-    _fees[fid(msg.sender, tag)][address(cash)].paid -= amt;
+    _bals[msg.sender][address(cash)] -= amt;
     _fees[fid(src, tag)][address(cash)].paid += amt;
     emit Paid(address(cash), msg.sender, src, amt);
   }
 
-  function topUp(IERC20 cash, bytes32 tag, uint amt) public {
-    PayConfig storage conf = _fees[fid(msg.sender, tag)][address(cash)];
+  function topUp(IERC20 cash, uint amt) public {
     cash.transferFrom(msg.sender, address(this), amt);
-    conf.paid += amt;
+    _bals[msg.sender][address(cash)] += amt;
   }
 
-  function cashOut(IERC20 cash, bytes32 tag, uint amt) public {
-    _fees[fid(msg.sender, tag)][address(cash)].fees -= amt;
+  function cashOut(IERC20 cash, uint amt) public {
+    _bals[msg.sender][address(cash)] -= amt;
     cash.transfer(msg.sender, amt);
+  }
+
+  function balanceOf(IERC20 cash, address who) public view returns (uint) {
+    return _bals[who][address(cash)];
   }
 
   function setCost(address cash, bytes32 tag, uint256 cost) public {

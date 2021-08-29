@@ -57,15 +57,20 @@ contract ThresholdCombinator {
     require(false, 'ERR_QUORUM');
   }
 
-  function cashOut(IERC20 cash, bytes32 tag) public {
-    uint256 fees = fb.feedCollected(cash, address(this), tag);
-    fb.cashOut(cash, tag, fees);
+  function cashOut(IERC20 cash) public {
+    uint256 fees = fb.balanceOf(cash, address(this));
+    fb.cashOut(cash, fees);
     cash.transfer(msg.sender, fees);
   }
 
-  function topUp(IERC20 cash, bytes32 tag, uint amt) public {
+  function cashOut(IERC20 cash, uint amt) public {
+    fb.cashOut(cash, amt);
+    cash.transfer(msg.sender, amt);
+  }
+
+  function topUp(IERC20 cash, uint amt) public {
     cash.transferFrom(msg.sender, address(this), amt);
     cash.approve(address(fb), amt);
-    fb.topUp(cash, tag, amt);
+    fb.topUp(cash, amt);
   }
 }

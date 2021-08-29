@@ -54,10 +54,10 @@ describe('pay flow', ()=>{
     const bal = await cash.balanceOf(signers[1].address);
     want(bal.toNumber()).equals(1000);
 
-    const tx_topUp = await fb.topUp(cash.address, TAG, 500);
+    const tx_topUp = await fb.topUp(cash.address, 500);
     await tx_topUp.wait();
 
-    const fbal0 = await fb.feedDemand(cash.address, signers[1].address, TAG);
+    const fbal0 = await fb.balanceOf(cash.address, signers[1].address);
     want(fbal0.toNumber()).equals(500);
     debug(`fbal0 ${fbal0}`);
     const bal2 = await cash.balanceOf(signers[1].address);
@@ -66,7 +66,7 @@ describe('pay flow', ()=>{
     const tx_request = await fb.request(cash.address, signers[0].address, TAG, 100);
     await tx_request.wait();
 
-    const fbal1 = await fb.feedDemand(cash.address, signers[1].address, TAG);
+    const fbal1 = await fb.balanceOf(cash.address, signers[1].address);
     want(fbal1.toNumber()).equals(400);
     const fbal2 = await fb.feedDemand(cash.address, signers[0].address, TAG);
     want(fbal2.toNumber()).equals(100);
@@ -83,17 +83,12 @@ describe('pay flow', ()=>{
 
     const fbal3 = await fb.feedDemand(cash.address, signers[0].address, TAG);
     want(fbal3.toNumber()).equals(0);
-    const fees = await fb.feedCollected(cash.address, signers[0].address, TAG);
-    want(fees.toNumber()).equals(100);
 
     const pre = await cash.balanceOf(signers[0].address);
-    const tx_cashOut = await fb.cashOut(cash.address, TAG, 100);
+    const tx_cashOut = await fb.cashOut(cash.address, 100);
     await tx_cashOut.wait();
     const post = await cash.balanceOf(signers[0].address);
     want(post.sub(pre).toNumber()).equals(100);
-    const fees2 = await fb.feedCollected(cash.address, signers[0].address, TAG);
-    want(fees2.toNumber()).equals(0);
-    
   });
 
 });
