@@ -5,39 +5,39 @@
         "/": "QmZ4JF1jibpHQbJFffjzPjwXFkCnhzpyD3ZuGb4zz46y1S"
       }
     },
-    "Oracle": {
+    "BasicReceiver": {
       "artifacts": {
-        "/": "QmWC1x2F9sEEzz7JvrvtAVcunNko28zSq9ztGmKbZjLhBa"
+        "/": "QmUh5aGFz5fCdzfMCFZ5CP3kGMa2QUv62mRWKAervQmKcs"
       }
     },
-    "OracleFactory": {
+    "BasicReceiverFactory": {
       "artifacts": {
-        "/": "QmQVARUasHiZMyGS5dTweh3soqKtomhvECEHmgwV6nRiEf"
+        "/": "QmbvZjdD3EETxJJfuQZhpB6Y4bNnTMdwQoWLxnW6H5uaJ3"
       }
     },
     "Feedbase": {
       "artifacts": {
-        "/": "QmZNXEuT7w49k4mh9Qt4T4EE7D95FpWG7mHK39A8cGvVSw"
+        "/": "QmRSGKhLbEkDr5LBEGCp3v34mC41tgFEpZpdc11Ky3okK5"
       }
     }
   },
   "objects": {
-    "oracleFactory": {
-      "typename": "OracleFactory",
+    "receiverFactory": {
+      "typename": "BasicReceiverFactory",
       "artifacts": {
-        "/": "QmQVARUasHiZMyGS5dTweh3soqKtomhvECEHmgwV6nRiEf"
+        "/": "QmbvZjdD3EETxJJfuQZhpB6Y4bNnTMdwQoWLxnW6H5uaJ3"
       },
       "addresses": {
-        "ropsten": "0xaB78C197Eaef75CcF37fc80602A198aEf5238ca7"
+        "ropsten": "0x7aB08BdD0265F3D8BcF3769d6AE6b4f6676aAf62"
       }
     },
     "feedbase": {
       "typename": "Feedbase",
       "artifacts": {
-        "/": "QmZNXEuT7w49k4mh9Qt4T4EE7D95FpWG7mHK39A8cGvVSw"
+        "/": "QmRSGKhLbEkDr5LBEGCp3v34mC41tgFEpZpdc11Ky3okK5"
       },
       "addresses": {
-        "ropsten": "0xD001E7EABBC0225DA5629579BF40Ba1e8375022C"
+        "ropsten": "0xf72e8C35f24c0f3Be00aE5FaE5441B2D0554AED4"
       }
     },
     "mockToken": {
@@ -46,7 +46,7 @@
         "/": "QmZ4JF1jibpHQbJFffjzPjwXFkCnhzpyD3ZuGb4zz46y1S"
       },
       "addresses": {
-        "ropsten": "0x79cf14d2eDd236aDe421b50A7d5c46da3aBe9d37"
+        "ropsten": "0xd2dd55610929aeB09c0571aC98382fD768020091"
       }
     }
   }
