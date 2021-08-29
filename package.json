@@ -4,6 +4,7 @@
     "build": "DEBUG=feedbase:* yarn run hardhat compile",
     "test": "DEBUG=feedbase:* yarn build && mocha test"
   },
+  "main": "index.js",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",

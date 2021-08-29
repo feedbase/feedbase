@@ -3,8 +3,8 @@ const debug = require('debug')('feedbase:deploy');
 const { ethers, network } = require('hardhat');
 
 const FeedbaseJson = require('../artifacts/contracts/Feedbase.sol/Feedbase.json');
-const OracleFactoryJson = require('../artifacts/contracts/Oracle.sol/OracleFactory.json');
-const OracleJson = require('../artifacts/contracts/Oracle.sol/Oracle.json');
+const BasicReceiverFactoryJson = require('../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json');
+const BasicReceiverJson = require('../artifacts/contracts/Receiver.sol/BasicReceiver.json');
 const MockTokenJson = require('../artifacts/contracts/MockToken.sol/MockToken.json');
 
 const { initPackFile, mutatePackFile } = require('../../lib/dpack');
@@ -23,11 +23,11 @@ async function deploy() {
     await fb.deployed();
     console.log(`Feedbase deployed to : `, fb.address);
 
-    //Deploy OracleFactory
-    const OracleFactory = await ethers.getContractFactory('OracleFactory');
-    const of = await OracleFactory.deploy(fb.address);
+    //Deploy BasicReceiverFactory
+    const BasicReceiverFactory = await ethers.getContractFactory('BasicReceiverFactory');
+    const of = await BasicReceiverFactory.deploy(fb.address);
     await of.deployed();
-    console.log(`OracleFactory deployed to : `, of.address);
+    console.log(`BasicReceiverFactory deployed to : `, of.address);
 
     //Deploy MockToken
     const MockToken = await ethers.getContractFactory('MockToken');
@@ -36,16 +36,16 @@ async function deploy() {
     console.log('MockToken Deployed to:', mt.address);
   
     await mutator.addType(MockTokenJson.contractName, MockTokenJson);
-    await mutator.addType(OracleJson.contractName, OracleJson);
-    await mutator.addType(OracleFactoryJson.contractName, OracleFactoryJson);
+    await mutator.addType(BasicReceiverJson.contractName, BasicReceiverJson);
+    await mutator.addType(BasicReceiverFactoryJson.contractName, BasicReceiverFactoryJson);
     await mutator.addType(FeedbaseJson.contractName, FeedbaseJson);
 
     await mutator.addObject(
-      'oracleFactory',
+      'receiverFactory',
       of.address,
       network.name,
-      OracleFactoryJson.contractName,
-      OracleFactoryJson
+      BasicReceiverFactoryJson.contractName,
+      BasicReceiverFactoryJson
     );
     await mutator.addObject(
       'feedbase',
