@@ -21,15 +21,15 @@ module.exports = {
         ],
         Submit: [
           {name: "tag", type: "bytes32"},
-          {name: "seq", type: "uint64"},
-          {name: "sec", type: "uint64"},
-          {name: "ttl", type: "uint64"},
+          {name: "seq", type: "uint256"},
+          {name: "sec", type: "uint256"},
+          {name: "ttl", type: "uint256"},
           {name: "val", type: "bytes32"},  
         ]
       },
       primaryType: 'Submit',
       domain: {
-        name: 'Feedbase',
+        name: 'FeedbaseBasicReceiver',
         version: '1',
         chainId: obj.chainId,
         verifyingContract: obj.receiver

@@ -5,6 +5,11 @@ pragma solidity ^0.8.6;
 import "./IERC20.sol";
 
 contract Feedbase {
+  struct Feed {
+    bytes32 val;
+    uint256 ttl;
+  }
+
   // id -> Feed
   mapping(bytes32=>Feed) _feeds;
 
@@ -12,14 +17,11 @@ contract Feedbase {
     return keccak256(abi.encode(bytes32(bytes20(src)), tag));
   }
 
-  struct Feed {
-    // update
-    uint64  ttl;
-    bytes32 val;
-  }
-
   // fid -> cash -> payConfig
   mapping(bytes32=>mapping(address=>PayConfig)) _fees;
+  // user -> cash -> balance
+  mapping(address=>mapping(address=>uint256)) _bals;
+
   struct PayConfig {
     bool    live;
     uint256 cost;
@@ -30,7 +32,7 @@ contract Feedbase {
   event Push(
       address indexed src
     , bytes32 indexed tag
-    , uint64          ttl
+    , uint256          ttl
     , bytes32         val
   );
 
@@ -41,7 +43,7 @@ contract Feedbase {
     , uint256 amt
   );
 
-  function read(address src, bytes32 tag) public view returns (uint64 ttl, bytes32 val) {
+  function read(address src, bytes32 tag) public view returns (uint256 ttl, bytes32 val) {
     Feed storage feed = _feeds[fid(src, tag)];
     require(feed.ttl >  block.timestamp, 'ERR_READ_LATE');
     return (feed.ttl, feed.val);
@@ -53,7 +55,7 @@ contract Feedbase {
     return feed;
   }
 
-  function pushPaid(IERC20 cash, bytes32 tag, uint64 ttl, bytes32 val) public {
+  function pushPaid(IERC20 cash, bytes32 tag, uint256 ttl, bytes32 val) public {
     PayConfig storage conf = _fees[fid(msg.sender, tag)][address(cash)];
 
     conf.paid -= conf.cost;
@@ -62,7 +64,7 @@ contract Feedbase {
     push(tag, ttl, val);
   }
 
-  function push(bytes32 tag, uint64 ttl, bytes32 val) public {
+  function push(bytes32 tag, uint256 ttl, bytes32 val) public {
     Feed storage feed = _feeds[fid(msg.sender, tag)];
 
     feed.ttl = ttl;

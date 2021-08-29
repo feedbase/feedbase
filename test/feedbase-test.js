@@ -4,8 +4,8 @@ const want = require('chai').expect
 const BN = require('bn.js')
 
 const Feedbase = require('../artifacts/contracts/Feedbase.sol/Feedbase.json')
-const OracleFactory = require('../artifacts/contracts/Oracle.sol/OracleFactory.json')
-const Oracle = require('../artifacts/contracts/Oracle.sol/Oracle.json')
+const BasicReceiverFactory = require('../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json')
+const BasicReceiver = require('../artifacts/contracts/Receiver.sol/BasicReceiver.json')
 
 const { ethers, network } = require('hardhat')
 
@@ -25,15 +25,15 @@ describe('feedbase', ()=>{
     //debug(signers[0])
     let FeedbaseFactory = await ethers.getContractFactory("Feedbase")
     const fb = await FeedbaseFactory.deploy() 
-    let OracleFactoryFactory = await ethers.getContractFactory("OracleFactory");
-    const factory = await OracleFactoryFactory.deploy(fb.address);
+    let BasicReceiverFactoryFactory = await ethers.getContractFactory("BasicReceiverFactory");
+    const factory = await BasicReceiverFactoryFactory.deploy(fb.address);
 
     const tx = await factory.build();
     //debug('create', tx)
     const res = await tx.wait();
     const oracleAddr = res.events[0].args[0]
 
-    const oracle = await new ethers.Contract(oracleAddr, Oracle.abi, signers[0]);
+    const oracle = await new ethers.Contract(oracleAddr, BasicReceiver.abi, signers[0]);
     const tx2 = await oracle.setSigner(signers[0].address, 1000000000000);
     await tx2.wait()
 

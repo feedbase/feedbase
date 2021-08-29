@@ -37,9 +37,9 @@ contract ThresholdCombinator {
     require(quorum > sources.length / 2, 'ERR_QUORUM');
 
     uint256 count;
-    uint64 minttl = type(uint64).max;
+    uint256 minttl = type(uint256).max;
     for( uint i = 0; i < sources.length; i++ ) {
-      (uint64 ttl, bytes32 val) = fb.read(sources[i], tag);
+      (uint256 ttl, bytes32 val) = fb.read(sources[i], tag);
       if (ttl < block.timestamp) {
         continue;
       }

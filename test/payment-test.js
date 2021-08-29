@@ -4,8 +4,8 @@ const want = require('chai').expect
 const BN = require('bn.js')
 
 const Feedbase = require('../artifacts/contracts/Feedbase.sol/Feedbase.json')
-const OracleFactory = require('../artifacts/contracts/Oracle.sol/OracleFactory.json')
-const Oracle = require('../artifacts/contracts/Oracle.sol/Oracle.json')
+const BasicReceiverFactory = require('../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json')
+const BasicReceiver = require('../artifacts/contracts/Receiver.sol/BasicReceiver.json')
 
 const Token = require('../artifacts/contracts/MockToken.sol/MockToken.json')
 
