@@ -23,7 +23,6 @@ contract Feedbase {
   mapping(address=>mapping(address=>uint256)) _bals;
 
   struct PayConfig {
-    bool    live;
     uint256 cost;
     uint256 paid;
   }
@@ -31,7 +30,7 @@ contract Feedbase {
   event Push(
       address indexed src
     , bytes32 indexed tag
-    , uint256          ttl
+    , uint256         ttl
     , bytes32         val
   );
 
@@ -39,7 +38,7 @@ contract Feedbase {
       address indexed cash
     , address indexed src
     , address indexed dst
-    , uint256 amt
+    , uint256         amt
   );
 
   function read(address src, bytes32 tag) public view returns (uint256 ttl, bytes32 val) {
@@ -48,22 +47,16 @@ contract Feedbase {
     return (feed.ttl, feed.val);
   }
 
-  function readFull(address src, bytes32 tag) public view returns (Feed memory) {
-    Feed storage feed = _feeds[fid(src, tag)];
-    require(feed.ttl >  block.timestamp, 'ERR_READ_LATE');
-    return feed;
-  }
-
   function pushPaid(IERC20 cash, bytes32 tag, uint256 ttl, bytes32 val) public {
     PayConfig storage conf = _fees[fid(msg.sender, tag)][address(cash)];
 
     conf.paid -= conf.cost;
     _bals[msg.sender][address(cash)] += conf.cost;
     
-    push(tag, ttl, val);
+    pushFree(tag, ttl, val);
   }
 
-  function push(bytes32 tag, uint256 ttl, bytes32 val) public {
+  function pushFree(bytes32 tag, uint256 ttl, bytes32 val) public {
     Feed storage feed = _feeds[fid(msg.sender, tag)];
 
     feed.ttl = ttl;

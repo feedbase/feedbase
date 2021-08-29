@@ -49,7 +49,7 @@ contract ThresholdCombinator {
       if (val == hint) {
         count++;
         if (count >= quorum) {
-          fb.push(tag, minttl, val);
+          fb.pushFree(tag, minttl, val);
           return;
         }
       }

@@ -104,7 +104,7 @@ contract BasicReceiver {
     require(block.timestamp <  ttl, 'receiver-submit-ttl');
 
     emit Submit(msg.sender, signer, tag, seq);
-    feedbase.push(tag, ttl, val);
+    feedbase.pushFree(tag, ttl, val);
   }
 
   function setCost(bytes32 tag, address cash, uint cost) public {
