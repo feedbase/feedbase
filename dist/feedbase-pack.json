@@ -7,17 +7,17 @@
     },
     "BasicReceiver": {
       "artifacts": {
-        "/": "QmUh5aGFz5fCdzfMCFZ5CP3kGMa2QUv62mRWKAervQmKcs"
+        "/": "QmXgGDX6KG3ZbX1KxdxJ85fWZPz2rk53utJwZEf2VY4Atv"
       }
     },
     "BasicReceiverFactory": {
       "artifacts": {
-        "/": "QmbvZjdD3EETxJJfuQZhpB6Y4bNnTMdwQoWLxnW6H5uaJ3"
+        "/": "QmQVNSoECJX2sVzcDovMhDnqw8bGVZANAHGwp6ywGUW5oN"
       }
     },
     "Feedbase": {
       "artifacts": {
-        "/": "QmRSGKhLbEkDr5LBEGCp3v34mC41tgFEpZpdc11Ky3okK5"
+        "/": "QmY6G1MtH968dakcLfYQeDqCe1nNW9wuXdVsryA5fSKgWs"
       }
     }
   },
@@ -25,19 +25,19 @@
     "receiverFactory": {
       "typename": "BasicReceiverFactory",
       "artifacts": {
-        "/": "QmbvZjdD3EETxJJfuQZhpB6Y4bNnTMdwQoWLxnW6H5uaJ3"
+        "/": "QmQVNSoECJX2sVzcDovMhDnqw8bGVZANAHGwp6ywGUW5oN"
       },
       "addresses": {
-        "ropsten": "0x7aB08BdD0265F3D8BcF3769d6AE6b4f6676aAf62"
+        "ropsten": "0xE25F5A5332da3f5dfb4DaD97Bf3856708373816b"
       }
     },
     "feedbase": {
       "typename": "Feedbase",
       "artifacts": {
-        "/": "QmRSGKhLbEkDr5LBEGCp3v34mC41tgFEpZpdc11Ky3okK5"
+        "/": "QmY6G1MtH968dakcLfYQeDqCe1nNW9wuXdVsryA5fSKgWs"
       },
       "addresses": {
-        "ropsten": "0xf72e8C35f24c0f3Be00aE5FaE5441B2D0554AED4"
+        "ropsten": "0x473e0CaC3D270bAE371E48a45401fb2756aF0adb"
       }
     },
     "mockToken": {
@@ -46,7 +46,7 @@
         "/": "QmZ4JF1jibpHQbJFffjzPjwXFkCnhzpyD3ZuGb4zz46y1S"
       },
       "addresses": {
-        "ropsten": "0xd2dd55610929aeB09c0571aC98382fD768020091"
+        "ropsten": "0x1EE064099afD61ce84c484E32f0D94549B6B431b"
       }
     }
   }
