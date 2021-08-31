@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-import "./IERC20.sol";
+import "./erc20/IERC20.sol";
 
 contract Feedbase {
   struct Feed {
@@ -18,13 +18,17 @@ contract Feedbase {
   }
 
   // fid -> cash -> payConfig
-  mapping(bytes32=>mapping(address=>PayConfig)) _fees;
+  mapping(bytes32=>mapping(address=>Config)) _fees;
   // user -> cash -> balance
   mapping(address=>mapping(address=>uint256)) _bals;
 
-  struct PayConfig {
+  struct Config {
     uint256 cost;
     uint256 paid;
+
+    bool    live; // enabled
+    bool    toss; // throw on expired feed read
+    bool    froc; // "first-read-on-chain" fees only
   }
 
   event Push(
@@ -48,7 +52,7 @@ contract Feedbase {
   }
 
   function push(IERC20 cash, bytes32 tag, uint256 ttl, bytes32 val) public {
-    PayConfig storage conf = _fees[fid(msg.sender, tag)][address(cash)];
+    Config storage conf = _fees[fid(msg.sender, tag)][address(cash)];
 
     conf.paid -= conf.cost;
     _bals[msg.sender][address(cash)] += conf.cost;

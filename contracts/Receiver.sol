@@ -4,8 +4,6 @@ pragma solidity ^0.8.6;
 
 import './Feedbase.sol';
 
-import "hardhat/console.sol";
-
 contract BasicReceiverFactory {
   Feedbase public feedbase;
   mapping(address=>bool) public builtHere;

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-import './Feedbase.sol';
+import '../Feedbase.sol';
 
 pragma solidity ^0.8.6;
 
