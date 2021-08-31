@@ -75,14 +75,23 @@ contract Feedbase {
     emit Paid(address(cash), msg.sender, src, amt);
   }
 
-  function deposit(IERC20 cash, uint amt) public {
-    cash.transferFrom(msg.sender, address(this), amt);
+  function deposit(IERC20 cash, uint amt) public payable {
+    if (address(cash) == address(0))  {
+      require(msg.value == amt, 'feedbase-deposit-value');
+    } else {
+      cash.transferFrom(msg.sender, address(this), amt);
+    }
     _bals[msg.sender][address(cash)] += amt;
   }
 
   function withdraw(IERC20 cash, uint amt) public {
     _bals[msg.sender][address(cash)] -= amt;
-    cash.transfer(msg.sender, amt);
+    if (address(cash) == address(0)) {
+      (bool ok, ) = msg.sender.call{value:amt}("");
+      require(ok, 'ERR_WITHDRAW_CALL');
+    } else {
+      cash.transfer(msg.sender, amt);
+    }
   }
 
   function balanceOf(IERC20 cash, address who) public view returns (uint) {
