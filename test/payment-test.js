@@ -48,13 +48,13 @@ describe('pay flow', ()=>{
     await tx_setCost.wait();
   });
 
-  it('topUp request push', async () => {
+  it('deposit request push', async () => {
     use(1)
 
     const bal = await cash.balanceOf(signers[1].address);
     want(bal.toNumber()).equals(1000);
 
-    const tx_topUp = await fb.topUp(cash.address, 500);
+    const tx_topUp = await fb.deposit(cash.address, 500);
     await tx_topUp.wait();
 
     const fbal0 = await fb.balanceOf(cash.address, signers[1].address);
@@ -68,7 +68,7 @@ describe('pay flow', ()=>{
 
     const fbal1 = await fb.balanceOf(cash.address, signers[1].address);
     want(fbal1.toNumber()).equals(400);
-    const fbal2 = await fb.feedDemand(cash.address, signers[0].address, TAG);
+    const fbal2 = await fb.requested(cash.address, signers[0].address, TAG);
     want(fbal2.toNumber()).equals(100);
 
     use(0)
@@ -78,14 +78,14 @@ describe('pay flow', ()=>{
     let ttl = 10**10;
     let val = Buffer.from('ff'.repeat(32), 'hex')
 
-    const tx_push = await fb.pushPaid(cash.address, TAG, ttl, val);
+    const tx_push = await fb.push(cash.address, TAG, ttl, val);
     await tx_push.wait()
 
-    const fbal3 = await fb.feedDemand(cash.address, signers[0].address, TAG);
+    const fbal3 = await fb.requested(cash.address, signers[0].address, TAG);
     want(fbal3.toNumber()).equals(0);
 
     const pre = await cash.balanceOf(signers[0].address);
-    const tx_cashOut = await fb.cashOut(cash.address, 100);
+    const tx_cashOut = await fb.withdraw(cash.address, 100);
     await tx_cashOut.wait();
     const post = await cash.balanceOf(signers[0].address);
     want(post.sub(pre).toNumber()).equals(100);

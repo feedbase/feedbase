@@ -47,7 +47,7 @@ contract Feedbase {
     return (feed.ttl, feed.val);
   }
 
-  function pushPaid(IERC20 cash, bytes32 tag, uint256 ttl, bytes32 val) public {
+  function push(IERC20 cash, bytes32 tag, uint256 ttl, bytes32 val) public {
     PayConfig storage conf = _fees[fid(msg.sender, tag)][address(cash)];
 
     conf.paid -= conf.cost;
@@ -65,7 +65,7 @@ contract Feedbase {
     emit Push(msg.sender, tag, ttl, val);
   }
 
-  function feedDemand(IERC20 cash, address src, bytes32 tag) public view returns (uint256) {
+  function requested(IERC20 cash, address src, bytes32 tag) public view returns (uint256) {
     return _fees[fid(src, tag)][address(cash)].paid;
   }
 
@@ -75,12 +75,12 @@ contract Feedbase {
     emit Paid(address(cash), msg.sender, src, amt);
   }
 
-  function topUp(IERC20 cash, uint amt) public {
+  function deposit(IERC20 cash, uint amt) public {
     cash.transferFrom(msg.sender, address(this), amt);
     _bals[msg.sender][address(cash)] += amt;
   }
 
-  function cashOut(IERC20 cash, uint amt) public {
+  function withdraw(IERC20 cash, uint amt) public {
     _bals[msg.sender][address(cash)] -= amt;
     cash.transfer(msg.sender, amt);
   }

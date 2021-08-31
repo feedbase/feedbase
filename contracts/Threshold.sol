@@ -26,7 +26,7 @@ contract ThresholdCombinator {
 
   function poke(bytes32 tag, IERC20 cash) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
-    uint balance = fb.feedDemand(cash, address(this), tag);
+    uint balance = fb.requested(cash, address(this), tag);
     for( uint i = 0; i < sources.length; i++) {
       fb.request(cash, sources[i], tag, balance / sources.length);
     }
@@ -57,20 +57,9 @@ contract ThresholdCombinator {
     require(false, 'ERR_QUORUM');
   }
 
-  function cashOut(IERC20 cash) public {
-    uint256 fees = fb.balanceOf(cash, address(this));
-    fb.cashOut(cash, fees);
-    cash.transfer(msg.sender, fees);
-  }
-
-  function cashOut(IERC20 cash, uint amt) public {
-    fb.cashOut(cash, amt);
-    cash.transfer(msg.sender, amt);
-  }
-
   function topUp(IERC20 cash, uint amt) public {
     cash.transferFrom(msg.sender, address(this), amt);
     cash.approve(address(fb), amt);
-    fb.topUp(cash, amt);
+    fb.deposit(cash, amt);
   }
 }
