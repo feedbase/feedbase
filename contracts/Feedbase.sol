@@ -28,7 +28,7 @@ contract Feedbase {
 
     bool    live; // enabled
     bool    toss; // throw on expired feed read
-    bool    froc; // "first-read-on-chain" fees only
+    bool    froc; // "first-read-on-chain" mode
   }
 
   event Push(

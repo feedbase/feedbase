@@ -1,0 +1,20 @@
+{
+  "types": {
+    "Feedbase": {
+      "artifacts": {
+        "/": "QmU8GzPLdJjzA6zeGqKG36oshsgQ28yEu1vKPpzfrKTfiq"
+      }
+    }
+  },
+  "objects": {
+    "feedbase": {
+      "typename": "Feedbase",
+      "artifacts": {
+        "/": "QmU8GzPLdJjzA6zeGqKG36oshsgQ28yEu1vKPpzfrKTfiq"
+      },
+      "addresses": {
+        "ropsten": "0x0C70277b39A407D23b79E838A4b020fbD823D3C6"
+      }
+    }
+  }
+}

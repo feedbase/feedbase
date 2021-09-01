@@ -2,23 +2,9 @@
 
 import '../Feedbase.sol';
 
+import './SelectorProvider.sol';
+
 pragma solidity ^0.8.6;
-
-interface SelectorProvider {
-  function getSelectors() external returns (uint quorum, address[] calldata selectors);
-}
-
-contract FixedSelectorProvider is SelectorProvider {
-  address[] selectors;
-  function setSelectors(address[] calldata set) public {
-    selectors = set;
-  }
-  function getSelectors() external view override
-    returns (uint quorum, address[] memory set)
-  {
-    return (1, selectors);
-  }
-}
 
 contract ThresholdCombinator {
   SelectorProvider public gov;
