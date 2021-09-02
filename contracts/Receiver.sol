@@ -120,6 +120,7 @@ contract BasicReceiver {
     require(msg.sender == owner, 'receiver-setSigner-bad-owner');
     signerTTL[who] = ttl;
   }
+
   function isSigner(address who) public view returns (bool) {
     return block.timestamp < signerTTL[who];
   }

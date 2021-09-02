@@ -10,21 +10,21 @@ const { TypedDataUtils } = require('ethers-eip712')
 // });
 module.exports = {
   makeUpdateDigest: (obj) => {
-    debug(obj);
+    debug(`making update digest from object`, obj)
     const typedData = {
       types: {
         EIP712Domain: [
-          {name: "name", type: "string"},
-          {name: "version", type: "string"},
-          {name: "chainId", type: "uint256"},
-          {name: "verifyingContract", type: "address"},
+          { name: 'name', type: 'string' },
+          { name: 'version', type: 'string' },
+          { name: 'chainId', type: 'uint256' },
+          { name: 'verifyingContract', type: 'address' }
         ],
         Submit: [
-          {name: "tag", type: "bytes32"},
-          {name: "seq", type: "uint256"},
-          {name: "sec", type: "uint256"},
-          {name: "ttl", type: "uint256"},
-          {name: "val", type: "bytes32"},  
+          { name: 'tag', type: 'bytes32' },
+          { name: 'seq', type: 'uint256' },
+          { name: 'sec', type: 'uint256' },
+          { name: 'ttl', type: 'uint256' },
+          { name: 'val', type: 'bytes32' }
         ]
       },
       primaryType: 'Submit',
@@ -35,14 +35,16 @@ module.exports = {
         verifyingContract: obj.receiver
       },
       message: {
-        'tag': obj.tag,
-        'seq': obj.seq,
-        'sec': obj.sec,
-        'ttl': obj.ttl,
-        'val': obj.val,
+        tag: obj.tag,
+        seq: obj.seq,
+        sec: obj.sec,
+        ttl: obj.ttl,
+        val: obj.val
       }
     }
+    debug(`encoding digest...`)
     const digest = TypedDataUtils.encodeDigest(typedData)
+    debug(`digest ${digest}`)
     return digest
   }
 }
