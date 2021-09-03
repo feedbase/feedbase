@@ -51,13 +51,14 @@ contract Feedbase {
     return (feed.ttl, feed.val);
   }
 
-  function push(IERC20 cash, bytes32 tag, uint256 ttl, bytes32 val) public {
+  function push(IERC20 cash, bytes32 tag, uint256 ttl, bytes32 val) public returns (uint256) {
     Config storage conf = _fees[fid(msg.sender, tag)][address(cash)];
 
     conf.paid -= conf.cost;
     _bals[msg.sender][address(cash)] += conf.cost;
     
     pushFree(tag, ttl, val);
+    return conf.cost;
   }
 
   function pushFree(bytes32 tag, uint256 ttl, bytes32 val) public {

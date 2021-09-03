@@ -1,9 +1,9 @@
 require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-ethers')
 
-const { DEPLOYER_PRIVATE_KEY, INFURA_PROJECT_ID } = process.env
+const { PRIVKEY, INFURA_PROJECT_ID } = process.env
 
-const privKey = DEPLOYER_PRIVATE_KEY ?? Buffer.alloc(32).toString('hex')
+const privKey = PRIVKEY ?? Buffer.alloc(32).toString('hex')
 
 /**
  * @type import('hardhat/config').HardhatUserConfig

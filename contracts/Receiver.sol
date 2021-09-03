@@ -73,7 +73,7 @@ contract BasicReceiver {
   ) public
   {
     // verify signer key is live for this signer/ttl
-    require(block.timestamp < ttl, 'oracle-submit-msg-ttl');
+    require(block.timestamp < ttl, 'receiver-submit-msg-ttl');
 
     // EIP712 digest
     string memory header = "\x19Ethereum Signed Message:\n32";
