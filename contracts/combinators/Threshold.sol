@@ -10,7 +10,7 @@ contract ThresholdCombinator {
   SelectorProvider public gov;
   Feedbase public fb;
 
-  function poke(bytes32 tag, IERC20 cash) public {
+  function poke(bytes32 tag, address cash) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
     uint balance = fb.requested(address(this), tag, cash);
     for( uint i = 0; i < sources.length; i++) {
@@ -35,7 +35,7 @@ contract ThresholdCombinator {
       if (val == hint) {
         count++;
         if (count >= quorum) {
-          fb.pushFree(tag, minttl, val);
+          fb.push(tag, minttl, val, address(0));
           return;
         }
       }
@@ -46,6 +46,6 @@ contract ThresholdCombinator {
   function topUp(IERC20 cash, uint amt) public {
     cash.transferFrom(msg.sender, address(this), amt);
     cash.approve(address(fb), amt);
-    fb.deposit(cash, amt);
+    fb.deposit(address(cash), amt);
   }
 }

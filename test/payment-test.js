@@ -56,7 +56,7 @@ describe('pay flow', () => {
     const tx_topUp = await fb.deposit(cash.address, 500)
     await tx_topUp.wait()
 
-    const fbal0 = await fb.balanceOf(cash.address, signers[1].address)
+    const fbal0 = await fb.balances(cash.address, signers[1].address)
     want(fbal0.toNumber()).equals(500)
     debug(`fbal0 ${fbal0}`)
     const bal2 = await cash.balanceOf(signers[1].address)
@@ -65,7 +65,7 @@ describe('pay flow', () => {
     const tx_request = await fb.request(signers[0].address, TAG, cash.address, 100)
     await tx_request.wait()
 
-    const fbal1 = await fb.balanceOf(cash.address, signers[1].address)
+    const fbal1 = await fb.balances(cash.address, signers[1].address)
     want(fbal1.toNumber()).equals(400)
     const fbal2 = await fb.requested(signers[0].address, TAG, cash.address)
     want(fbal2.toNumber()).equals(100)

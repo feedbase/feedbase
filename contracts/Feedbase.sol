@@ -21,7 +21,7 @@ contract Feedbase {
 
   // src -> tag -> Feed
   mapping(address=>mapping(bytes32=>Feed)) _feeds;
-  // user -> cash -> balance
+  // src -> cash -> balance
   mapping(address=>mapping(address=>uint256)) _bals;
   // src -> tag -> cash -> Config
   mapping(address=>mapping(bytes32=>mapping(address=>Config))) _config;
@@ -46,16 +46,12 @@ contract Feedbase {
     return (feed.ttl, feed.val);
   }
 
-  function pushFree(bytes32 tag, uint256 ttl, bytes32 val) public returns (uint256) {
-    return push(tag, ttl, val, IERC20(address(0)));
-  }
-
-  function push(bytes32 tag, uint256 ttl, bytes32 val, IERC20 cash) public returns (uint256) {
+  function push(bytes32 tag, uint256 ttl, bytes32 val, address cash) public returns (uint256) {
     Feed storage feed = _feeds[msg.sender][tag];
-    Config storage config = _config[msg.sender][tag][address(cash)];
+    Config storage config = _config[msg.sender][tag][cash];
 
     config.paid -= config.cost;
-    _bals[msg.sender][address(cash)] += config.cost;
+    _bals[msg.sender][cash] += config.cost;
    
     feed.ttl = ttl;
     feed.val = val; 
@@ -65,29 +61,29 @@ contract Feedbase {
     return config.cost;
   }
 
-  function requested(address src, bytes32 tag, IERC20 cash) public view returns (uint256) {
-    return _config[src][tag][address(cash)].paid;
+  function requested(address src, bytes32 tag, address cash) public view returns (uint256) {
+    return _config[src][tag][cash].paid;
   }
 
-  function request(address src, bytes32 tag, IERC20 cash, uint amt) public {
-    _bals[msg.sender][address(cash)] -= amt;
-    _config[src][tag][address(cash)].paid += amt;
-    emit Paid(address(cash), msg.sender, src, amt);
+  function request(address src, bytes32 tag, address cash, uint256 amt) public {
+    _bals[msg.sender][cash] -= amt;
+    _config[src][tag][cash].paid += amt;
+    emit Paid(cash, msg.sender, src, amt);
   }
 
-  function deposit(IERC20 cash, uint amt) public payable {
-    if (address(cash) == address(0))  {
+  function deposit(address cash, uint amt) public payable {
+    if (cash == address(0))  {
       require(msg.value == amt, 'feedbase-deposit-value');
     } else {
       bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
       require(ok, 'ERR_ERC20_PULL');
     }
-    _bals[msg.sender][address(cash)] += amt;
+    _bals[msg.sender][cash] += amt;
   }
 
-  function withdraw(IERC20 cash, uint amt) public {
-    _bals[msg.sender][address(cash)] -= amt;
-    if (address(cash) == address(0)) {
+  function withdraw(address cash, uint amt) public {
+    _bals[msg.sender][cash] -= amt;
+    if (cash == address(0)) {
       (bool ok, ) = msg.sender.call{value:amt}("");
       require(ok, 'ERR_WITHDRAW_CALL');
     } else {
@@ -96,14 +92,13 @@ contract Feedbase {
     }
   }
 
-  function balanceOf(IERC20 cash, address who) public view returns (uint) {
-    return _bals[who][address(cash)];
+  function balances(address cash, address who) public view returns (uint) {
+    return _bals[who][cash];
   }
 
   function setCost(bytes32 tag, address cash, uint256 cost) public {
     _config[msg.sender][tag][cash].cost = cost;
   }
-
 
 }
 
