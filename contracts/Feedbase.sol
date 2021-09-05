@@ -29,8 +29,8 @@ contract Feedbase {
   event Push(
       address indexed src
     , bytes32 indexed tag
-    , uint256         ttl
     , bytes32         val
+    , uint256         ttl
   );
 
   event Paid(
@@ -40,13 +40,13 @@ contract Feedbase {
     , uint256         amt
   );
 
-  function read(address src, bytes32 tag) public view returns (uint256 ttl, bytes32 val) {
+  function read(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
     Feed storage feed = _feeds[src][tag];
     require(feed.ttl >  block.timestamp, 'ERR_READ_LATE');
-    return (feed.ttl, feed.val);
+    return (feed.val, feed.ttl);
   }
 
-  function push(bytes32 tag, uint256 ttl, bytes32 val, address cash) public returns (uint256) {
+  function push(bytes32 tag, bytes32 val, uint256 ttl, address cash) public returns (uint256) {
     Feed storage feed = _feeds[msg.sender][tag];
     Config storage config = _config[msg.sender][tag][cash];
 
@@ -56,7 +56,7 @@ contract Feedbase {
     feed.ttl = ttl;
     feed.val = val; 
 
-    emit Push(msg.sender, tag, ttl, val);
+    emit Push(msg.sender, tag, val, ttl);
 
     return config.cost;
   }

@@ -25,7 +25,7 @@ contract ThresholdCombinator {
     uint256 count;
     uint256 minttl = type(uint256).max;
     for( uint i = 0; i < sources.length; i++ ) {
-      (uint256 ttl, bytes32 val) = fb.read(sources[i], tag);
+      (bytes32 val, uint256 ttl) = fb.read(sources[i], tag);
       if (ttl < block.timestamp) {
         continue;
       }
@@ -35,7 +35,7 @@ contract ThresholdCombinator {
       if (val == hint) {
         count++;
         if (count >= quorum) {
-          fb.push(tag, minttl, val, address(0));
+          fb.push(tag, val, minttl, address(0));
           return;
         }
       }

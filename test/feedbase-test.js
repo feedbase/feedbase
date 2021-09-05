@@ -82,7 +82,7 @@ describe('feedbase', () => {
     const val = Buffer.from('11'.repeat(32), 'hex')
     debug(tag, seq, sec, ttl, val)
 
-    const push = await fb.push(tag, ttl, val, "00".repeat(20))
+    const push = await fb.push(tag, val, ttl, "00".repeat(20))
     const read = await fb.read(signers[0].address, tag)
     debug(`read result ${read}`)
 
