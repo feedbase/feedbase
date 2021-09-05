@@ -65,7 +65,7 @@ describe('feedbase', () => {
     debug(`signature ${signature}`)
     const sig = ethers.utils.splitSignature(signature)
     // debug(sig);
-    const tx3 = await oracle.submit(tag, seq, sec, ttl, val, sig.v, sig.r, sig.s)
+    const tx3 = await oracle.submit(tag, seq, sec, ttl, val, "0".repeat(40), sig.v, sig.r, sig.s)
   })
 
   it('ttl on read', async function () {

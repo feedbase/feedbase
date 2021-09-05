@@ -69,6 +69,7 @@ contract BasicReceiver {
     uint256 sec,
     uint256 ttl,
     bytes32 val,
+    address cash,
     uint8 v, bytes32 r, bytes32 s
   ) public
   {
@@ -102,7 +103,7 @@ contract BasicReceiver {
     require(block.timestamp <  ttl, 'receiver-submit-ttl');
 
     emit Submit(msg.sender, signer, tag, seq);
-    feedbase.push(tag, val, ttl, address(0));
+    feedbase.push(tag, val, ttl, cash);
   }
 
   function setCost(bytes32 tag, address cash, uint cost) public {
