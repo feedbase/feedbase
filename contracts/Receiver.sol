@@ -39,7 +39,7 @@ contract BasicReceiver {
     , address indexed signer
     , bytes32 indexed tag
     , uint256  indexed seq
-  ) anonymous ;
+  ) anonymous;
 
   // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(bytes32 tag,uint256 seq,uint256 sec,uint256 ttl,bytes32 val)");
   bytes32 public constant SUBMIT_TYPEHASH = 0x704ca89a84579f1c77f8af3ba18d619ac3bfe3ef4b477dd428170b1a3984c5d0;
