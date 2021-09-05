@@ -14,7 +14,6 @@ contract Feedbase {
     uint256 cost;
     uint256 paid;
 
-// later:
     bool    live; // enabled
     bool    toss; // throw on expired feed read
     bool    froc; // "first-read-on-chain" mode
@@ -48,10 +47,10 @@ contract Feedbase {
   }
 
   function pushFree(bytes32 tag, uint256 ttl, bytes32 val) public returns (uint256) {
-    return push(IERC20(address(0)), tag, ttl, val);
+    return push(tag, ttl, val, IERC20(address(0)));
   }
 
-  function push(IERC20 cash, bytes32 tag, uint256 ttl, bytes32 val) public returns (uint256) {
+  function push(bytes32 tag, uint256 ttl, bytes32 val, IERC20 cash) public returns (uint256) {
     Feed storage feed = _feeds[msg.sender][tag];
     Config storage config = _config[msg.sender][tag][address(cash)];
 
@@ -66,11 +65,11 @@ contract Feedbase {
     return config.cost;
   }
 
-  function requested(IERC20 cash, address src, bytes32 tag) public view returns (uint256) {
+  function requested(address src, bytes32 tag, IERC20 cash) public view returns (uint256) {
     return _config[src][tag][address(cash)].paid;
   }
 
-  function request(IERC20 cash, address src, bytes32 tag, uint amt) public {
+  function request(address src, bytes32 tag, IERC20 cash, uint amt) public {
     _bals[msg.sender][address(cash)] -= amt;
     _config[src][tag][address(cash)].paid += amt;
     emit Paid(address(cash), msg.sender, src, amt);
@@ -101,7 +100,7 @@ contract Feedbase {
     return _bals[who][address(cash)];
   }
 
-  function setCost(address cash, bytes32 tag, uint256 cost) public {
+  function setCost(bytes32 tag, address cash, uint256 cost) public {
     _config[msg.sender][tag][cash].cost = cost;
   }
 

@@ -107,7 +107,7 @@ contract BasicReceiver {
 
   function setCost(bytes32 tag, address cash, uint cost) public {
     require(msg.sender == owner, 'receiver-setCost-bad-owner');
-    feedbase.setCost(cash, tag, cost);
+    feedbase.setCost(tag, cash, cost);
   }
 
   function setOwner(address newOwner) public {

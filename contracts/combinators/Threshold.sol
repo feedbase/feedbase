@@ -12,9 +12,9 @@ contract ThresholdCombinator {
 
   function poke(bytes32 tag, IERC20 cash) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
-    uint balance = fb.requested(cash, address(this), tag);
+    uint balance = fb.requested(address(this), tag, cash);
     for( uint i = 0; i < sources.length; i++) {
-      fb.request(cash, sources[i], tag, balance / sources.length);
+      fb.request(sources[i], tag, cash, balance / sources.length);
     }
   }
 

@@ -43,7 +43,7 @@ describe('pay flow', () => {
 
     use(0)
 
-    const tx_setCost = await fb.setCost(cash.address, TAG, 100)
+    const tx_setCost = await fb.setCost(TAG, cash.address, 100)
     await tx_setCost.wait()
   })
 
@@ -62,12 +62,12 @@ describe('pay flow', () => {
     const bal2 = await cash.balanceOf(signers[1].address)
     want(bal2.toNumber()).equals(500)
 
-    const tx_request = await fb.request(cash.address, signers[0].address, TAG, 100)
+    const tx_request = await fb.request(signers[0].address, TAG, cash.address, 100)
     await tx_request.wait()
 
     const fbal1 = await fb.balanceOf(cash.address, signers[1].address)
     want(fbal1.toNumber()).equals(400)
-    const fbal2 = await fb.requested(cash.address, signers[0].address, TAG)
+    const fbal2 = await fb.requested(signers[0].address, TAG, cash.address)
     want(fbal2.toNumber()).equals(100)
 
     use(0)
@@ -77,10 +77,10 @@ describe('pay flow', () => {
     const ttl = 10 ** 10
     const val = Buffer.from('ff'.repeat(32), 'hex')
 
-    const tx_push = await fb.push(cash.address, TAG, ttl, val)
+    const tx_push = await fb.push(TAG, ttl, val, cash.address)
     await tx_push.wait()
 
-    const fbal3 = await fb.requested(cash.address, signers[0].address, TAG)
+    const fbal3 = await fb.requested(signers[0].address, TAG, cash.address)
     want(fbal3.toNumber()).equals(0)
 
     const pre = await cash.balanceOf(signers[0].address)
