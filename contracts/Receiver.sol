@@ -29,6 +29,12 @@ contract BasicReceiver {
   mapping(address=>uint)   public signerTTL; // isSigner
   mapping(address=>uint)   public signerSeq;
 
+  // relayer's flat fee  
+  // tag -> cash -> cost
+  mapping(bytes32=>mapping(address=>uint)) public fees;
+  // relayer -> cash -> collected
+  mapping(address=>mapping(address=>uint)) public collected;
+
   bytes32                  public DOMAIN_SEPARATOR;
 
   event OwnerUpdate(address indexed oldOwner, address indexed newOwner);
@@ -63,6 +69,20 @@ contract BasicReceiver {
     return block.chainid;
   }
 
+  // EIP712 digest
+  function digest(bytes32 tag, uint seq, uint sec, uint ttl, bytes32 val) public view returns (bytes32) {
+    string memory header = "\x19Ethereum Signed Message:\n32";
+    bytes32 sighash = keccak256(abi.encodePacked(header, 
+      keccak256(abi.encodePacked(
+        "\x19\x01", DOMAIN_SEPARATOR,
+        keccak256(abi.encode(
+          SUBMIT_TYPEHASH, tag, seq, sec, ttl, val
+        ))
+      ))
+    ));
+    return sighash;
+  }
+
   function submit(
     bytes32 tag,
     uint256 seq,
@@ -76,24 +96,8 @@ contract BasicReceiver {
     // verify signer key is live for this signer/ttl
     require(block.timestamp < ttl, 'receiver-submit-msg-ttl');
 
-    // EIP712 digest
-    string memory header = "\x19Ethereum Signed Message:\n32";
-    bytes32 digest = keccak256(abi.encodePacked(header, 
-      keccak256(abi.encodePacked(
-        "\x19\x01",
-        DOMAIN_SEPARATOR,
-        keccak256(abi.encode(
-          SUBMIT_TYPEHASH, 
-          tag, 
-          seq,
-          sec,
-          ttl,
-          val
-        ))
-      ))
-    ));
-
-    address signer = ecrecover(digest, v, r, s);
+    bytes32 sighash = digest(tag, seq, sec, ttl, val);
+    address signer = ecrecover(sighash, v, r, s);
 
     uint sttl = signerTTL[signer];
     require(block.timestamp < sttl, 'receiver-submit-bad-signer');
@@ -103,7 +107,26 @@ contract BasicReceiver {
     require(block.timestamp <  ttl, 'receiver-submit-ttl');
 
     emit Submit(msg.sender, signer, tag, seq);
-    feedbase.push(tag, val, ttl, cash);
+
+    uint paid = feedbase.push(tag, val, ttl, cash);
+
+    uint fee = fees[tag][cash];
+    if (paid < fee) {
+      fee = paid;
+    }
+    collected[msg.sender][cash] += fee;
+  }
+
+  function collect(address cash) public {
+    uint bal = collected[msg.sender][cash];
+    collected[msg.sender][cash] = 0;
+    if (cash == address(0)) {
+      (bool ok, ) = msg.sender.call{value:bal}("");
+      require(ok, 'ERR_WITHDRAW_CALL');
+    } else {
+      bool ok = IERC20(cash).transfer(msg.sender, bal);
+      require(ok, 'ERR_ERC20_PUSH');
+    }
   }
 
   function setCost(bytes32 tag, address cash, uint cost) public {
