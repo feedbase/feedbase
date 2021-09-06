@@ -41,8 +41,8 @@ describe('feedbase', () => {
     debug(`sttl: ${sttl}`)
 
     const oracleChainId = await oracle.chainId()
-    debug(`chainId: ${chainId}, type ${typeof(chainId)}`)
-    debug(`oracleChainId: ${oracleChainId}, type ${typeof(oracleChainId)}`)
+    debug(`chainId: ${chainId}, type ${typeof (chainId)}`)
+    debug(`oracleChainId: ${oracleChainId}, type ${typeof (oracleChainId)}`)
     want(chainId).equal(oracleChainId.toNumber())
 
     const tag = Buffer.from('USDETH'.padStart(32, '\0'))
@@ -66,7 +66,7 @@ describe('feedbase', () => {
     debug(`signature ${signature}`)
     const sig = ethers.utils.splitSignature(signature)
     // debug(sig);
-    const tx3 = await oracle.submit(tag, seq, sec, ttl, val, "0".repeat(40), sig.v, sig.r, sig.s)
+    const tx3 = await oracle.submit(tag, seq, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s)
   })
 
   it('ttl on read', async function () {
@@ -83,7 +83,7 @@ describe('feedbase', () => {
     const val = Buffer.from('11'.repeat(32), 'hex')
     debug(tag, seq, sec, ttl, val)
 
-    const push = await fb.push(tag, val, ttl, "00".repeat(20))
+    const push = await fb.push(tag, val, ttl, '00'.repeat(20))
     const read = await fb.read(signers[0].address, tag)
     debug(`read result ${read}`)
 

@@ -10,7 +10,7 @@ const { TypedDataUtils } = require('ethers-eip712')
 // });
 module.exports = {
   makeUpdateDigest: (obj) => {
-    //debug('making update digest from object', obj)
+    // debug('making update digest from object', obj)
     const typedData = {
       types: {
         EIP712Domain: [
@@ -42,9 +42,9 @@ module.exports = {
         val: obj.val
       }
     }
-    //debug('encoding digest...')
+    // debug('encoding digest...')
     const digest = TypedDataUtils.encodeDigest(typedData)
-    //debug(`digest ${digest}`)
+    // debug(`digest ${digest}`)
     return digest
   }
 }

@@ -2,16 +2,18 @@
   "name": "feedbase",
   "scripts": {
     "build": "DEBUG=feedbase:* yarn run hardhat compile",
-    "test": "DEBUG=feedbase:* yarn build && mocha test"
+    "test": "DEBUG=feedbase:* yarn build && mocha test",
+    "fmt": "ts-standard --fix"
   },
   "main": "index.js",
+  "dependencies": {
+    "ethers-eip712": "^0.2.0"
+  },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "chai": "^4.3.4",
     "hardhat": "^2.4.3",
-    "ipfs-core": "^0.9.0"
-  },
-  "dependencies": {
-    "ethers-eip712": "^0.2.0"
+    "ipfs-core": "^0.9.0",
+    "ts-standard": "^10.0.0"
   }
 }
