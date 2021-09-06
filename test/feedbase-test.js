@@ -41,8 +41,9 @@ describe('feedbase', () => {
     debug(`sttl: ${sttl}`)
 
     const oracleChainId = await oracle.chainId()
-    debug(`oracleChainId: ${oracleChainId}`)
-    want(chainId).equal(oracleChainId)
+    debug(`chainId: ${chainId}, type ${typeof(chainId)}`)
+    debug(`oracleChainId: ${oracleChainId}, type ${typeof(oracleChainId)}`)
+    want(chainId).equal(oracleChainId.toNumber())
 
     const tag = Buffer.from('USDETH'.padStart(32, '\0'))
     const seq = 1
@@ -86,7 +87,7 @@ describe('feedbase', () => {
     const read = await fb.read(signers[0].address, tag)
     debug(`read result ${read}`)
 
-    want(read.ttl).equal(ttl)
+    want(read.ttl.toNumber()).equal(ttl)
     want(read.val).equal('0x' + val.toString('hex'))
   })
 })

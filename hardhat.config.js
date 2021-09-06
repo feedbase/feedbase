@@ -1,4 +1,3 @@
-require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-ethers')
 
 const { PRIVKEY, INFURA_PROJECT_ID } = process.env
