@@ -134,6 +134,11 @@ contract BasicReceiver {
     feedbase.setCost(tag, cash, cost);
   }
 
+  function setRelayFee(bytes32 tag, address cash, uint256 fee) public {
+    require(msg.sender == owner, 'receiver-setRelayFee-bad-owner');
+    fees[tag][cash] = fee;
+  }
+
   function setOwner(address newOwner) public {
     require(msg.sender == owner, 'receiver-setOwner-bad-owner');
     emit OwnerUpdate(owner, newOwner);
