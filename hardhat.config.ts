@@ -1,4 +1,6 @@
-require('@nomiclabs/hardhat-ethers')
+import '@nomiclabs/hardhat-ethers'
+
+import './tasks/deploy1.ts'
 
 const { PRIVKEY, INFURA_PROJECT_ID } = process.env
 
@@ -7,7 +9,7 @@ const privKey = PRIVKEY ?? Buffer.alloc(32).toString('hex')
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
-const config = {
+export default {
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {},
@@ -35,5 +37,3 @@ const config = {
   },
   solidity: '0.8.6'
 }
-
-module.exports = config
