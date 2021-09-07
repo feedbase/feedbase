@@ -1,6 +1,6 @@
 const debug = require('debug')('feedbase:task')
 
-const dpack = require('../../lib/dpack')
+const dpack = require('dpack')
 
 const { task } = require('hardhat/config');
 
