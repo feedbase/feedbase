@@ -1,1 +1,9 @@
-{}
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "esModuleInterop": true
+  },
+  "exclude": [
+    "test/*"
+  ]
+}

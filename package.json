@@ -1,20 +1,27 @@
 {
   "name": "feedbase",
   "scripts": {
-    "build": "npx hardhat compile",
-    "test": "npm run build && ts-mocha test",
+    "build:typescript": "tsc",
+    "build:contracts": "npx hardhat compile",
+    "test": "npm run build:contracts && ts-mocha test",
     "fmt": "ts-standard --fix"
   },
-  "main": "index.js",
+  "main": "index.ts",
   "dependencies": {
+    "bn.js": "^5.2.0",
+    "commander": "^8.0.0",
+    "debug": "^4.3.2",
     "dpack": "github:dapphub/dpack",
-    "ethers-eip712": "^0.2.0"
+    "ethers": "^5.4.6",
+    "ethers-eip712": "^0.2.0",
+    "ipfs-core": "^0.10.6",
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
     "hardhat": "^2.4.3",
-    "ipfs-core": "^0.9.0",
     "ts-mocha": "^8.0.0",
     "ts-node": "^10.2.1",
     "ts-standard": "^10.0.0",
