@@ -1,11 +1,10 @@
 const { autofeed } = require('../lib/autofeed')
 
 export const getter = autofeed({
-  url: "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
-  jqs: ".ethereum.usd",
-  ops: "toNumber toWei toBytes32"
-});
-
+  url: 'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
+  jqs: '.ethereum.usd',
+  ops: 'toNumber toWei toBytes32'
+})
 
 /*
 export async function getter (): Promise<Buffer> {

@@ -6,7 +6,7 @@ const { TypedDataUtils } = require('ethers-eip712')
 //  chainId, receiver,
 //  tag, seq, sec, ttl, val
 // });
-function makeUpdateDigest (obj:any) : Buffer {
+function makeUpdateDigest (obj: any): Buffer {
   // debug('making update digest from object', obj)
   const typedData = {
     types: {

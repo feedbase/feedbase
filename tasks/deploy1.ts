@@ -2,13 +2,13 @@ const debug = require('debug')('feedbase:task')
 
 const dpack = require('dpack')
 
-const { task } = require('hardhat/config');
+const { task } = require('hardhat/config')
 
-task("deploy1", "deploy feedbase-core-pack and feedbase-full-pack v1", async (args, hre) => {
-  const { ethers, network } = hre;
+task('deploy1', 'deploy feedbase-core-pack and feedbase-full-pack v1', async (args, hre) => {
+  const { ethers, network } = hre
 
-  const [acct] = await hre.ethers.getSigners();
-  const deployer = acct.address;
+  const [acct] = await hre.ethers.getSigners()
+  const deployer = acct.address
 
   console.log(`Deploying contracts using ${deployer} to ${network.name}`)
 
@@ -24,7 +24,7 @@ task("deploy1", "deploy feedbase-core-pack and feedbase-full-pack v1", async (ar
     fb = await FeedbaseDeployer.deploy()
     await fb.deployed()
     console.log('Feedbase deployed to : ', fb.address)
-    const FeedbaseArtifact = await hre.artifacts.readArtifact("Feedbase")
+    const FeedbaseArtifact = await hre.artifacts.readArtifact('Feedbase')
     await mutator.addType(FeedbaseArtifact)
     await mutator.addObject(
       'feedbase',
@@ -45,9 +45,9 @@ task("deploy1", "deploy feedbase-core-pack and feedbase-full-pack v1", async (ar
     await mt.deployed()
     console.log('MockToken Deployed to:', mt.address)
 
-    const MockTokenArtifact = await hre.artifacts.readArtifact("contracts/erc20/MockToken.sol:MockToken");
-    const BasicReceiverArtifact = await hre.artifacts.readArtifact("BasicReceiver");
-    const BasicReceiverFactoryArtifact = await hre.artifacts.readArtifact("BasicReceiverFactory");
+    const MockTokenArtifact = await hre.artifacts.readArtifact('contracts/erc20/MockToken.sol:MockToken')
+    const BasicReceiverArtifact = await hre.artifacts.readArtifact('BasicReceiver')
+    const BasicReceiverFactoryArtifact = await hre.artifacts.readArtifact('BasicReceiverFactory')
 
     await mutator.addType(MockTokenArtifact)
     await mutator.addType(BasicReceiverArtifact)
@@ -66,7 +66,6 @@ task("deploy1", "deploy feedbase-core-pack and feedbase-full-pack v1", async (ar
       MockTokenArtifact
     )
   })
-
-});
+})
 
 export {}

@@ -6,7 +6,7 @@ const http = require('http')
 
 const { makeUpdateDigest } = require('../index')
 
-console.warn("WARN using delayed time")
+console.warn('WARN using delayed time')
 const now = () => Math.floor(Date.now() / 1000) - 500 // WARN
 
 class Sensor {
@@ -50,7 +50,7 @@ class Sensor {
 }
 
 export async function serve (getter: Function, opts: any): Promise<void> {
-  debug(`serve`, opts)
+  debug('serve', opts)
   const s = new Sensor(getter)
   s.receiver = opts.receiver
   s.chainId = opts.chainId

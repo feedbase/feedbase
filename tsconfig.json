@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
+    "outDir": "lib",
     "esModuleInterop": true
   },
   "exclude": [
-    "test/*"
+    "test/*",
+    "hardhat.config.ts"
   ]
 }

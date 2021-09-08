@@ -71,7 +71,7 @@ export async function jqq (url: string, jqs: string, ops: string): Promise<any> 
 }
 
 // autofeed({ url, jqs, ops })
-export function autofeed (args:any) : Function {
+export function autofeed (args: any): Function {
   return async function (): Promise<Buffer> {
     debug(`auto getter ${args.url} ${args.jqs} ${args.ops}`)
     return await jqq(args.url, args.jqs, args.ops)
