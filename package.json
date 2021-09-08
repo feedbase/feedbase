@@ -1,22 +1,37 @@
 {
   "name": "feedbase",
   "scripts": {
-    "build": "npx hardhat compile",
-    "test": "npm run build && ts-mocha test",
+    "build:ts": "npm run clean:ts && tsc",
+    "clean:ts": "rm -r lib/*",
+    "build:sol": "npx hardhat compile",
+    "build:docs:sol": "npm run clean:docs:sol && npx solidity-docgen -o docs/contracts --solc-module solc-0.8.6",
+    "clean:docs:sol": "rm -r docs/contracts",
+    "test": "npm run build:sol && ts-mocha test",
     "fmt": "ts-standard --fix"
   },
-  "main": "index.js",
+  "bin": {
+    "feed": "./lib/cmd.js"
+  },
+  "index": "./lib/index.js",
   "dependencies": {
+    "bn.js": "^5.2.0",
+    "commander": "^8.0.0",
+    "debug": "^4.3.2",
     "dpack": "github:dapphub/dpack",
-    "ethers-eip712": "^0.2.0"
+    "ethers": "^5.4.6",
+    "ethers-eip712": "^0.2.0",
+    "ipfs-core": "^0.10.6",
+    "node-fetch": "^2.6.1",
+    "ts-node": "^10.2.1"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
     "hardhat": "^2.4.3",
-    "ipfs-core": "^0.9.0",
+    "solc-0.8.6": "npm:solc@^0.8.6",
+    "solidity-docgen": "^0.5.13",
     "ts-mocha": "^8.0.0",
-    "ts-node": "^10.2.1",
     "ts-standard": "^10.0.0",
     "typescript": "^4.4.2"
   }
