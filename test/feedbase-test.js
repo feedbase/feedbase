@@ -9,7 +9,7 @@ const BasicReceiver = require('../artifacts/contracts/Receiver.sol/BasicReceiver
 
 const { ethers, network } = require('hardhat')
 
-const { makeUpdateDigest } = require('..')
+const { makeUpdateDigest } = require('../src')
 
 describe('feedbase', () => {
   it('basics', async function () {

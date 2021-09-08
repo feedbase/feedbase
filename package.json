@@ -1,16 +1,16 @@
 {
   "name": "feedbase",
   "scripts": {
-    "build:ts": "tsc",
+    "build:ts": "npm run clean:ts && tsc",
+    "clean:ts": "rm -r lib/*",
     "build:sol": "npx hardhat compile",
-    "clean": "rm -r lib/*",
     "test": "npm run build:sol && ts-mocha test",
     "fmt": "ts-standard --fix"
   },
   "bin": {
-    "feed": "./dist/cmd.js"
+    "feed": "./lib/cmd.js"
   },
-  "index": "./dist/index.js",
+  "index": "./lib/index.js",
   "dependencies": {
     "bn.js": "^5.2.0",
     "commander": "^8.0.0",

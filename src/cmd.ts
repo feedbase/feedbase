@@ -9,7 +9,7 @@ const exit = process.exit
 
 const prog = require('commander')
 const ethers = require('ethers')
-const fmt = require('./src/formatters')
+const fmt = require('./formatters')
 
 const dpack = require('dpack')
 const lib = require('./index')

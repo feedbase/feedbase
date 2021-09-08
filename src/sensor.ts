@@ -4,7 +4,7 @@ const debug = require('debug')('feedbase:sensor')
 
 const http = require('http')
 
-const { makeUpdateDigest } = require('../index')
+const { makeUpdateDigest } = require('./index')
 
 console.warn('WARN using delayed time')
 const now = () => Math.floor(Date.now() / 1000) - 500 // WARN

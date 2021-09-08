@@ -3,6 +3,9 @@
     "outDir": "lib",
     "esModuleInterop": true
   },
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "test/*",
     "hardhat.config.ts"
