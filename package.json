@@ -3,13 +3,14 @@
   "scripts": {
     "build:ts": "tsc",
     "build:sol": "npx hardhat compile",
+    "clean": "rm -r lib/*",
     "test": "npm run build:sol && ts-mocha test",
     "fmt": "ts-standard --fix"
   },
   "bin": {
     "feed": "./dist/cmd.js"
   },
-  "main": "./dist/index.js",
+  "index": "./dist/index.js",
   "dependencies": {
     "bn.js": "^5.2.0",
     "commander": "^8.0.0",

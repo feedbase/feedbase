@@ -12,8 +12,8 @@ task('deploy1', 'deploy feedbase-core-pack and feedbase-full-pack v1', async (ar
 
   console.log(`Deploying contracts using ${deployer} to ${network.name}`)
 
-  const corePath = 'dist/feedbase-core-pack.json'
-  const fullPath = 'dist/feedbase-full-pack.json'
+  const corePath = 'dpacks/feedbase-core-pack.json'
+  const fullPath = 'dpacks/feedbase-full-pack.json'
 
   await dpack.initPackFile(corePath)
 
