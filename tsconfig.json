@@ -4,10 +4,10 @@
     "esModuleInterop": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "hardhat.config.ts"
   ],
   "exclude": [
-    "test/*",
-    "hardhat.config.ts"
+    "test/*"
   ]
 }
