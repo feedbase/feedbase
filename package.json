@@ -1,9 +1,9 @@
 {
   "name": "feedbase",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
-    "build:ts": "npm run clean:ts && tsc && npm run copy-dpacks",
+    "build:ts": "npm run clean:ts && tsc && chmod +x lib/src/cmd.js && npm run copy-dpacks",
     "copy-dpacks": "cp dpacks/* lib/dpacks",
     "clean:ts": "rm -r lib/* && mkdir lib/dpacks",
     "build:sol": "npx hardhat compile",
@@ -15,7 +15,7 @@
   "bin": {
     "feed": "./lib/src/cmd.js"
   },
-  "index": "./lib/src/index.js",
+  "main": "./lib/src/index.js",
   "dependencies": {
     "commander": "^8.0.0",
     "debug": "^4.3.2",
