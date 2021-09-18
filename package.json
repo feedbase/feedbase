@@ -1,6 +1,8 @@
 {
   "name": "feedbase",
+  "version": "0.1.3",
   "scripts": {
+    "build": "npm run build:ts && npm run build:sol",
     "build:ts": "npm run clean:ts && tsc",
     "clean:ts": "rm -r lib/*",
     "build:sol": "npx hardhat compile",
@@ -10,11 +12,10 @@
     "fmt": "ts-standard --fix"
   },
   "bin": {
-    "feed": "./lib/cmd.js"
+    "feed": "./lib/src/cmd.js"
   },
-  "index": "./lib/index.js",
+  "index": "./lib/src/index.js",
   "dependencies": {
-    "bn.js": "^5.2.0",
     "commander": "^8.0.0",
     "debug": "^4.3.2",
     "dpack": "github:dapphub/dpack",

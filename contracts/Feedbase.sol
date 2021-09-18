@@ -13,18 +13,14 @@ contract Feedbase {
   struct Config {
     uint256 cost;
     uint256 paid;
-
-    bool    live; // enabled
-    bool    toss; // throw on expired feed read
-    bool    froc; // "first-read-on-chain" mode
   }
 
   // src -> tag -> Feed
-  mapping(address=>mapping(bytes32=>Feed)) _feeds;
+  mapping(address=>mapping(bytes32=>Feed)) public _feeds;
   // src -> cash -> balance
-  mapping(address=>mapping(address=>uint256)) _bals;
+  mapping(address=>mapping(address=>uint256)) public _bals;
   // src -> tag -> cash -> Config
-  mapping(address=>mapping(bytes32=>mapping(address=>Config))) _config;
+  mapping(address=>mapping(bytes32=>mapping(address=>Config))) public _config;
 
   event Push(
       address indexed src
@@ -42,7 +38,7 @@ contract Feedbase {
 
   function read(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
     Feed storage feed = _feeds[src][tag];
-    require(feed.ttl >  block.timestamp, 'ERR_READ_LATE');
+    require(feed.ttl > block.timestamp, 'ERR_READ_LATE');
     return (feed.val, feed.ttl);
   }
 

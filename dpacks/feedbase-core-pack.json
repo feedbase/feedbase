@@ -2,7 +2,7 @@
   "types": {
     "Feedbase": {
       "artifacts": {
-        "/": "QmYgZApwD76e52ANtpHUNPZ8JZ312cbc52cUpog4KwgvAR"
+        "/": "QmfHtSUDFz1tVzeXSthEf2APCKo6iZCWHM64EaUU9zprcv"
       }
     }
   },
@@ -10,10 +10,10 @@
     "feedbase": {
       "typename": "Feedbase",
       "artifacts": {
-        "/": "QmYgZApwD76e52ANtpHUNPZ8JZ312cbc52cUpog4KwgvAR"
+        "/": "QmfHtSUDFz1tVzeXSthEf2APCKo6iZCWHM64EaUU9zprcv"
       },
       "addresses": {
-        "ropsten": "0xcC15795194f477605c627eD80E9C7a344cD52325"
+        "ropsten": "0x9099AF08FB8Ec2a565123379936AdbBdEc58bf7f"
       }
     }
   }

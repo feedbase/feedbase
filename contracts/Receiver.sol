@@ -41,10 +41,13 @@ contract BasicReceiver {
   event SignerUpdate(address indexed signer, uint signerTTL);
 
   event Submit(
-      address indexed submiter
+      address indexed relayer
     , address indexed signer
     , bytes32 indexed tag
-    , uint256  indexed seq
+    , uint256 indexed seq
+    , uint256         sec
+    , uint256         ttl
+    , bytes32         val
   ) anonymous;
 
   // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(bytes32 tag,uint256 seq,uint256 sec,uint256 ttl,bytes32 val)");
@@ -106,7 +109,7 @@ contract BasicReceiver {
     require(block.timestamp >= sec, 'receiver-submit-sec');
     require(block.timestamp <  ttl, 'receiver-submit-ttl');
 
-    emit Submit(msg.sender, signer, tag, seq);
+    emit Submit(msg.sender, signer, tag, seq, sec, ttl, val);
 
     uint paid = feedbase.push(tag, val, ttl, cash);
 
