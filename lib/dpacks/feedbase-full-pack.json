@@ -1,0 +1,53 @@
+{
+  "types": {
+    "Feedbase": {
+      "artifacts": {
+        "/": "QmfHtSUDFz1tVzeXSthEf2APCKo6iZCWHM64EaUU9zprcv"
+      }
+    },
+    "MockToken": {
+      "artifacts": {
+        "/": "QmQcpi4TiBE65oCaMMwUT49ewTQnA9SHVPFPoQnrRHYxRp"
+      }
+    },
+    "BasicReceiver": {
+      "artifacts": {
+        "/": "QmNhvGDhg5pH6Ekt8ZTRC2CXDEagsogPRnzdKJS6aTHaRc"
+      }
+    },
+    "BasicReceiverFactory": {
+      "artifacts": {
+        "/": "QmS258HYWaBy2zWZpRyUE6xLQZT7KAkTFcMSwn2QHyknWH"
+      }
+    }
+  },
+  "objects": {
+    "feedbase": {
+      "typename": "Feedbase",
+      "artifacts": {
+        "/": "QmfHtSUDFz1tVzeXSthEf2APCKo6iZCWHM64EaUU9zprcv"
+      },
+      "addresses": {
+        "ropsten": "0x9099AF08FB8Ec2a565123379936AdbBdEc58bf7f"
+      }
+    },
+    "receiverFactory": {
+      "typename": "BasicReceiverFactory",
+      "artifacts": {
+        "/": "QmS258HYWaBy2zWZpRyUE6xLQZT7KAkTFcMSwn2QHyknWH"
+      },
+      "addresses": {
+        "ropsten": "0xffcB8Af4F0c35bdCcEd1d64873Cc18AB47483255"
+      }
+    },
+    "mockToken": {
+      "typename": "MockToken",
+      "artifacts": {
+        "/": "QmQcpi4TiBE65oCaMMwUT49ewTQnA9SHVPFPoQnrRHYxRp"
+      },
+      "addresses": {
+        "ropsten": "0x3C9469f1052A60b74F68750793Cbcbfa093a139d"
+      }
+    }
+  }
+}

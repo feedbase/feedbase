@@ -1,10 +1,11 @@
 {
   "name": "feedbase",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
-    "build:ts": "npm run clean:ts && tsc",
-    "clean:ts": "rm -r lib/*",
+    "build:ts": "npm run clean:ts && tsc && npm run copy-dpacks",
+    "copy-dpacks": "cp dpacks/* lib/dpacks",
+    "clean:ts": "rm -r lib/* && mkdir lib/dpacks",
     "build:sol": "npx hardhat compile",
     "build:docs:sol": "npm run clean:docs:sol && npx solidity-docgen -o docs/contracts --solc-module solc-0.8.6",
     "clean:docs:sol": "rm -r docs/contracts",

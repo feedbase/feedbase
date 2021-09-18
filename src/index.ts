@@ -1,3 +1,4 @@
+const path = require('path')
 const dpack = require('dpack')
 const sensor = require('./sensor')
 const { makeUpdateDigest } = require('./message')
@@ -5,7 +6,8 @@ const { makeUpdateDigest } = require('./message')
 let dapp
 
 async function init () {
-  dapp = await dpack.loadFromFile('../dpacks/feedbase-full-pack.json')
+  const packfile = path.join(__dirname, '../dpacks/feedbase-full-pack.json')
+  dapp = await dpack.loadFromFile(packfile)
 }
 
 export {
