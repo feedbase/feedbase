@@ -1,6 +1,6 @@
 {
   "name": "feedbase",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
     "build:ts": "npm run clean:ts && tsc",
@@ -9,7 +9,7 @@
     "build:docs:sol": "npm run clean:docs:sol && npx solidity-docgen -o docs/contracts --solc-module solc-0.8.6",
     "clean:docs:sol": "rm -r docs/contracts",
     "test": "npm run build:sol && ts-mocha test",
-    "fmt": "ts-standard --fix"
+    "fmt": "ts-standard --fix src tasks"
   },
   "bin": {
     "feed": "./lib/src/cmd.js"

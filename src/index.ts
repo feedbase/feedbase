@@ -4,11 +4,12 @@ const { makeUpdateDigest } = require('./message')
 
 let dapp
 
-export async function init () {
+async function init () {
   dapp = await dpack.loadFromFile('../dpacks/feedbase-full-pack.json')
 }
 
-module.exports = {
+export {
+  init,
   dapp,
   sensor,
   makeUpdateDigest
