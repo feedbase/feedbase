@@ -5,6 +5,7 @@
   },
   "include": [
     "src/**/*",
+    "tasks/*",
     "hardhat.config.ts"
   ],
   "exclude": [
