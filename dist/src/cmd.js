@@ -96,7 +96,7 @@ prog
 prog
     .command('read')
     .option('--src <src>', "feed 'src' address", fmt.address)
-    .option('--tag <tag>', 'feed tag', fmt.bytes32)
+    .option('--tag <tag>', 'feed tag', fmt.str2b32)
     .action(function (opts) { return __awaiter(void 0, void 0, void 0, function () {
     var res;
     return __generator(this, function (_a) {

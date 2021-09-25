@@ -52,7 +52,7 @@ prog
 prog
   .command('read')
   .option('--src <src>', "feed 'src' address", fmt.address)
-  .option('--tag <tag>', 'feed tag', fmt.bytes32)
+  .option('--tag <tag>', 'feed tag', fmt.str2b32)
   .action(async (opts: any) => {
     const res = await dapp.objects.feedbase.functions.read(opts.src, opts.tag)
     console.log(res)
