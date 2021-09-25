@@ -3,6 +3,7 @@ const dpack = require('dpack')
 const sensor = require('./sensor')
 const { makeUpdateDigest } = require('./message')
 const format = require('./format')
+const autofeed = require('./autofeed')
 
 let dapp
 
@@ -17,4 +18,5 @@ export {
   sensor,
   makeUpdateDigest,
   format,
+  autofeed,
 }

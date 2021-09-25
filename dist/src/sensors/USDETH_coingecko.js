@@ -1,7 +1,7 @@
 "use strict";
 exports.__esModule = true;
 exports.getter = void 0;
-var autofeed = require('../lib/autofeed').autofeed;
+var autofeed = require('../autofeed').autofeed;
 exports.getter = autofeed({
     url: 'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
     jqs: '.ethereum.usd',

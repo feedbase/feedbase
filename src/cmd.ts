@@ -205,8 +205,7 @@ prog
     debug(`using signer ${wallet.address}`)
     opts.signer = wallet
 
-    const { autofeed } = require('./lib/autofeed')
-    const getter = autofeed({
+    const getter = lib.autofeed({
       url: opts.url, jqs: opts.jqs, ops: opts.ops
     })
 

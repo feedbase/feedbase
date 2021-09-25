@@ -274,7 +274,7 @@ prog
     .requiredOption('--receiver <receiver>', 'Receiver contract address', fmt.address)
     .requiredOption('--chainId <chainId>', 'Chain ID of receiver contract')
     .action(function (opts) { return __awaiter(void 0, void 0, void 0, function () {
-    var wallet, autofeed, getter;
+    var wallet, getter;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -286,8 +286,7 @@ prog
                 wallet = new ethers.Wallet(process.env.SENSOR_PRIVKEY);
                 debug("using signer " + wallet.address);
                 opts.signer = wallet;
-                autofeed = require('./lib/autofeed').autofeed;
-                getter = autofeed({
+                getter = lib.autofeed({
                     url: opts.url, jqs: opts.jqs, ops: opts.ops
                 });
                 return [4 /*yield*/, lib.sensor.serve(getter, opts)];

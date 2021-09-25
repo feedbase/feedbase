@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-exports.format = exports.makeUpdateDigest = exports.sensor = exports.dapp = exports.init = void 0;
+exports.autofeed = exports.format = exports.makeUpdateDigest = exports.sensor = exports.dapp = exports.init = void 0;
 var path = require('path');
 var dpack = require('dpack');
 var sensor = require('./sensor');
@@ -45,6 +45,8 @@ var makeUpdateDigest = require('./message').makeUpdateDigest;
 exports.makeUpdateDigest = makeUpdateDigest;
 var format = require('./format');
 exports.format = format;
+var autofeed = require('./autofeed');
+exports.autofeed = autofeed;
 var dapp;
 exports.dapp = dapp;
 function init() {
