@@ -1,3 +1,5 @@
+const { ethers } = require('hardhat');
+
 function pad (s, n) {
   return s.padEnd(n, '\0')
 }

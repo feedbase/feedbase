@@ -23,8 +23,7 @@
     "ethers": "^5.4.6",
     "ethers-eip712": "^0.2.0",
     "ipfs-core": "^0.10.6",
-    "node-fetch": "^2.6.1",
-    "ts-node": "^10.2.1"
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",

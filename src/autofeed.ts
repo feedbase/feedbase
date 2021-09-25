@@ -1,6 +1,6 @@
 const debug = require('debug')('feedbase:autofeed')
 
-const fmt = require('./formatters')
+const fmt = require('./format')
 
 const fetchurl = require('node-fetch')
 const { execSync } = require('child_process')

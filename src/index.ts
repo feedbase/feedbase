@@ -2,6 +2,7 @@ const path = require('path')
 const dpack = require('dpack')
 const sensor = require('./sensor')
 const { makeUpdateDigest } = require('./message')
+const format = require('./format')
 
 let dapp
 
@@ -14,5 +15,6 @@ export {
   init,
   dapp,
   sensor,
-  makeUpdateDigest
+  makeUpdateDigest,
+  format,
 }
