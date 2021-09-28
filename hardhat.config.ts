@@ -6,6 +6,8 @@ const { PRIVKEY, INFURA_PROJECT_ID } = process.env
 
 const privKey = PRIVKEY ?? Buffer.alloc(32).toString('hex')
 
+console.log(privKey);
+
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */

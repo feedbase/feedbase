@@ -12,7 +12,7 @@ export async function load (env: any) {
   }
 
   console.log('WARN hard coded packfile')
-  const path = require('path').join(__dirname, '../dpacks/feedbase-pack.json')
+  const path = require('path').join(__dirname, '../dpacks/feedbase.json')
 
   debug(dpack)
   const dapp = await dpack.loadFromFile(path)

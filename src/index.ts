@@ -8,7 +8,8 @@ const autofeed = require('./autofeed')
 let dapp
 
 async function init () {
-  const packfile = path.join(__dirname, '../dpacks/feedbase-full-pack.json')
+  console.log("WARN hard coded packfile")
+  const packfile = path.join(__dirname, '../dpacks/feedbase.json')
   dapp = await dpack.loadFromFile(packfile)
 }
 
@@ -20,3 +21,4 @@ export {
   format,
   autofeed,
 }
+

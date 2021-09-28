@@ -4,7 +4,9 @@ const dpack = require('dpack')
 
 const { task } = require('hardhat/config')
 
-task('deploy1', 'deploy feedbase-core-pack and feedbase-full-pack v1', async (args, hre) => {
+task('deploy-feedbase', 'deploy Feedbase and BasicReceiverFactory')
+.addParam('dpack', "output path for dpack")
+.setAction(async (args, hre) => {
   const { ethers, network } = hre
 
   const [acct] = await hre.ethers.getSigners()
@@ -12,19 +14,17 @@ task('deploy1', 'deploy feedbase-core-pack and feedbase-full-pack v1', async (ar
 
   console.log(`Deploying contracts using ${deployer} to ${network.name}`)
 
-  const corePath = 'dpacks/feedbase-core-pack.json'
-  const fullPath = 'dpacks/feedbase-full-pack.json'
-
-  await dpack.initPackFile(corePath)
+  await dpack.initPackFile(args.dpack)
 
   let fb
 
-  await dpack.mutatePackFile(corePath, corePath, async (mutator: any) => {
+  await dpack.mutatePackFile(args.dpack, args.dpack, async (mutator: any) => {
     const FeedbaseDeployer = await hre.ethers.getContractFactory('Feedbase')
     fb = await FeedbaseDeployer.deploy()
     await fb.deployed()
     console.log('Feedbase deployed to : ', fb.address)
     const FeedbaseArtifact = await hre.artifacts.readArtifact('Feedbase')
+
     await mutator.addType(FeedbaseArtifact)
     await mutator.addObject(
       'feedbase',
@@ -32,40 +32,26 @@ task('deploy1', 'deploy feedbase-core-pack and feedbase-full-pack v1', async (ar
       network.name,
       FeedbaseArtifact
     )
-  })
 
-  await dpack.mutatePackFile(corePath, fullPath, async (mutator: any) => {
     const BasicReceiverFactoryDeployer = await hre.ethers.getContractFactory('BasicReceiverFactory')
-    const of = await BasicReceiverFactoryDeployer.deploy(fb.address)
-    await of.deployed()
-    console.log('BasicReceiverFactory deployed to : ', of.address)
+    const brf = await BasicReceiverFactoryDeployer.deploy(fb.address)
+    await brf.deployed()
+    console.log('BasicReceiverFactory deployed to : ', brf.address)
 
-    const MockTokenDeployer = await ethers.getContractFactory('MockToken')
-    const mt = await MockTokenDeployer.deploy('CASH')
-    await mt.deployed()
-    console.log('MockToken Deployed to:', mt.address)
-
-    const MockTokenArtifact = await hre.artifacts.readArtifact('contracts/erc20/MockToken.sol:MockToken')
     const BasicReceiverArtifact = await hre.artifacts.readArtifact('BasicReceiver')
     const BasicReceiverFactoryArtifact = await hre.artifacts.readArtifact('BasicReceiverFactory')
 
-    await mutator.addType(MockTokenArtifact)
     await mutator.addType(BasicReceiverArtifact)
     await mutator.addType(BasicReceiverFactoryArtifact)
 
     await mutator.addObject(
       'receiverFactory',
-      of.address,
+      brf.address,
       network.name,
       BasicReceiverFactoryArtifact
     )
-    await mutator.addObject(
-      'mockToken',
-      mt.address,
-      network.name,
-      MockTokenArtifact
-    )
   })
+
 })
 
 export {}
