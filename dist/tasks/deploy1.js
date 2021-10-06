@@ -39,8 +39,10 @@ exports.__esModule = true;
 var debug = require('debug')('feedbase:task');
 var dpack = require('dpack');
 var task = require('hardhat/config').task;
-task('deploy1', 'deploy feedbase-core-pack and feedbase-full-pack v1', function (args, hre) { return __awaiter(void 0, void 0, void 0, function () {
-    var ethers, network, acct, deployer, corePath, fullPath, fb;
+task('deploy-feedbase', 'deploy Feedbase and BasicReceiverFactory')
+    .addParam('dpack', "output path for dpack")
+    .setAction(function (args, hre) { return __awaiter(void 0, void 0, void 0, function () {
+    var ethers, network, acct, deployer, fb;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -50,13 +52,11 @@ task('deploy1', 'deploy feedbase-core-pack and feedbase-full-pack v1', function 
                 acct = (_a.sent())[0];
                 deployer = acct.address;
                 console.log("Deploying contracts using " + deployer + " to " + network.name);
-                corePath = 'dpacks/feedbase-core-pack.json';
-                fullPath = 'dpacks/feedbase-full-pack.json';
-                return [4 /*yield*/, dpack.initPackFile(corePath)];
+                return [4 /*yield*/, dpack.initPackFile(args.dpack)];
             case 2:
                 _a.sent();
-                return [4 /*yield*/, dpack.mutatePackFile(corePath, corePath, function (mutator) { return __awaiter(void 0, void 0, void 0, function () {
-                        var FeedbaseDeployer, FeedbaseArtifact;
+                return [4 /*yield*/, dpack.mutatePackFile(args.dpack, args.dpack, function (mutator) { return __awaiter(void 0, void 0, void 0, function () {
+                        var FeedbaseDeployer, FeedbaseArtifact, BasicReceiverFactoryDeployer, brf, BasicReceiverArtifact, BasicReceiverFactoryArtifact;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0: return [4 /*yield*/, hre.ethers.getContractFactory('Feedbase')];
@@ -78,65 +78,36 @@ task('deploy1', 'deploy feedbase-core-pack and feedbase-full-pack v1', function 
                                     return [4 /*yield*/, mutator.addObject('feedbase', fb.address, network.name, FeedbaseArtifact)];
                                 case 6:
                                     _a.sent();
-                                    return [2 /*return*/];
-                            }
-                        });
-                    }); })];
-            case 3:
-                _a.sent();
-                return [4 /*yield*/, dpack.mutatePackFile(corePath, fullPath, function (mutator) { return __awaiter(void 0, void 0, void 0, function () {
-                        var BasicReceiverFactoryDeployer, of, MockTokenDeployer, mt, MockTokenArtifact, BasicReceiverArtifact, BasicReceiverFactoryArtifact;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0: return [4 /*yield*/, hre.ethers.getContractFactory('BasicReceiverFactory')];
-                                case 1:
+                                    return [4 /*yield*/, hre.ethers.getContractFactory('BasicReceiverFactory')];
+                                case 7:
                                     BasicReceiverFactoryDeployer = _a.sent();
                                     return [4 /*yield*/, BasicReceiverFactoryDeployer.deploy(fb.address)];
-                                case 2:
-                                    of = _a.sent();
-                                    return [4 /*yield*/, of.deployed()];
-                                case 3:
-                                    _a.sent();
-                                    console.log('BasicReceiverFactory deployed to : ', of.address);
-                                    return [4 /*yield*/, ethers.getContractFactory('MockToken')];
-                                case 4:
-                                    MockTokenDeployer = _a.sent();
-                                    return [4 /*yield*/, MockTokenDeployer.deploy('CASH')];
-                                case 5:
-                                    mt = _a.sent();
-                                    return [4 /*yield*/, mt.deployed()];
-                                case 6:
-                                    _a.sent();
-                                    console.log('MockToken Deployed to:', mt.address);
-                                    return [4 /*yield*/, hre.artifacts.readArtifact('contracts/erc20/MockToken.sol:MockToken')];
-                                case 7:
-                                    MockTokenArtifact = _a.sent();
-                                    return [4 /*yield*/, hre.artifacts.readArtifact('BasicReceiver')];
                                 case 8:
+                                    brf = _a.sent();
+                                    return [4 /*yield*/, brf.deployed()];
+                                case 9:
+                                    _a.sent();
+                                    console.log('BasicReceiverFactory deployed to : ', brf.address);
+                                    return [4 /*yield*/, hre.artifacts.readArtifact('BasicReceiver')];
+                                case 10:
                                     BasicReceiverArtifact = _a.sent();
                                     return [4 /*yield*/, hre.artifacts.readArtifact('BasicReceiverFactory')];
-                                case 9:
-                                    BasicReceiverFactoryArtifact = _a.sent();
-                                    return [4 /*yield*/, mutator.addType(MockTokenArtifact)];
-                                case 10:
-                                    _a.sent();
-                                    return [4 /*yield*/, mutator.addType(BasicReceiverArtifact)];
                                 case 11:
-                                    _a.sent();
-                                    return [4 /*yield*/, mutator.addType(BasicReceiverFactoryArtifact)];
+                                    BasicReceiverFactoryArtifact = _a.sent();
+                                    return [4 /*yield*/, mutator.addType(BasicReceiverArtifact)];
                                 case 12:
                                     _a.sent();
-                                    return [4 /*yield*/, mutator.addObject('receiverFactory', of.address, network.name, BasicReceiverFactoryArtifact)];
+                                    return [4 /*yield*/, mutator.addType(BasicReceiverFactoryArtifact)];
                                 case 13:
                                     _a.sent();
-                                    return [4 /*yield*/, mutator.addObject('mockToken', mt.address, network.name, MockTokenArtifact)];
+                                    return [4 /*yield*/, mutator.addObject('receiverFactory', brf.address, network.name, BasicReceiverFactoryArtifact)];
                                 case 14:
                                     _a.sent();
                                     return [2 /*return*/];
                             }
                         });
                     }); })];
-            case 4:
+            case 3:
                 _a.sent();
                 return [2 /*return*/];
         }

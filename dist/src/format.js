@@ -11,6 +11,7 @@ function str2b32(s) {
     return ethers.utils.zeroPad(Buffer.from(s), 32);
 }
 exports.str2b32 = str2b32;
+// BigNumber to `bytes32`-compatible Bytes
 function bn2b32(bn) {
     if (!bn._isBigNumber) {
         throw new Error("bn2b32 takes a BigNumber, got " + bn + ", a " + typeof (bn));

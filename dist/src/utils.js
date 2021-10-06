@@ -53,7 +53,7 @@ function load(env) {
                         throw new Error('No env.NETWORK provided');
                     }
                     console.log('WARN hard coded packfile');
-                    path = require('path').join(__dirname, '../dpacks/feedbase-pack.json');
+                    path = require('path').join(__dirname, '../dpacks/feedbase.json');
                     debug(dpack);
                     return [4 /*yield*/, dpack.loadFromFile(path)];
                 case 1:
