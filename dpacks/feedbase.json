@@ -2,17 +2,17 @@
   "types": {
     "Feedbase": {
       "artifacts": {
-        "/": "QmfHtSUDFz1tVzeXSthEf2APCKo6iZCWHM64EaUU9zprcv"
+        "/": "QmSniz8yc8nyNdus4QcbNm1968ueQumJMH5viQqPt2oCc6"
       }
     },
     "BasicReceiver": {
       "artifacts": {
-        "/": "QmNhvGDhg5pH6Ekt8ZTRC2CXDEagsogPRnzdKJS6aTHaRc"
+        "/": "QmTUJaCmxj2Ae9oC85pUn7eZkwL5iDQUfBYKJa3V4P1fhB"
       }
     },
     "BasicReceiverFactory": {
       "artifacts": {
-        "/": "QmS258HYWaBy2zWZpRyUE6xLQZT7KAkTFcMSwn2QHyknWH"
+        "/": "QmTFrZhCDzS2Fadx8eeTUuc89N7CLBKkZ3xfKVFDDnChfc"
       }
     }
   },
@@ -20,19 +20,19 @@
     "feedbase": {
       "typename": "Feedbase",
       "artifacts": {
-        "/": "QmfHtSUDFz1tVzeXSthEf2APCKo6iZCWHM64EaUU9zprcv"
+        "/": "QmSniz8yc8nyNdus4QcbNm1968ueQumJMH5viQqPt2oCc6"
       },
       "addresses": {
-        "ropsten": "0x035A66fE6010ae0d5B934E0B1D863cbb8bb28B06"
+        "ropsten": "0xd16FC1AddbC94C98DbEbC11364DF62E47e5C44bb"
       }
     },
     "receiverFactory": {
       "typename": "BasicReceiverFactory",
       "artifacts": {
-        "/": "QmS258HYWaBy2zWZpRyUE6xLQZT7KAkTFcMSwn2QHyknWH"
+        "/": "QmTFrZhCDzS2Fadx8eeTUuc89N7CLBKkZ3xfKVFDDnChfc"
       },
       "addresses": {
-        "ropsten": "0x6403bD57C5c447B4058eA0C8eE5a83A008aFeFb0"
+        "ropsten": "0x8D1427A36a1dD90A202F366Aa0B22ec7042b7424"
       }
     }
   }
