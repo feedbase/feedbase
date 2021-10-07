@@ -55,7 +55,7 @@ function init() {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    console.log("WARN hard coded packfile");
+                    console.log('WARN hard coded packfile');
                     packfile = path.join(__dirname, '../dpacks/feedbase.json');
                     return [4 /*yield*/, dpack.loadFromFile(packfile)];
                 case 1:

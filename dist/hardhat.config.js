@@ -1,7 +1,7 @@
 "use strict";
 exports.__esModule = true;
 require("@nomiclabs/hardhat-ethers");
-require("./tasks/deploy1.ts");
+require("./task/deploy-feedbase.ts");
 var _a = process.env, PRIVKEY = _a.PRIVKEY, INFURA_PROJECT_ID = _a.INFURA_PROJECT_ID;
 var privKey = PRIVKEY !== null && PRIVKEY !== void 0 ? PRIVKEY : Buffer.alloc(32).toString('hex');
 console.log(privKey);
