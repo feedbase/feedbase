@@ -1,3 +1,4 @@
+// (c) nikolai mushegian
 // SPDX-License-Identifier: GPL-v3.0
 
 pragma solidity ^0.8.6;
@@ -15,12 +16,13 @@ contract Feedbase {
     uint256 paid;
   }
 
-  // src -> tag -> Feed
-  mapping(address=>mapping(bytes32=>Feed)) public _feeds;
-  // src -> cash -> balance
+  // _feeds  :: src -> tag -> Feed
+  mapping(address=>mapping(bytes32=>Feed))    public _feeds;
+  // _bals   :: src -> cash -> balance
   mapping(address=>mapping(address=>uint256)) public _bals;
-  // src -> tag -> cash -> Config
-  mapping(address=>mapping(bytes32=>mapping(address=>Config))) public _config;
+  // _config :: src -> tag -> cash -> Config
+  mapping(address=>mapping(
+    bytes32=>mapping(address=>Config)))       public _config;
 
   event Push(
       address indexed src
@@ -38,7 +40,7 @@ contract Feedbase {
 
   function read(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
     Feed storage feed = _feeds[src][tag];
-    require(feed.ttl > block.timestamp, 'ERR_READ_LATE');
+    require(block.timestamp < feed.ttl, 'ERR_READ');
     return (feed.val, feed.ttl);
   }
 
@@ -69,10 +71,10 @@ contract Feedbase {
 
   function deposit(address cash, uint amt) public payable {
     if (cash == address(0))  {
-      require(msg.value == amt, 'feedbase-deposit-value');
+      require(msg.value == amt, 'ERR_DEPOSIT_AMT');
     } else {
       bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
-      require(ok, 'ERR_ERC20_PULL');
+      require(ok, 'ERR_DEPOSIT_PULL');
     }
     _bals[msg.sender][cash] += amt;
   }
@@ -84,7 +86,7 @@ contract Feedbase {
       require(ok, 'ERR_WITHDRAW_CALL');
     } else {
       bool ok = IERC20(cash).transfer(msg.sender, amt);
-      require(ok, 'ERR_ERC20_PUSH');
+      require(ok, 'ERR_WITHDRAW_PUSH');
     }
   }
 

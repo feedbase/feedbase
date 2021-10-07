@@ -1,6 +1,6 @@
 {
   "name": "feedbase",
-  "version": "0.1.9",
+  "version": "0.1.11",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
     "build:ts": "npm run clean:ts && tsc && chmod +x dist/src/cmd.js && npm run copy-dpacks",
@@ -10,7 +10,7 @@
     "build:docs:sol": "npm run clean:docs:sol && npx solidity-docgen -o docs/contracts --solc-module solc-0.8.6",
     "clean:docs:sol": "rm -r docs/contracts",
     "test": "npm run build && ts-mocha test",
-    "fmt": "ts-standard --fix src tasks"
+    "fmt": "ts-standard --fix src task"
   },
   "bin": {
     "feed": "./dist/src/cmd.js"
@@ -22,7 +22,6 @@
     "dpack": "github:dapphub/dpack",
     "ethers": "^5.4.6",
     "ethers-eip712": "^0.2.0",
-    "ipfs-core": "^0.10.6",
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {

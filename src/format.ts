@@ -1,26 +1,26 @@
 const debug = require('debug')('feedbase:format')
 
-const { ethers } = require('hardhat');
-const { BigNumber } = ethers;
+const { ethers } = require('hardhat')
+const { BigNumber } = ethers
 
 function pad (s, n) {
   return s.padEnd(n, '\0')
 }
 
-export function str2b32 (s : string) : Buffer {
-  return ethers.utils.zeroPad(Buffer.from(s), 32);
+export function str2b32 (s: string): Buffer {
+  return ethers.utils.zeroPad(Buffer.from(s), 32)
 }
 
 // BigNumber to `bytes32`-compatible Bytes
-export function bn2b32 (bn : any) : Buffer {
+export function bn2b32 (bn: any): Buffer {
   if (!bn._isBigNumber) {
-    throw new Error(`bn2b32 takes a BigNumber, got ${bn}, a ${typeof(bn)}`)
+    throw new Error(`bn2b32 takes a BigNumber, got ${bn}, a ${typeof (bn)}`)
   }
-  const hex = bn.toHexString();
-  const buff = Buffer.from(hex.slice(2), 'hex');
-  const b32 = ethers.utils.zeroPad(buff, 32);
+  const hex = bn.toHexString()
+  const buff = Buffer.from(hex.slice(2), 'hex')
+  const b32 = ethers.utils.zeroPad(buff, 32)
   debug(b32)
-  return b32;
+  return b32
 }
 
 export function address (v: any): string {

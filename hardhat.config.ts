@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers'
 
-import './tasks/deploy1.ts'
+import './task/deploy-feedbase.ts'
 
 const { PRIVKEY, INFURA_PROJECT_ID } = process.env
 
