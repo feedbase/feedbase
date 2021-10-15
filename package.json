@@ -28,6 +28,7 @@
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
     "hardhat": "^2.4.3",
     "solc-0.8.6": "npm:solc@^0.8.6",
     "solidity-docgen": "^0.5.13",

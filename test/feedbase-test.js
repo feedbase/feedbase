@@ -1,5 +1,7 @@
 const debug = require('debug')('feedbase:test')
-const want = require('chai').expect
+const chai = require('chai')
+chai.use(require('chai-as-promised'))
+const want = chai.expect
 
 const Feedbase = require('../artifacts/contracts/Feedbase.sol/Feedbase.json')
 const BasicReceiverFactory = require('../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json')
@@ -8,6 +10,21 @@ const BasicReceiver = require('../artifacts/contracts/Receiver.sol/BasicReceiver
 const { ethers, network } = require('hardhat')
 
 const { makeUpdateDigest } = require('../src')
+
+async function send(...args) {
+  const f = args[0];
+  const fargs = args.slice(1);
+  const tx = await f(...fargs);
+  return await tx.wait()
+}
+
+async function fail(...args) {
+  const err = args[0];
+  const sargs = args.slice(1);
+  await want(send(...sargs)).rejectedWith(err);
+}
+
+
 
 describe('feedbase', () => {
   it('basics', async function () {
@@ -87,5 +104,67 @@ describe('feedbase', () => {
 
     want(read.ttl.toNumber()).equal(ttl)
     want(read.val).equal('0x' + val.toString('hex'))
+  })
+
+  describe('some fb tests', () => {
+    let signers, fb;
+    beforeEach(async () => {
+      signers = await ethers.getSigners()
+      // debug(signers[0]);
+      const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
+      fb = await FeedbaseFactory.deploy()
+    })
+
+    describe('messing with costs', () => {
+      let tag, seq, sec, ttl, val, cash;
+      beforeEach(async () => {
+        tag = Buffer.from('USDETH'.padStart(32, '\0'))
+        seq = 1
+        sec = Math.floor(Date.now() / 1000)
+        ttl = 10000000000000
+        val = Buffer.from('11'.repeat(32), 'hex')
+        debug(tag, seq, sec, ttl, val)
+        cash = '00'.repeat(20)
+      })
+
+      describe('balance zero', async function () {
+        it('cost too high', async function () {
+          const cost = 1
+          const setCost = await fb.setCost(tag, cash, cost)
+          fail('VM Exception while processing transaction: reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)',
+            fb.push, tag, val, ttl, cash)
+        })
+
+        it('cost ok', async function () {
+          const cost = 0
+          const setCost = await fb.setCost(tag, cash, cost)
+          await fb.push(tag, val, ttl, cash);
+        })
+      })
+
+      describe('balance nonzero', async function () {
+        let bal;
+        beforeEach(async () => {
+          bal = 1000;
+
+        })
+        it('cost too high', async function () {
+          const cost = 1001
+          const setCost = await fb.setCost(tag, cash, cost)
+          const deposit = await fb.deposit(cash, bal, {value: bal});
+          const request = await fb.request(signers[0].address, tag, cash, bal);
+          fail('VM Exception while processing transaction: reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)',
+            fb.push, tag, val, ttl, cash)
+        })
+
+        it('cost ok', async function () {
+          const cost = 1000
+          const setCost = await fb.setCost(tag, cash, cost)
+          const deposit = await fb.deposit(cash, bal, {value: bal});
+          const request = await fb.request(signers[0].address, tag, cash, bal);
+          await fb.push(tag, val, ttl, cash);
+        })
+      })
+    })
   })
 })
