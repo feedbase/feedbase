@@ -8,12 +8,18 @@ const { execSync } = require('child_process')
 const BN = require('bn.js')
 const bn = (n) => new BN(n)
 
-try {
-  const result = execSync('jq')
-} catch (e) {
-  console.log('This feature requires the \'jq\' binary to be installed.')
-  console.log(e)
-  process.exit(1)
+let loaded = false;
+function checkJQ() {
+  if (!loaded) {
+    try {
+      const result = execSync('jq')
+    } catch (e) {
+      console.log('This feature requires the \'jq\' binary to be installed.')
+      console.log(e)
+      process.exit(1)
+    }
+    loaded = true;
+  }
 }
 
 const opdb = {
@@ -36,6 +42,7 @@ const opdb = {
 }
 
 export function filter (obj, jqs) {
+  checkJQ();
   debug('jq filter', obj, jqs)
   try {
     const result = execSync(`echo '${JSON.stringify(obj)}' | jq ${jqs}`)
@@ -47,6 +54,7 @@ export function filter (obj, jqs) {
 }
 
 export async function jqq (url: string, jqs: string, ops: string): Promise<any> {
+  checkJQ();
   const res = await fetchurl(url)
   const json = await res.json()
   debug(`url ${url}`)
@@ -72,6 +80,7 @@ export async function jqq (url: string, jqs: string, ops: string): Promise<any> 
 
 // autofeed({ url, jqs, ops })
 export function autofeed (args: any): Function {
+  checkJQ();
   return async function (): Promise<Buffer> {
     debug(`auto getter ${args.url} ${args.jqs} ${args.ops}`)
     return await jqq(args.url, args.jqs, args.ops)
