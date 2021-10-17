@@ -106,6 +106,72 @@ describe('feedbase', () => {
     want(read.val).equal('0x' + val.toString('hex'))
   })
 
+
+
+  //TODO: auth tests
+  describe('some receiver tests', () => {
+    let signers, fb, oracle;
+    beforeEach(async () => {
+      signers = await ethers.getSigners()
+      // debug(signers[0]);
+      const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
+      fb = await FeedbaseFactory.deploy()
+      const BasicReceiverFactoryFactory = await ethers.getContractFactory('BasicReceiverFactory')
+      const factory = await BasicReceiverFactoryFactory.deploy(fb.address)
+
+      const tx = await factory.build()
+      // debug('create', tx)
+      const res = await tx.wait()
+      const oracleAddr = res.events[0].args[0]
+
+      oracle = await new ethers.Contract(oracleAddr, BasicReceiver.abi, signers[0])
+      await oracle.setSigner(signers[0].address, 1000000000000)
+    })
+
+    it('collect (cost < relay fee)', async function () {
+      const { chainId } = network.config;
+      const cost     = 10;
+      const relayFee = 11;
+
+      const tag = Buffer.from('USDETH'.padStart(32, '\0'))
+      const seq = 1
+      const sec = Math.floor(Date.now() / 1000)
+      const ttl = 10000000000000
+      const val = Buffer.from('11'.repeat(32), 'hex')
+      debug(tag, seq, sec, ttl, val)
+      const cash    = '0'.repeat(40);
+      const setCost = await oracle.setCost(tag, cash, cost);
+      const deposit = await fb.deposit(cash, cost * 2, {value: cost * 2});
+      const request = await fb.request(oracle.address, tag, cash, cost * 2);
+
+      const digest = makeUpdateDigest({
+        tag,
+        val: val,
+        seq: seq,
+        sec: sec,
+        ttl: ttl,
+        chainId: chainId,
+        receiver: oracle.address
+      })
+      debug(`digest: ${Buffer.from(digest).toString('hex')}`)
+
+      const signature = await signers[0].signMessage(digest)
+      debug(`signature ${signature}`)
+      const sig = ethers.utils.splitSignature(signature)
+      // debug(sig);
+      // should pay to signer's balance within fb
+      await oracle.setRelayFee(tag, cash, relayFee);
+      await oracle.submit(tag, seq, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s);
+      await oracle.submit(tag, seq, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s);
+      
+      const bal     = await signers[0].getBalance();
+      const collect = await oracle.collect(cash);
+      const fee     = collect.gasPrice.mul((await collect.wait()).gasUsed);
+
+      want(await signers[0].getBalance()).to.eql(bal.add(cost * 2).sub(fee));
+    });
+  })
+
   describe('some fb tests', () => {
     let signers, fb;
     beforeEach(async () => {
@@ -127,7 +193,7 @@ describe('feedbase', () => {
         cash = '00'.repeat(20)
       })
 
-      describe('balance zero', async function () {
+      describe('balance zero', () => {
         it('cost too high', async function () {
           const cost = 1
           const setCost = await fb.setCost(tag, cash, cost)
@@ -142,12 +208,12 @@ describe('feedbase', () => {
         })
       })
 
-      describe('balance nonzero', async function () {
+      describe('balance nonzero', () => {
         let bal;
         beforeEach(async () => {
           bal = 1000;
-
         })
+
         it('cost too high', async function () {
           const cost = 1001
           const setCost = await fb.setCost(tag, cash, cost)
@@ -163,6 +229,51 @@ describe('feedbase', () => {
           const deposit = await fb.deposit(cash, bal, {value: bal});
           const request = await fb.request(signers[0].address, tag, cash, bal);
           await fb.push(tag, val, ttl, cash);
+        })
+      })
+      describe('deposit', () => {
+        let bal;
+        beforeEach(async () => {
+          bal      = await signers[0].getBalance();
+        })
+        it('zero', async function () {
+          //const bal      = await signers[0].getBalance();
+          const amt      = 0;
+          const deposit  = await fb.deposit(cash, amt, {value: amt});
+          let fee = deposit.gasPrice.mul((await deposit.wait()).gasUsed);
+          want(await signers[0].getBalance()).to.eql(bal.sub(fee).sub(amt));
+        })
+        it('nonzero', async function () {
+          //const bal      = await signers[0].getBalance();
+          const amt      = 3;
+          const deposit  = await fb.deposit(cash, amt, {value: amt});
+          let fee = deposit.gasPrice.mul((await deposit.wait()).gasUsed);
+          want(await signers[0].getBalance()).to.eql(bal.sub(fee).sub(amt));
+        })
+      })
+
+      describe('withdraw', () => {
+        it('zero', async function () {
+          //const bal      = await signers[0].getBalance();
+          const amt      = 0;
+          const bal      = await signers[0].getBalance();
+          const withdraw = await fb.withdraw(cash, amt);
+          let fee = withdraw.gasPrice.mul((await withdraw.wait()).gasUsed);
+          want(await signers[0].getBalance()).to.eql(bal.sub(fee).add(amt));
+        })
+        it('nonzero', async function () {
+          //const bal      = await signers[0].getBalance();
+          const amt      = 3;
+          const deposit  = await fb.deposit(cash, amt, {value: amt});
+          const bal      = await signers[0].getBalance();
+          const withdraw = await fb.withdraw(cash, amt);
+          let fee = withdraw.gasPrice.mul((await withdraw.wait()).gasUsed);
+          want(await signers[0].getBalance()).to.eql(bal.sub(fee).add(amt));
+        })
+        it('balance too low', async function () {
+          const amt      = 3;
+          const deposit  = await fb.deposit(cash, amt, {value: amt});
+          fail('underflow', fb.withdraw, cash, amt+1);
         })
       })
     })
