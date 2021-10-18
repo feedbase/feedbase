@@ -123,6 +123,7 @@ contract BasicReceiver {
   function collect(address cash) public {
     uint bal = collected[msg.sender][cash];
     collected[msg.sender][cash] = 0;
+    feedbase.withdraw(cash, bal);
     if (cash == address(0)) {
       (bool ok, ) = msg.sender.call{value:bal}("");
       require(ok, 'ERR_WITHDRAW_CALL');
@@ -156,5 +157,7 @@ contract BasicReceiver {
   function isSigner(address who) public view returns (bool) {
     return block.timestamp < signerTTL[who];
   }
+
+  fallback () external payable {}
 
 }
