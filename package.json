@@ -3,8 +3,8 @@
   "version": "0.1.12",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
-    "build:ts": "npm run clean:ts && tsc && chmod +x dist/src/cmd.js",
-    "clean:ts": "rm -r dist/* && mkdir dist/dpacks",
+    "build:ts": "tsc -b && chmod +x dist/src/cmd.js",
+    "clean:ts": "tsc -b --clean",
     "build:sol": "npx hardhat compile",
     "build:docs:sol": "npm run clean:docs:sol && npx solidity-docgen -o docs/contracts --solc-module solc-0.8.6",
     "clean:docs:sol": "rm -r docs/contracts",
