@@ -1,12 +1,12 @@
 const debug = require('debug')('feedbase:message')
 
-const { TypedDataUtils } = require('ethers-eip712')
+import { TypedDataUtils } from 'ethers-eip712'
 
 // makeUpdateDigest({
 //  chainId, receiver,
 //  tag, seq, sec, ttl, val
 // });
-function makeUpdateDigest (obj: any): Buffer {
+export function makeUpdateDigest(obj: any): Buffer {
   // debug('making update digest from object', obj)
   const typedData = {
     types: {
@@ -40,11 +40,5 @@ function makeUpdateDigest (obj: any): Buffer {
     }
   }
   // debug('encoding digest...')
-  const digest = TypedDataUtils.encodeDigest(typedData)
-  // debug(`digest ${digest}`)
-  return digest
-}
-
-module.exports = {
-  makeUpdateDigest
+  return Buffer.from(TypedDataUtils.encodeDigest(typedData))
 }

@@ -1,9 +1,9 @@
 const debug = require('debug')('feedbase:util')
 
-const ethers = require('ethers')
-const dpack = require('./dpack')
+import ethers from 'ethers'
+import * as dpack from 'dpack'
 
-export async function load (env: any) {
+export async function load(env: any) {
   if (!env.DEPLOYER_PRIVATE_KEY) {
     throw new Error('No env.DEPLOYER_PRIVATE_KEY provided')
   }

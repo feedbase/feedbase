@@ -1,3 +1,3 @@
-export async function getter (): Promise<Buffer> {
-  return await Promise.resolve(Buffer.alloc(32))
+export async function getter(): Promise<Buffer> {
+  return Promise.resolve(Buffer.alloc(32))
 }
