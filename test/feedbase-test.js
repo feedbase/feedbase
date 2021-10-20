@@ -107,10 +107,9 @@ describe('feedbase', () => {
   })
 
 
-
   //TODO: auth tests
   describe('some receiver tests', () => {
-    let signers, fb, oracle;
+    let signers, fb, oracle, tag, seq, sec, ttl, val, cash, chainId;
     beforeEach(async () => {
       signers = await ethers.getSigners()
       // debug(signers[0]);
@@ -126,20 +125,24 @@ describe('feedbase', () => {
 
       oracle = await new ethers.Contract(oracleAddr, BasicReceiver.abi, signers[0])
       await oracle.setSigner(signers[0].address, 1000000000000)
+
+      tag = Buffer.from('USDETH'.padStart(32, '\0'))
+      seq = 1
+      sec = Math.floor(Date.now() / 1000)
+      ttl = 10000000000000
+      val = Buffer.from('11'.repeat(32), 'hex')
+      debug(tag, seq, sec, ttl, val)
+      cash    = '0'.repeat(40);
+
+      chainId = network.config.chainId;
+ 
     })
 
-    it('collect (cost < relay fee)', async function () {
-      const { chainId } = network.config;
+    //sequence number must increase
+    it('seq #', async function () {
       const cost     = 10;
       const relayFee = 11;
 
-      const tag = Buffer.from('USDETH'.padStart(32, '\0'))
-      const seq = 1
-      const sec = Math.floor(Date.now() / 1000)
-      const ttl = 10000000000000
-      const val = Buffer.from('11'.repeat(32), 'hex')
-      debug(tag, seq, sec, ttl, val)
-      const cash    = '0'.repeat(40);
       const setCost = await oracle.setCost(tag, cash, cost);
       const deposit = await fb.deposit(cash, cost * 2, {value: cost * 2});
       const request = await fb.request(oracle.address, tag, cash, cost * 2);
@@ -159,11 +162,43 @@ describe('feedbase', () => {
       debug(`signature ${signature}`)
       const sig = ethers.utils.splitSignature(signature)
       // debug(sig);
-      // should pay to signer's balance within fb
+
       await oracle.setRelayFee(tag, cash, relayFee);
+
+      //submit twice with same seq
       await oracle.submit(tag, seq, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s);
-      await oracle.submit(tag, seq, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s);
-      
+      await fail('submit-seq', oracle.submit, tag, seq, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s);
+    });
+
+    //TODO: cost > relay fee
+    it('collect (cost < relay fee)', async function () {
+      const cost     = 10;
+      const relayFee = 11;
+
+      const setCost = await oracle.setCost(tag, cash, cost);
+      const deposit = await fb.deposit(cash, cost * 2, {value: cost * 2});
+      const request = await fb.request(oracle.address, tag, cash, cost * 2);
+      await oracle.setRelayFee(tag, cash, relayFee);
+
+      for( let i = 0; i < 2; i++ ) {
+        const digest = makeUpdateDigest({
+          tag,
+          val: val,
+          seq: seq + i,
+          sec: sec,
+          ttl: ttl,
+          chainId: chainId,
+          receiver: oracle.address
+        })
+        debug(`digest: ${Buffer.from(digest).toString('hex')}`)
+
+        const signature = await signers[0].signMessage(digest)
+        debug(`signature ${signature}`)
+        const sig = ethers.utils.splitSignature(signature)
+        // debug(sig);
+        await oracle.submit(tag, seq + i, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s);
+      }
+
       const bal     = await signers[0].getBalance();
       const collect = await oracle.collect(cash);
       const fee     = collect.gasPrice.mul((await collect.wait()).gasUsed);
