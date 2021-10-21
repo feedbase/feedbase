@@ -1,14 +1,18 @@
 {
   "compilerOptions": {
     "outDir": "dist",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "strictNullChecks": true
   },
   "include": [
     "src/**/*",
+    "dpacks/**/*.json",
     "task/*",
-    "hardhat.config.ts"
-  ],
-  "exclude": [
-    "test/*"
+    "hardhat.config.ts",
+    "test/**/*"
   ]
 }

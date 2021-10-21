@@ -1,13 +1,13 @@
+import Feedbase from '../artifacts/contracts/Feedbase.sol/Feedbase.json'
+import BasicReceiverFactory from '../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json'
+import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.json'
+
+import Token from '../artifacts/contracts/erc20/MockToken.sol/MockToken.json'
+
+import { ethers, network } from 'hardhat'
+
 const debug = require('debug')('feedbase:test')
 const want = require('chai').expect
-
-const Feedbase = require('../artifacts/contracts/Feedbase.sol/Feedbase.json')
-const BasicReceiverFactory = require('../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json')
-const BasicReceiver = require('../artifacts/contracts/Receiver.sol/BasicReceiver.json')
-
-const Token = require('../artifacts/contracts/erc20/MockToken.sol/MockToken.json')
-
-const { ethers, network } = require('hardhat')
 
 let fb
 let cash

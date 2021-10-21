@@ -1,7 +1,7 @@
-const debug = require('debug')('feedbase:util')
+import ethers from 'ethers'
+import * as dpack from 'dpack'
 
-const ethers = require('ethers')
-const dpack = require('./dpack')
+const debug = require('debug')('feedbase:util')
 
 export async function load (env: any) {
   if (!env.DEPLOYER_PRIVATE_KEY) {

@@ -1,9 +1,9 @@
-const path = require('path')
-const dpack = require('dpack')
-const sensor = require('./sensor')
-const { makeUpdateDigest } = require('./message')
-const format = require('./format')
-const autofeed = require('./autofeed')
+import path from 'path'
+import * as dpack from 'dpack'
+import * as sensor from './sensor'
+import { makeUpdateDigest } from './message'
+import * as format from './format'
+import * as autofeed from './autofeed'
 
 let dapp
 

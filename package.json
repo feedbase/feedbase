@@ -3,14 +3,15 @@
   "version": "0.1.12",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
-    "build:ts": "npm run clean:ts && tsc && chmod +x dist/src/cmd.js && npm run copy-dpacks",
-    "copy-dpacks": "cp dpacks/* dist/dpacks",
-    "clean:ts": "rm -r dist/* && mkdir dist/dpacks",
+    "build:ts": "tsc -b tsconfig.prod.json && chmod +x dist/src/cmd.js",
+    "clean:ts": "tsc -b --clean",
     "build:sol": "npx hardhat compile",
     "build:docs:sol": "npm run clean:docs:sol && npx solidity-docgen -o docs/contracts --solc-module solc-0.8.6",
     "clean:docs:sol": "rm -r docs/contracts",
-    "test": "npm run build && ts-mocha test",
-    "fmt": "ts-standard --fix src task"
+    "postinstall": "cp -n .env.example .env",
+    "pretest": "npm run build",
+    "test": "ts-mocha test/**/*.ts",
+    "fmt": "ts-standard --fix src task test"
   },
   "bin": {
     "feed": "./dist/src/cmd.js"
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@types/chai": "^4.2.22",
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
     "hardhat": "^2.4.3",
