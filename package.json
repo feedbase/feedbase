@@ -11,7 +11,7 @@
     "postinstall": "cp -n .env.example .env",
     "pretest": "npm run build",
     "test": "ts-mocha test/**/*.ts",
-    "fmt": "ts-standard --fix src task"
+    "fmt": "ts-standard --fix src task test"
   },
   "bin": {
     "feed": "./dist/src/cmd.js"
