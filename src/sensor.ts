@@ -1,8 +1,8 @@
-const debug = require('debug')('feedbase:sensor')
-
 import { ethers } from 'ethers'
 import http from 'http'
 import { makeUpdateDigest } from './index'
+
+const debug = require('debug')('feedbase:sensor')
 
 console.warn('WARN using delayed time')
 const now = () => Math.floor(Date.now() / 1000) - 500 // WARN
@@ -23,11 +23,11 @@ class Sensor {
 
   getter: Function
 
-  constructor(getter: Function) {
+  constructor (getter: Function) {
     this.getter = getter
   }
 
-  async refresh() {
+  async refresh () {
     debug('refreshing...')
     this.val = await this.getter()
     this.sec = now()
@@ -47,7 +47,7 @@ class Sensor {
   }
 }
 
-export async function serve(getter: Function, opts: any): Promise<void> {
+export async function serve (getter: Function, opts: any): Promise<void> {
   debug('serve', opts)
   const s = new Sensor(getter)
   s.receiver = opts.receiver

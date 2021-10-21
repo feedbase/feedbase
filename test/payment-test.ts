@@ -1,6 +1,3 @@
-const debug = require('debug')('feedbase:test')
-const want = require('chai').expect
-
 import Feedbase from '../artifacts/contracts/Feedbase.sol/Feedbase.json'
 import BasicReceiverFactory from '../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json'
 import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.json'
@@ -8,6 +5,9 @@ import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.jso
 import Token from '../artifacts/contracts/erc20/MockToken.sol/MockToken.json'
 
 import { ethers, network } from 'hardhat'
+
+const debug = require('debug')('feedbase:test')
+const want = require('chai').expect
 
 let fb
 let cash

@@ -1,13 +1,13 @@
-const debug = require('debug')('feedbase:autofeed')
-
 import fetchurl from 'node-fetch'
 import { execSync } from 'child_process'
 import { ethers } from 'hardhat'
 
+const debug = require('debug')('feedbase:autofeed')
+
 const { BigNumber } = ethers
 
 let loaded = false
-function checkJQ() {
+function checkJQ () {
   if (!loaded) {
     try {
       execSync('jq')
@@ -39,7 +39,7 @@ const opdb = {
   }
 }
 
-export function filter(obj, jqs) {
+export function filter (obj, jqs) {
   checkJQ()
   debug('jq filter', obj, jqs)
   try {
@@ -51,7 +51,7 @@ export function filter(obj, jqs) {
   }
 }
 
-export async function jqq(url: string, jqs: string, ops: string): Promise<any> {
+export async function jqq (url: string, jqs: string, ops: string): Promise<any> {
   checkJQ()
   const res = await fetchurl(url)
   const json = await res.json()
@@ -77,10 +77,10 @@ export async function jqq(url: string, jqs: string, ops: string): Promise<any> {
 }
 
 // autofeed({ url, jqs, ops })
-export function autofeed(args: any): Function {
+export function autofeed (args: any): Function {
   checkJQ()
   return async function (): Promise<Buffer> {
     debug(`auto getter ${args.url} ${args.jqs} ${args.ops}`)
-    return jqq(args.url, args.jqs, args.ops)
+    return await jqq(args.url, args.jqs, args.ops)
   }
 }

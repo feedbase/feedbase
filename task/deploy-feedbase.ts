@@ -1,8 +1,8 @@
-const debug = require('debug')('feedbase:task')
-
 import * as dpack from 'dpack'
 import { task } from 'hardhat/config'
 import { HardhatRuntimeEnvironment, TaskArguments } from 'hardhat/types'
+
+const debug = require('debug')('feedbase:task')
 
 task('deploy-feedbase', 'deploy Feedbase and BasicReceiverFactory')
   .addParam('dpack', 'output path for dpack')

@@ -1,6 +1,3 @@
-const debug = require('debug')('feedbase:test')
-const want = require('chai').expect
-
 import Feedbase from '../artifacts/contracts/Feedbase.sol/Feedbase.json'
 import BasicReceiverFactory from '../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json'
 import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.json'
@@ -8,6 +5,9 @@ import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.jso
 import { ethers, network } from 'hardhat'
 
 import { makeUpdateDigest } from '../src'
+
+const debug = require('debug')('feedbase:test')
+const want = require('chai').expect
 
 describe('feedbase', () => {
   it('basics', async function () {

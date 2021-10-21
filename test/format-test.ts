@@ -1,6 +1,6 @@
-const debug = require('debug')('feedbase:format')
-
 import { utils, BigNumber } from 'ethers'
+
+const debug = require('debug')('feedbase:format')
 const fmt = require('..').format
 
 describe('feedbase format utils', () => {
