@@ -6,12 +6,11 @@ const { PRIVKEY, INFURA_PROJECT_ID } = process.env
 
 const privKey = PRIVKEY ?? Buffer.alloc(32).toString('hex')
 
-console.log(privKey);
-
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
 export default {
+  solidity: '0.8.9',
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {},
@@ -36,6 +35,5 @@ export default {
       accounts: [`0x${privKey}`]
 
     }
-  },
-  solidity: '0.8.6'
+  }
 }
