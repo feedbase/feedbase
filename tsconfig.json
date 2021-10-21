@@ -11,9 +11,7 @@
     "src/**/*",
     "dpacks/**/*.json",
     "task/*",
-    "hardhat.config.ts"
-  ],
-  "exclude": [
-    "test/*"
+    "hardhat.config.ts",
+    "test/**/*"
   ]
 }
