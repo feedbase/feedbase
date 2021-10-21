@@ -1,12 +1,12 @@
 const debug = require('debug')('feedbase:task')
 
-const dpack = require('dpack')
-
-const { task } = require('hardhat/config')
+import * as dpack from 'dpack'
+import { task } from 'hardhat/config'
+import { HardhatRuntimeEnvironment, TaskArguments } from 'hardhat/types'
 
 task('deploy-feedbase', 'deploy Feedbase and BasicReceiverFactory')
   .addParam('dpack', 'output path for dpack')
-  .setAction(async (args, hre) => {
+  .setAction(async (args: TaskArguments, hre: HardhatRuntimeEnvironment) => {
     const { ethers, network } = hre
 
     const [acct] = await hre.ethers.getSigners()
@@ -53,4 +53,4 @@ task('deploy-feedbase', 'deploy Feedbase and BasicReceiverFactory')
     })
   })
 
-export {}
+export { }
