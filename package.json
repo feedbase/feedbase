@@ -8,6 +8,7 @@
     "build:sol": "npx hardhat compile",
     "build:docs:sol": "npm run clean:docs:sol && npx solidity-docgen -o docs/contracts --solc-module solc-0.8.6",
     "clean:docs:sol": "rm -r docs/contracts",
+    "postinstall": "cp -n .env.example .env",
     "pretest": "npm run build",
     "test": "ts-mocha test/**/*.ts",
     "fmt": "ts-standard --fix src task"
