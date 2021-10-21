@@ -10,7 +10,8 @@
     "build:docs:sol": "npm run clean:docs:sol && npx solidity-docgen -o docs/contracts --solc-module solc-0.8.6",
     "clean:docs:sol": "rm -r docs/contracts",
     "test": "npm run build && ts-mocha test",
-    "fmt": "ts-standard --fix src task"
+    "fmt": "ts-standard --fix src task",
+    "fmt:sol": "prettier --check --write 'contracts/**/*.sol'"
   },
   "bin": {
     "feed": "./dist/src/cmd.js"
@@ -29,6 +30,8 @@
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
     "hardhat": "^2.4.3",
+    "prettier": "^2.4.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.18",
     "solc-0.8.6": "npm:solc@^0.8.6",
     "solidity-docgen": "^0.5.13",
     "ts-mocha": "^8.0.0",
