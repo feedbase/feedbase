@@ -43,13 +43,19 @@ var fetchurl = require('node-fetch');
 var execSync = require('child_process').execSync;
 var BN = require('bn.js');
 var bn = function (n) { return new BN(n); };
-try {
-    var result = execSync('jq');
-}
-catch (e) {
-    console.log('This feature requires the \'jq\' binary to be installed.');
-    console.log(e);
-    process.exit(1);
+var loaded = false;
+function checkJQ() {
+    if (!loaded) {
+        try {
+            var result = execSync('jq');
+        }
+        catch (e) {
+            console.log('This feature requires the \'jq\' binary to be installed.');
+            console.log(e);
+            process.exit(1);
+        }
+        loaded = true;
+    }
 }
 var opdb = {
     toWei: function (n) {
@@ -70,6 +76,7 @@ var opdb = {
     }
 };
 function filter(obj, jqs) {
+    checkJQ();
     debug('jq filter', obj, jqs);
     try {
         var result = execSync("echo '" + JSON.stringify(obj) + "' | jq " + jqs);
@@ -86,7 +93,9 @@ function jqq(url, jqs, ops) {
         var res, json, value, _i, _a, op;
         return __generator(this, function (_b) {
             switch (_b.label) {
-                case 0: return [4 /*yield*/, fetchurl(url)];
+                case 0:
+                    checkJQ();
+                    return [4 /*yield*/, fetchurl(url)];
                 case 1:
                     res = _b.sent();
                     return [4 /*yield*/, res.json()];
@@ -119,6 +128,7 @@ function jqq(url, jqs, ops) {
 exports.jqq = jqq;
 // autofeed({ url, jqs, ops })
 function autofeed(args) {
+    checkJQ();
     return function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {

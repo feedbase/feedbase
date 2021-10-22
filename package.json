@@ -20,7 +20,7 @@
     "commander": "^8.0.0",
     "debug": "^4.3.2",
     "dpack": "github:dapphub/dpack",
-    "ethers": "^5.4.6",
+    "ethers": ">=5.4.6 <5.5.0",
     "ethers-eip712": "^0.2.0",
     "node-fetch": "^2.6.1"
   },

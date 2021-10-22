@@ -144,7 +144,7 @@ describe('feedbase', () => {
       const relayFee = 11;
 
       const setCost = await oracle.setCost(tag, cash, cost);
-      const deposit = await fb.deposit(cash, cost * 2, {value: cost * 2});
+      const deposit = await fb.deposit(cash, signers[0].address, cost * 2, {value: cost * 2});
       const request = await fb.request(oracle.address, tag, cash, cost * 2);
 
       const digest = makeUpdateDigest({
@@ -176,7 +176,7 @@ describe('feedbase', () => {
       const relayFee = 11;
 
       const setCost = await oracle.setCost(tag, cash, cost);
-      const deposit = await fb.deposit(cash, cost * 2, {value: cost * 2});
+      const deposit = await fb.deposit(cash, signers[0].address, cost * 2, {value: cost * 2});
       const request = await fb.request(oracle.address, tag, cash, cost * 2);
       await oracle.setRelayFee(tag, cash, relayFee);
 
@@ -252,7 +252,7 @@ describe('feedbase', () => {
         it('cost too high', async function () {
           const cost = 1001
           const setCost = await fb.setCost(tag, cash, cost)
-          const deposit = await fb.deposit(cash, bal, {value: bal});
+          const deposit = await fb.deposit(cash, signers[0].address, bal, {value: bal});
           const request = await fb.request(signers[0].address, tag, cash, bal);
           fail('VM Exception while processing transaction: reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)',
             fb.push, tag, val, ttl, cash)
@@ -261,7 +261,7 @@ describe('feedbase', () => {
         it('cost ok', async function () {
           const cost = 1000
           const setCost = await fb.setCost(tag, cash, cost)
-          const deposit = await fb.deposit(cash, bal, {value: bal});
+          const deposit = await fb.deposit(cash, signers[0].address, bal, {value: bal});
           const request = await fb.request(signers[0].address, tag, cash, bal);
           await fb.push(tag, val, ttl, cash);
         })
@@ -274,14 +274,14 @@ describe('feedbase', () => {
         it('zero', async function () {
           //const bal      = await signers[0].getBalance();
           const amt      = 0;
-          const deposit  = await fb.deposit(cash, amt, {value: amt});
+          const deposit  = await fb.deposit(cash, signers[0].address, amt, {value: amt});
           let fee = deposit.gasPrice.mul((await deposit.wait()).gasUsed);
           want(await signers[0].getBalance()).to.eql(bal.sub(fee).sub(amt));
         })
         it('nonzero', async function () {
           //const bal      = await signers[0].getBalance();
           const amt      = 3;
-          const deposit  = await fb.deposit(cash, amt, {value: amt});
+          const deposit  = await fb.deposit(cash, signers[0].address, amt, {value: amt});
           let fee = deposit.gasPrice.mul((await deposit.wait()).gasUsed);
           want(await signers[0].getBalance()).to.eql(bal.sub(fee).sub(amt));
         })
@@ -292,22 +292,22 @@ describe('feedbase', () => {
           //const bal      = await signers[0].getBalance();
           const amt      = 0;
           const bal      = await signers[0].getBalance();
-          const withdraw = await fb.withdraw(cash, amt);
+          const withdraw = await fb.withdraw(cash, signers[0].address, amt);
           let fee = withdraw.gasPrice.mul((await withdraw.wait()).gasUsed);
           want(await signers[0].getBalance()).to.eql(bal.sub(fee).add(amt));
         })
         it('nonzero', async function () {
           //const bal      = await signers[0].getBalance();
           const amt      = 3;
-          const deposit  = await fb.deposit(cash, amt, {value: amt});
+          const deposit  = await fb.deposit(cash, signers[0].address, amt, {value: amt});
           const bal      = await signers[0].getBalance();
-          const withdraw = await fb.withdraw(cash, amt);
+          const withdraw = await fb.withdraw(cash, signers[0].address, amt);
           let fee = withdraw.gasPrice.mul((await withdraw.wait()).gasUsed);
           want(await signers[0].getBalance()).to.eql(bal.sub(fee).add(amt));
         })
         it('balance too low', async function () {
           const amt      = 3;
-          const deposit  = await fb.deposit(cash, amt, {value: amt});
+          const deposit  = await fb.deposit(cash, signers[0].address, amt, {value: amt});
           fail('underflow', fb.withdraw, cash, amt+1);
         })
       })
