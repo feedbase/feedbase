@@ -308,7 +308,7 @@ describe('feedbase', () => {
         it('balance too low', async function () {
           const amt      = 3;
           const deposit  = await fb.deposit(cash, signers[0].address, amt, {value: amt});
-          fail('underflow', fb.withdraw, cash, amt+1);
+          await fail('underflow', fb.withdraw, cash, signers[0].address, amt+1);
         })
       })
     })
