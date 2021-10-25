@@ -35,40 +35,40 @@ describe('pay flow', () => {
     fb = await FeedbaseDeployer.deploy()
     cash = await TokenDeployer.deploy('Mock Cash', 'CASH')
 
-    use(1)
+    use(1) // bob
 
     const tx_mint = await cash.mint(BOB, 1000)
     await tx_mint.wait()
     const tx_approve = await cash.approve(fb.address, 1000000)
     await tx_approve.wait()
 
-    use(0)
+    use(0) // ali
 
     const tx_setCost = await fb.setCost(TAG, cash.address, 100)
     await tx_setCost.wait()
   })
 
   it('deposit request push', async () => {
-    use(1)
+    use(1) // bob
 
-    const bal = await cash.balanceOf(signers[1].address)
+    const bal = await cash.balanceOf(BOB)
     want(bal.toNumber()).equals(1000)
 
     const tx_topUp = await fb.deposit(cash.address, BOB, 500)
     await tx_topUp.wait()
 
-    const fbal0 = await fb.balances(cash.address, signers[1].address)
+    const fbal0 = await fb.balances(cash.address, BOB)
     want(fbal0.toNumber()).equals(500)
     debug(`fbal0 ${fbal0}`)
-    const bal2 = await cash.balanceOf(signers[1].address)
+    const bal2 = await cash.balanceOf(BOB)
     want(bal2.toNumber()).equals(500)
 
-    const tx_request = await fb.request(signers[0].address, TAG, cash.address, 100)
+    const tx_request = await fb.request(ALI, TAG, cash.address, 100)
     await tx_request.wait()
 
-    const fbal1 = await fb.balances(cash.address, signers[1].address)
+    const fbal1 = await fb.balances(cash.address, BOB);
     want(fbal1.toNumber()).equals(400)
-    const fbal2 = await fb.requested(signers[0].address, TAG, cash.address)
+    const fbal2 = await fb.requested(ALI, TAG, cash.address)
     want(fbal2.toNumber()).equals(100)
 
     use(0)
@@ -81,13 +81,13 @@ describe('pay flow', () => {
     const tx_push = await fb.push(TAG, val, ttl, cash.address)
     await tx_push.wait()
 
-    const fbal3 = await fb.requested(signers[0].address, TAG, cash.address)
+    const fbal3 = await fb.requested(ALI, TAG, cash.address)
     want(fbal3.toNumber()).equals(0)
 
     const pre = await cash.balanceOf(signers[0].address)
     const tx_cashOut = await fb.withdraw(cash.address, ALI, 100)
     await tx_cashOut.wait()
-    const post = await cash.balanceOf(signers[0].address)
+    const post = await cash.balanceOf(ALI);
     want(post.sub(pre).toNumber()).equals(100)
   })
 })

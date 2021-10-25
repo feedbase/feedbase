@@ -16,7 +16,7 @@
   "dependencies": {
     "commander": "^8.0.0",
     "debug": "^4.3.2",
-    "ethers": "^5.4.6",
+    "ethers": ">=5.4.6 <5.5.0",
     "ethers-eip712": "^0.2.0",
     "node-fetch": "^2.6.1"
   },
@@ -25,6 +25,7 @@
     "@types/chai": "^4.2.22",
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
     "hardhat": "^2.4.3",
     "ts-mocha": "^8.0.0",
     "ts-standard": "^10.0.0",

@@ -104,6 +104,7 @@ contract BasicReceiver {
     require(block.timestamp < sttl, 'receiver-submit-bad-signer');
 
     require(seq > signerSeq[signer], 'receiver-submit-seq');
+    signerSeq[signer] = seq;
     require(block.timestamp >= sec, 'receiver-submit-sec');
     require(block.timestamp <  ttl, 'receiver-submit-ttl');
 
@@ -148,5 +149,7 @@ contract BasicReceiver {
   function isSigner(address who) public view returns (bool) {
     return block.timestamp < signerTTL[who];
   }
+
+  fallback () external payable {}
 
 }
