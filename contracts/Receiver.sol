@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.9;
 
 import './Feedbase.sol';
 
@@ -35,8 +35,6 @@ contract BasicReceiver {
   // relayer -> cash -> collected
   mapping(address=>mapping(address=>uint)) public collected;
 
-  bytes32                  public DOMAIN_SEPARATOR;
-
   event OwnerUpdate(address indexed oldOwner, address indexed newOwner);
   event SignerUpdate(address indexed signer, uint signerTTL);
 
@@ -52,17 +50,17 @@ contract BasicReceiver {
 
   // bytes32 public constant SUBMIT_TYPEHASH = keccak256("Submit(bytes32 tag,uint256 seq,uint256 sec,uint256 ttl,bytes32 val)");
   bytes32 public constant SUBMIT_TYPEHASH = 0x704ca89a84579f1c77f8af3ba18d619ac3bfe3ef4b477dd428170b1a3984c5d0;
+  bytes32 public immutable DOMAIN_SEPARATOR;
 
   constructor(Feedbase fb) {
     feedbase = fb;
     owner = msg.sender;
 
     // EIP712
-    string memory version = "1";
     DOMAIN_SEPARATOR = keccak256(abi.encode(
       keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
       keccak256("FeedbaseBasicReceiver"),
-      keccak256(bytes(version)),
+      keccak256("1"),
       chainId(),
       address(this)
     ));
@@ -121,10 +119,10 @@ contract BasicReceiver {
     collected[msg.sender][cash] += fee;
   }
 
-  function collect(address cash) public {
+  function collect(address cash, address dest) public {
     uint bal = collected[msg.sender][cash];
     collected[msg.sender][cash] = 0;
-    feedbase.withdraw(cash, msg.sender, bal);
+    feedbase.withdraw(cash, dest, bal);
   }
 
   function setCost(bytes32 tag, address cash, uint cost) public {

@@ -1,24 +1,22 @@
+import fetchurl from 'node-fetch'
+import { execSync } from 'child_process'
+import { ethers } from 'hardhat'
+
 const debug = require('debug')('feedbase:autofeed')
 
-const fmt = require('./format')
+const { BigNumber } = ethers
 
-const fetchurl = require('node-fetch')
-const { execSync } = require('child_process')
-
-const BN = require('bn.js')
-const bn = (n) => new BN(n)
-
-let loaded = false;
-function checkJQ() {
+let loaded = false
+function checkJQ () {
   if (!loaded) {
     try {
-      const result = execSync('jq')
+      execSync('jq')
     } catch (e) {
       console.log('This feature requires the \'jq\' binary to be installed.')
       console.log(e)
       process.exit(1)
     }
-    loaded = true;
+    loaded = true
   }
 }
 
@@ -26,12 +24,12 @@ const opdb = {
   toWei: (n: number) => {
     // 10^18 == 10^4 * 10^14
     debug('WARN toWei sanitize')
-    return (bn(n * 10000)).mul(bn(10).pow(bn(14)))
+    return (BigNumber.from(n * 10000)).mul(BigNumber.from(10).pow(BigNumber.from(14)))
   },
   toBytes32: (n: any) => {
     debug('WARN toBytes32 sanitize')
-    if (n instanceof BN) {
-      return Buffer.from(n.toString(16).padStart(64, '0'), 'hex')
+    if (n instanceof BigNumber) {
+      return Buffer.from(n.toHexString().padStart(64, '0'), 'hex')
     }
     throw new Error(`Unrecognized arg type for toBytes32: ${n} : ${typeof (n)}`)
   },
@@ -42,7 +40,7 @@ const opdb = {
 }
 
 export function filter (obj, jqs) {
-  checkJQ();
+  checkJQ()
   debug('jq filter', obj, jqs)
   try {
     const result = execSync(`echo '${JSON.stringify(obj)}' | jq ${jqs}`)
@@ -54,7 +52,7 @@ export function filter (obj, jqs) {
 }
 
 export async function jqq (url: string, jqs: string, ops: string): Promise<any> {
-  checkJQ();
+  checkJQ()
   const res = await fetchurl(url)
   const json = await res.json()
   debug(`url ${url}`)
@@ -80,7 +78,7 @@ export async function jqq (url: string, jqs: string, ops: string): Promise<any> 
 
 // autofeed({ url, jqs, ops })
 export function autofeed (args: any): Function {
-  checkJQ();
+  checkJQ()
   return async function (): Promise<Buffer> {
     debug(`auto getter ${args.url} ${args.jqs} ${args.ops}`)
     return await jqq(args.url, args.jqs, args.ops)

@@ -1,13 +1,13 @@
+import Feedbase from '../artifacts/contracts/Feedbase.sol/Feedbase.json'
+import BasicReceiverFactory from '../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json'
+import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.json'
+
+import Token from '../artifacts/contracts/erc20/MockToken.sol/MockToken.json'
+
+import { ethers, network } from 'hardhat'
+
 const debug = require('debug')('feedbase:test')
 const want = require('chai').expect
-
-const Feedbase = require('../artifacts/contracts/Feedbase.sol/Feedbase.json')
-const BasicReceiverFactory = require('../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json')
-const BasicReceiver = require('../artifacts/contracts/Receiver.sol/BasicReceiver.json')
-
-const Token = require('../artifacts/contracts/erc20/MockToken.sol/MockToken.json')
-
-const { ethers, network } = require('hardhat')
 
 let fb
 let cash
@@ -24,10 +24,11 @@ const use = (n) => {
 }
 
 describe('pay flow', () => {
+  let ALI, BOB;
   beforeEach(async () => {
     signers = await ethers.getSigners()
-    ali = signers[0]; ALI = ali.address;
-    bob = signers[1]; BOB = ali.address;
+    ALI = signers[0].address;
+    BOB = signers[1].address;
 
     const FeedbaseDeployer = await ethers.getContractFactory('Feedbase')
     const TokenDeployer = await ethers.getContractFactory('MockToken')
@@ -83,7 +84,7 @@ describe('pay flow', () => {
     const fbal3 = await fb.requested(ALI, TAG, cash.address)
     want(fbal3.toNumber()).equals(0)
 
-    const pre = await cash.balanceOf(ALI);
+    const pre = await cash.balanceOf(signers[0].address)
     const tx_cashOut = await fb.withdraw(cash.address, ALI, 100)
     await tx_cashOut.wait()
     const post = await cash.balanceOf(ALI);

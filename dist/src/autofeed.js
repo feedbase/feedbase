@@ -35,19 +35,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 exports.__esModule = true;
 exports.autofeed = exports.jqq = exports.filter = void 0;
+var node_fetch_1 = __importDefault(require("node-fetch"));
+var child_process_1 = require("child_process");
+var hardhat_1 = require("hardhat");
 var debug = require('debug')('feedbase:autofeed');
-var fmt = require('./format');
-var fetchurl = require('node-fetch');
-var execSync = require('child_process').execSync;
-var BN = require('bn.js');
-var bn = function (n) { return new BN(n); };
+var BigNumber = hardhat_1.ethers.BigNumber;
 var loaded = false;
 function checkJQ() {
     if (!loaded) {
         try {
-            var result = execSync('jq');
+            (0, child_process_1.execSync)('jq');
         }
         catch (e) {
             console.log('This feature requires the \'jq\' binary to be installed.');
@@ -61,12 +63,12 @@ var opdb = {
     toWei: function (n) {
         // 10^18 == 10^4 * 10^14
         debug('WARN toWei sanitize');
-        return (bn(n * 10000)).mul(bn(10).pow(bn(14)));
+        return (BigNumber.from(n * 10000)).mul(BigNumber.from(10).pow(BigNumber.from(14)));
     },
     toBytes32: function (n) {
         debug('WARN toBytes32 sanitize');
-        if (n instanceof BN) {
-            return Buffer.from(n.toString(16).padStart(64, '0'), 'hex');
+        if (n instanceof BigNumber) {
+            return Buffer.from(n.toHexString().padStart(64, '0'), 'hex');
         }
         throw new Error("Unrecognized arg type for toBytes32: " + n + " : " + typeof (n));
     },
@@ -79,7 +81,7 @@ function filter(obj, jqs) {
     checkJQ();
     debug('jq filter', obj, jqs);
     try {
-        var result = execSync("echo '" + JSON.stringify(obj) + "' | jq " + jqs);
+        var result = (0, child_process_1.execSync)("echo '" + JSON.stringify(obj) + "' | jq " + jqs);
         return result.toString();
     }
     catch (e) {
@@ -95,7 +97,7 @@ function jqq(url, jqs, ops) {
             switch (_b.label) {
                 case 0:
                     checkJQ();
-                    return [4 /*yield*/, fetchurl(url)];
+                    return [4 /*yield*/, (0, node_fetch_1["default"])(url)];
                 case 1:
                     res = _b.sent();
                     return [4 /*yield*/, res.json()];
