@@ -7,7 +7,6 @@ import Token from '../artifacts/contracts/erc20/MockToken.sol/MockToken.json'
 import { ethers, network } from 'hardhat'
 
 const debug = require('debug')('feedbase:test')
-const want = require('chai').expect
 
 let fb
 let cash
@@ -15,7 +14,7 @@ let signers
 
 const TAG = Buffer.from('USDETH' + ' '.repeat(26))
 
-const { send } = require('/Users/code/hhs');
+const { send, want } = require('/Users/code/minihat');
 
 const use = (n) => {
   const signer = signers[n]
@@ -61,7 +60,7 @@ describe('pay flow', () => {
     const bal2 = await cash.balanceOf(BOB)
     want(bal2.toNumber()).equals(500)
 
-    await send(fb.request, signers[0].address, TAG, cash.address, 100)
+    await send(fb.request, ALI, TAG, cash.address, 100)
 
     const fbal1 = await fb.balances(cash.address, BOB);
     want(fbal1.toNumber()).equals(400)
@@ -80,9 +79,9 @@ describe('pay flow', () => {
     const fbal3 = await fb.requested(ALI, TAG, cash.address)
     want(fbal3.toNumber()).equals(0)
 
-    const pre = await cash.balanceOf(signers[0].address)
+    const pre = await cash.balanceOf(ALI)
     await send(fb.withdraw, cash.address, ALI, 100)
-    const post = await cash.balanceOf(signers[0].address)
+    const post = await cash.balanceOf(ALI)
     want(post.sub(pre).toNumber()).equals(100)
   })
 })
