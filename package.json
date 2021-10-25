@@ -1,14 +1,10 @@
 {
   "name": "feedbase",
-  "version": "0.1.12",
+  "version": "0.2.1",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
-    "build:ts": "tsc -b tsconfig.prod.json && chmod +x dist/src/cmd.js",
-    "clean:ts": "tsc -b --clean",
+    "build:ts": "tsc && chmod +x dist/src/cmd.js",
     "build:sol": "npx hardhat compile",
-    "build:docs:sol": "npm run clean:docs:sol && npx solidity-docgen -o docs/contracts --solc-module solc-0.8.6",
-    "clean:docs:sol": "rm -r docs/contracts",
-    "postinstall": "cp -n .env.example .env",
     "pretest": "npm run build",
     "test": "ts-mocha test/**/*.ts",
     "fmt": "ts-standard --fix src task test"
@@ -20,7 +16,6 @@
   "dependencies": {
     "commander": "^8.0.0",
     "debug": "^4.3.2",
-    "dpack": "github:dapphub/dpack",
     "ethers": "^5.4.6",
     "ethers-eip712": "^0.2.0",
     "node-fetch": "^2.6.1"
@@ -31,8 +26,6 @@
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
     "hardhat": "^2.4.3",
-    "solc-0.8.6": "npm:solc@^0.8.6",
-    "solidity-docgen": "^0.5.13",
     "ts-mocha": "^8.0.0",
     "ts-standard": "^10.0.0",
     "typescript": "^4.4.2"
