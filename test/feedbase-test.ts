@@ -38,6 +38,8 @@ const use = (n) => {
   fb = fb.connect(signer)
 }
 
+const { send } = require('/Users/code/hhs');
+
 describe('feedbase', () => {
   const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
   let tag, seq, sec, ttl, val;
@@ -77,14 +79,11 @@ describe('feedbase', () => {
     const BasicReceiverFactoryFactory = await ethers.getContractFactory('BasicReceiverFactory')
     const factory = await BasicReceiverFactoryFactory.deploy(fb.address)
 
-    const tx = await factory.build()
-    // debug('create', tx)
-    const res = await tx.wait()
+    const res = await send(factory.build);
     const oracleAddr = res.events[0].args[0]
 
     const oracle = await new ethers.Contract(oracleAddr, BasicReceiver.abi, signers[0])
-    const tx2 = await oracle.setSigner(signers[0].address, 1000000000000)
-    await tx2.wait()
+    await send(oracle.setSigner, signers[0].address, 1000000000000)
 
     const sttl = await oracle.signerTTL(signers[0].address)
     debug(`sttl: ${sttl}`)
@@ -109,7 +108,7 @@ describe('feedbase', () => {
     debug(`signature ${signature}`)
     const sig = ethers.utils.splitSignature(signature)
     // debug(sig);
-    const tx3 = await oracle.submit(tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s)
+    await send(oracle.submit, tag, seq, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s)
   })
 
   it('ttl on read', async function () {
@@ -118,7 +117,14 @@ describe('feedbase', () => {
     const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
     const fb = await FeedbaseFactory.deploy()
 
-    const push = await fb.push(tag, val, ttl, '00'.repeat(20))
+    const tag = Buffer.from('USDETH'.padStart(32, '\0'))
+    const seq = 1
+    const sec = Math.floor(Date.now() / 1000)
+    const ttl = 10000000000000
+    const val = Buffer.from('11'.repeat(32), 'hex')
+    debug(tag, seq, sec, ttl, val)
+
+    const push = await send(fb.push, tag, val, ttl, '00'.repeat(20))
     const read = await fb.read(signers[0].address, tag)
     debug(`read result ${read}`)
 
