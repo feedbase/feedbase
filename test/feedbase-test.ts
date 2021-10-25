@@ -39,6 +39,7 @@ const use = (n) => {
 }
 
 describe('feedbase', () => {
+  const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
   let tag, seq, sec, ttl, val;
   beforeEach(async () => {
     signers = await ethers.getSigners();
@@ -47,13 +48,13 @@ describe('feedbase', () => {
     fb = await FeedbaseFactory.deploy()
  
     const TokenDeployer = await ethers.getContractFactory('MockToken')
-    cash = await TokenDeployer.deploy('CASH')
+    cash = await TokenDeployer.deploy('CASH', 'CASH')
 
     use(0)
 
-    const tx_mint = await cash.functions['mint(uint256)'](1000)
+    const tx_mint = await cash.functions['mint(address,uint256)'](signers[0].address, 1000)
     await tx_mint.wait()
-    const tx_approve = await cash.functions['approve(address)'](fb.address)
+    const tx_approve = await cash.functions['approve(address,uint256)'](fb.address, UINT_MAX)
     await tx_approve.wait()
 
     tag = Buffer.from('USDCASH'.padStart(32, '\0'))
