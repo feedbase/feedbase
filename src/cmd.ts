@@ -11,7 +11,6 @@ const prog = require('commander')
 const ethers = require('ethers')
 const fmt = require('./format')
 
-const dpack = require('dpack')
 const lib = require('./index')
 
 let gopts: any
