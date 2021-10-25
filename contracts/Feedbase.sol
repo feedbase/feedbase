@@ -38,6 +38,20 @@ contract Feedbase {
     , uint256         amt
   );
 
+  event Deposit(
+      address indexed caller
+    , address indexed cash
+    , address indexed recipient
+    , uint256         amount
+  );
+
+  event Withdrawal(
+      address indexed caller
+    , address indexed cash
+    , address indexed recipient
+    , uint256         amount
+  );
+
   function read(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
     Feed storage feed = _feeds[src][tag];
     require(block.timestamp < feed.ttl, 'ERR_READ');
@@ -69,16 +83,18 @@ contract Feedbase {
     emit Paid(cash, msg.sender, src, amt);
   }
 
-  function deposit(address cash, uint amt) public payable {
+  function deposit(address cash, address user, uint amt) public payable {
     bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
     require(ok, 'ERR_DEPOSIT_PULL');
-    _bals[msg.sender][cash] += amt;
+    _bals[user][cash] += amt;
+    emit Deposit(msg.sender, cash, user, amt);
   }
 
-  function withdraw(address cash, uint amt) public {
+  function withdraw(address cash, address user, uint amt) public {
     _bals[msg.sender][cash] -= amt;
-    bool ok = IERC20(cash).transfer(msg.sender, amt);
+    bool ok = IERC20(cash).transfer(user, amt);
     require(ok, 'ERR_WITHDRAW_PUSH');
+    emit Withdrawal(msg.sender, cash, user, amt);
   }
 
   function balances(address cash, address who) public view returns (uint) {
