@@ -70,24 +70,15 @@ contract Feedbase {
   }
 
   function deposit(address cash, uint amt) public payable {
-    if (cash == address(0))  {
-      require(msg.value == amt, 'ERR_DEPOSIT_AMT');
-    } else {
-      bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
-      require(ok, 'ERR_DEPOSIT_PULL');
-    }
+    bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
+    require(ok, 'ERR_DEPOSIT_PULL');
     _bals[msg.sender][cash] += amt;
   }
 
   function withdraw(address cash, uint amt) public {
     _bals[msg.sender][cash] -= amt;
-    if (cash == address(0)) {
-      (bool ok, ) = msg.sender.call{value:amt}("");
-      require(ok, 'ERR_WITHDRAW_CALL');
-    } else {
-      bool ok = IERC20(cash).transfer(msg.sender, amt);
-      require(ok, 'ERR_WITHDRAW_PUSH');
-    }
+    bool ok = IERC20(cash).transfer(msg.sender, amt);
+    require(ok, 'ERR_WITHDRAW_PUSH');
   }
 
   function balances(address cash, address who) public view returns (uint) {
