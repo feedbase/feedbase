@@ -150,6 +150,4 @@ contract BasicReceiver {
     return block.timestamp < signerTTL[who];
   }
 
-  fallback () external payable {}
-
 }
