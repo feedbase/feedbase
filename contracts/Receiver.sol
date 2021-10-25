@@ -118,16 +118,10 @@ contract BasicReceiver {
     collected[msg.sender][cash] += fee;
   }
 
-  function collect(address cash) public {
+  function collect(address cash, address dest) public {
     uint bal = collected[msg.sender][cash];
     collected[msg.sender][cash] = 0;
-    if (cash == address(0)) {
-      (bool ok, ) = msg.sender.call{value:bal}("");
-      require(ok, 'ERR_WITHDRAW_CALL');
-    } else {
-      bool ok = IERC20(cash).transfer(msg.sender, bal);
-      require(ok, 'ERR_ERC20_PUSH');
-    }
+    feedbase.withdraw(cash, dest, bal);
   }
 
   function setCost(bytes32 tag, address cash, uint cost) public {
