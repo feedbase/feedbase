@@ -24,8 +24,11 @@ const use = (n) => {
 }
 
 describe('pay flow', () => {
+  let ALI, BOB;
   beforeEach(async () => {
     signers = await ethers.getSigners()
+    ALI = signers[0].address;
+    BOB = signers[1].address;
 
     const FeedbaseDeployer = await ethers.getContractFactory('Feedbase')
     const TokenDeployer = await ethers.getContractFactory('MockToken')
@@ -51,7 +54,7 @@ describe('pay flow', () => {
     const bal = await cash.balanceOf(signers[1].address)
     want(bal.toNumber()).equals(1000)
 
-    const tx_topUp = await fb.deposit(cash.address, 500)
+    const tx_topUp = await fb.deposit(cash.address, BOB, 500)
     await tx_topUp.wait()
 
     const fbal0 = await fb.balances(cash.address, signers[1].address)
@@ -82,7 +85,7 @@ describe('pay flow', () => {
     want(fbal3.toNumber()).equals(0)
 
     const pre = await cash.balanceOf(signers[0].address)
-    const tx_cashOut = await fb.withdraw(cash.address, 100)
+    const tx_cashOut = await fb.withdraw(cash.address, ALI, 100)
     await tx_cashOut.wait()
     const post = await cash.balanceOf(signers[0].address)
     want(post.sub(pre).toNumber()).equals(100)

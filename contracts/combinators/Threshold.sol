@@ -46,6 +46,6 @@ contract ThresholdCombinator {
   function topUp(IERC20 cash, uint amt) public {
     cash.transferFrom(msg.sender, address(this), amt);
     cash.approve(address(fb), amt);
-    fb.deposit(address(cash), amt);
+    fb.deposit(address(cash), address(this), amt);
   }
 }
