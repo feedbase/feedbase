@@ -33,13 +33,13 @@ describe('pay flow', () => {
     const FeedbaseDeployer = await ethers.getContractFactory('Feedbase')
     const TokenDeployer = await ethers.getContractFactory('MockToken')
     fb = await FeedbaseDeployer.deploy()
-    cash = await TokenDeployer.deploy('CASH')
+    cash = await TokenDeployer.deploy('Mock Cash', 'CASH')
 
     use(1) // bob
 
-    const tx_mint = await cash.functions['mint(uint256)'](1000)
+    const tx_mint = await cash.mint(BOB, 1000)
     await tx_mint.wait()
-    const tx_approve = await cash.functions['approve(address)'](fb.address)
+    const tx_approve = await cash.approve(fb.address, 1000000)
     await tx_approve.wait()
 
     use(0) // ali

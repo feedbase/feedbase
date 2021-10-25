@@ -1,6 +1,6 @@
 {
   "name": "feedbase",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
     "build:ts": "tsc && chmod +x dist/src/cmd.js",
