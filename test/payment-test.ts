@@ -5,6 +5,7 @@ import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.jso
 import Token from '../artifacts/contracts/erc20/MockToken.sol/MockToken.json'
 
 import { ethers, network } from 'hardhat'
+import { send, want } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
 
@@ -14,7 +15,6 @@ let signers
 
 const TAG = Buffer.from('USDETH' + ' '.repeat(26))
 
-const { send, want } = require('/Users/code/minihat');
 
 const use = (n) => {
   const signer = signers[n]

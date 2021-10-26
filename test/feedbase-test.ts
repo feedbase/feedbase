@@ -5,12 +5,12 @@ import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.jso
 import Token from '../artifacts/contracts/erc20/MockToken.sol/MockToken.json'
 
 import { ethers, network } from 'hardhat'
+import { send, fail, chai, want } from 'minihat'
 
 import { makeUpdateDigest } from '../src'
 
 const debug = require('debug')('feedbase:test')
 
-const { send, fail, chai, want } = require('/Users/code/minihat');
 
 let cash
 let fb
