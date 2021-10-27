@@ -4,8 +4,9 @@ import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.jso
 
 import Token from '../artifacts/contracts/erc20/MockToken.sol/MockToken.json'
 
+import * as hh from 'hardhat'
 import { ethers, network } from 'hardhat'
-import { send, fail, chai, want } from 'minihat'
+import { send, fail, chai, want, snapshot, revert } from 'minihat'
 
 import { makeUpdateDigest } from '../src'
 
@@ -54,8 +55,6 @@ describe('feedbase', () => {
     debug(tag, seq, sec, ttl, val)
   })
              
-  it('basics', async function () {})
-
   it('oracle relay', async function () {
     const { chainId } = network.config
     debug('chainId: ', chainId)
@@ -119,7 +118,7 @@ describe('feedbase', () => {
 
 
   //TODO: auth tests
-  describe('some receiver tests', () => {
+  describe('receiver setSigner factory build', () => {
     let oracle, chainId;
     beforeEach(async () => {
       const BasicReceiverFactoryFactory = await ethers.getContractFactory('BasicReceiverFactory')
@@ -137,7 +136,7 @@ describe('feedbase', () => {
     })
 
     //sequence number must increase
-    it('seq #', async function () {
+    it('seq # setCost deposit request submit', async function () {
       const cost     = 10;
       const relayFee = 11;
 
@@ -205,9 +204,9 @@ describe('feedbase', () => {
     });
   })
 
-  describe('some fb tests', () => {
+  describe('feedbase', () => {
 
-    describe('messing with costs', () => {
+    describe('cost setCost', () => {
 
       describe('balance zero', () => {
         it('cost too high', async function () {
@@ -224,7 +223,7 @@ describe('feedbase', () => {
         })
       })
 
-      describe('balance nonzero', () => {
+      describe('push balance nonzero', () => {
         let bal;
         beforeEach(async () => {
           bal = 1000;
@@ -278,7 +277,7 @@ describe('feedbase', () => {
           const withdraw = await fb.withdraw(cash.address, ALI, amt);
           want(await cash.balanceOf(ALI)).to.eql(bal.add(amt));
         })
-        it('balance too low', async function () {
+        it('underflow', async function () {
           const amt      = 3;
           const deposit  = await fb.deposit(cash.address, ALI, amt, {value: amt});
           await fail('underflow', fb.withdraw, cash.address, ALI, amt+1);
