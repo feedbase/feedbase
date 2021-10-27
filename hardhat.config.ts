@@ -1,5 +1,5 @@
 import '@nomiclabs/hardhat-ethers'
-
+import 'solidity-coverage'
 import './task/deploy-feedbase.ts'
 
 const { PRIVKEY, INFURA_PROJECT_ID } = process.env

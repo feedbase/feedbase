@@ -1,3 +1,10 @@
 node_modules
 artifacts
 cache
+
+# OS Files
+.DS_Store
+
+# Test Files
+coverage
+coverage.json
