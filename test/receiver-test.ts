@@ -1,7 +1,3 @@
-import Feedbase from '../artifacts/contracts/Feedbase.sol/Feedbase.json'
-import BasicReceiverFactory from '../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json'
-import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.json'
-
 import { makeUpdateDigest } from '../src'
 
 import * as hh from 'hardhat'

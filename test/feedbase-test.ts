@@ -1,14 +1,6 @@
-import Feedbase from '../artifacts/contracts/Feedbase.sol/Feedbase.json'
-import BasicReceiverFactory from '../artifacts/contracts/Receiver.sol/BasicReceiverFactory.json'
-import BasicReceiver from '../artifacts/contracts/Receiver.sol/BasicReceiver.json'
-
-import Token from '../artifacts/contracts/erc20/MockToken.sol/MockToken.json'
-
 import * as hh from 'hardhat'
 import { ethers, network } from 'hardhat'
 import { send, fail, chai, want, snapshot, revert } from 'minihat'
-
-import { makeUpdateDigest } from '../src'
 
 const debug = require('debug')('feedbase:test')
 
@@ -29,7 +21,7 @@ describe('feedbase', () => {
   let tag, seq, sec, ttl, val;
   let ali, bob;
   let ALI, BOB;
-  beforeEach(async () => {
+  before(async () => {
     signers = await ethers.getSigners();
     [ali, bob] = signers;
     [ALI, BOB] = [ali.address, bob.address]
@@ -45,26 +37,18 @@ describe('feedbase', () => {
     await send(cash.mint, ALI, 1000)
     await send(cash.approve, fb.address, UINT_MAX)
 
+    await snapshot(hh);
+  });
+  beforeEach(async () => {
+    await revert(hh);
     tag = Buffer.from('USDCASH'.padStart(32, '\0'))
     seq = 1
     sec = Math.floor(Date.now() / 1000)
     ttl = 10000000000000
     val = Buffer.from('11'.repeat(32), 'hex')
-    debug(tag, seq, sec, ttl, val)
   })
              
   it('ttl on read', async function () {
-
-    const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
-    const fb = await FeedbaseFactory.deploy()
-
-    const tag = Buffer.from('USDETH'.padStart(32, '\0'))
-    const seq = 1
-    const sec = Math.floor(Date.now() / 1000)
-    const ttl = 10000000000000
-    const val = Buffer.from('11'.repeat(32), 'hex')
-    debug(tag, seq, sec, ttl, val)
-
     const push = await send(fb.push, tag, val, ttl, '00'.repeat(20))
     const read = await fb.read(ALI, tag)
     debug(`read result ${read}`)
@@ -74,82 +58,71 @@ describe('feedbase', () => {
   })
 
 
-  describe('cost setCost', () => {
-
-    describe('balance zero', () => {
-      it('cost too high', async function () {
-        const cost = 1
-        const setCost = await fb.setCost(tag, cash.address, cost)
-        fail('VM Exception while processing transaction: reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)',
-          fb.push, tag, val, ttl, cash.address)
-      })
-
-      it('cost ok', async function () {
-        const cost = 0
-        const setCost = await fb.setCost(tag, cash.address, cost)
-        await fb.push(tag, val, ttl, cash.address);
-      })
-    })
-
-    describe('push balance nonzero', () => {
-      let bal;
-      beforeEach(async () => {
-        bal = 1000;
-      })
-
-      it('cost too high', async function () {
-        const cost = 1001
-        const setCost = await fb.setCost(tag, cash.address, cost)
-        const deposit = await fb.deposit(cash.address, ALI, bal, {value: bal});
-        const request = await fb.request(ALI, tag, cash.address, bal);
-        await fail('VM Exception while processing transaction: reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)',
-          fb.push, tag, val, ttl, cash.address)
-      })
-
-      it('cost ok', async function () {
-        const cost = 1000
-        const setCost = await fb.setCost(tag, cash.address, cost)
-        const deposit = await fb.deposit(cash.address, ALI, bal, {value: bal});
-        const request = await fb.request(ALI, tag, cash.address, bal);
-        await fb.push(tag, val, ttl, cash.address);
-      })
-    })
-    describe('deposit', () => {
-      let bal;
-      beforeEach(async () => {
-        bal      = await cash.balanceOf(ALI);
-      })
-      it('zero', async function () {
-        const amt      = 0;
-        const deposit  = await fb.deposit(cash.address, ALI, amt, {value: amt});
-        want(await cash.balanceOf(ALI)).to.eql(bal.sub(amt));
-      })
-      it('nonzero', async function () {
-        const amt      = 3;
-        const deposit  = await fb.deposit(cash.address, ALI, amt, {value: amt});
-        want(await cash.balanceOf(ALI)).to.eql(bal.sub(amt));
-      })
-    })
-
-    describe('withdraw', () => {
-      it('zero', async function () {
-        const amt      = 0;
-        const bal      = await cash.balanceOf(ALI);
-        const withdraw = await fb.withdraw(cash.address, ALI, amt);
-        want(await cash.balanceOf(ALI)).to.eql(bal.add(amt));
-      })
-      it('nonzero', async function () {
-        const amt      = 3;
-        const deposit  = await fb.deposit(cash.address, ALI, amt, {value: amt});
-        const bal      = await cash.balanceOf(ALI);
-        const withdraw = await fb.withdraw(cash.address, ALI, amt);
-        want(await cash.balanceOf(ALI)).to.eql(bal.add(amt));
-      })
-      it('underflow', async function () {
-        const amt      = 3;
-        const deposit  = await fb.deposit(cash.address, ALI, amt, {value: amt});
-        await fail('underflow', fb.withdraw, cash.address, ALI, amt+1);
-      })
-    })
+  it('zero cost too high', async function () {
+    const cost = 1
+    const setCost = await fb.setCost(tag, cash.address, cost)
+    fail('VM Exception while processing transaction: reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)',
+      fb.push, tag, val, ttl, cash.address)
   })
+
+  it('zero cost ok', async function () {
+    const cost = 0
+    const setCost = await fb.setCost(tag, cash.address, cost)
+    await fb.push(tag, val, ttl, cash.address);
+  })
+
+  it('nonzero cost too high', async function () {
+    const bal = 1000;
+    const cost = 1001
+    const setCost = await fb.setCost(tag, cash.address, cost)
+    const deposit = await fb.deposit(cash.address, ALI, bal, {value: bal});
+    const request = await fb.request(ALI, tag, cash.address, bal);
+    await fail('VM Exception while processing transaction: reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)',
+      fb.push, tag, val, ttl, cash.address)
+  })
+
+  it('nonzero cost ok', async function () {
+    const bal = 1000;
+    const cost = 1000
+    const setCost = await fb.setCost(tag, cash.address, cost)
+    const deposit = await fb.deposit(cash.address, ALI, bal, {value: bal});
+    const request = await fb.request(ALI, tag, cash.address, bal);
+    await fb.push(tag, val, ttl, cash.address);
+  })
+
+  it('deposit zero', async function () {
+    const bal = await cash.balanceOf(ALI);
+    const amt      = 0;
+    const deposit  = await fb.deposit(cash.address, ALI, amt, {value: amt});
+    want(await cash.balanceOf(ALI)).to.eql(bal.sub(amt));
+  })
+
+  it('deposit nonzero', async function () {
+    const bal = await cash.balanceOf(ALI);
+    const amt      = 3;
+    const deposit  = await fb.deposit(cash.address, ALI, amt, {value: amt});
+    want(await cash.balanceOf(ALI)).to.eql(bal.sub(amt));
+  })
+
+  it('withdraw zero', async function () {
+    const amt      = 0;
+    const bal      = await cash.balanceOf(ALI);
+    const withdraw = await fb.withdraw(cash.address, ALI, amt);
+    want(await cash.balanceOf(ALI)).to.eql(bal.add(amt));
+  })
+
+  it('withdraw nonzero', async function () {
+    const amt      = 3;
+    const deposit  = await fb.deposit(cash.address, ALI, amt, {value: amt});
+    const bal      = await cash.balanceOf(ALI);
+    const withdraw = await fb.withdraw(cash.address, ALI, amt);
+    want(await cash.balanceOf(ALI)).to.eql(bal.add(amt));
+  })
+
+  it('withdraw underflow', async function () {
+    const amt      = 3;
+    const deposit  = await fb.deposit(cash.address, ALI, amt, {value: amt});
+    await fail('underflow', fb.withdraw, cash.address, ALI, amt+1);
+  })
+
 })
