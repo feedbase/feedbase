@@ -7,8 +7,6 @@ const { constants, BigNumber, utils } = ethers
 const { MaxUint256 } = constants
 const { formatBytes32String, parseEther, parseBytes32String } = utils
 
-const toAddressList = (xs: Contract[]): string[] => xs.map(x => x.address)
-
 describe('medianizer', () => {
   let cash, sources
   let fb, medianizer, selector
@@ -53,9 +51,10 @@ describe('medianizer', () => {
     const owner = await selector.owner()
     want(owner).to.eql(ali.address)
 
-    await selector.setSelectors(toAddressList(sources))
+    const selectors = sources.map(s => s.address)
+    await selector.setSelectors(selectors)
     const { set } = await selector.getSelectors()
-    want(set).to.eql(toAddressList(sources))
+    want(set).to.eql(selectors)
   })
 
   it('poke', async function () {

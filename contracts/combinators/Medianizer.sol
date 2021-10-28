@@ -16,7 +16,6 @@ contract MedianizerCombinator {
 
   function poke(bytes32 tag, address cash) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
-    require(sources.length % 2 != 0, 'ERR_SOURCE_COUNT');
     uint balance = fb.requested(address(this), tag, cash);
     for(uint i = 0; i < sources.length; i++) {
       fb.request(sources[i], tag, cash, balance / sources.length);
