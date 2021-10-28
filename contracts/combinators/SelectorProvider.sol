@@ -9,6 +9,9 @@ interface SelectorProvider {
 contract FixedSelectorProvider is SelectorProvider {
   address public owner;
   address[] selectors;
+  constructor() {
+    owner = msg.sender;
+  }
   function setOwner(address newOwner) public {
     require(msg.sender == owner, 'ERR_OWNER');
     owner = newOwner;
