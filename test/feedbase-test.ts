@@ -29,13 +29,15 @@ async function fail(...args) {
 let cash
 let fb
 let signers
+let oracle
 
 const use = (n) => {
   const signer = signers[n]
   debug(`using ${n} ${signer.address}`)
 
-  cash = cash.connect(signer)
-  fb = fb.connect(signer)
+  if( cash ) cash = cash.connect(signer);
+  if( fb ) fb = fb.connect(signer);
+  if( oracle ) oracle = oracle.connect(signer);
 }
 
 describe('feedbase', () => {
@@ -67,51 +69,6 @@ describe('feedbase', () => {
              
   it('basics', async function () {})
 
-  it('oracle relay', async function () {
-    const { chainId } = network.config
-    debug('chainId: ', chainId)
-
-    // debug(signers[0])
-    const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
-    const fb = await FeedbaseFactory.deploy()
-    const BasicReceiverFactoryFactory = await ethers.getContractFactory('BasicReceiverFactory')
-    const factory = await BasicReceiverFactoryFactory.deploy(fb.address)
-
-    const tx = await factory.build()
-    // debug('create', tx)
-    const res = await tx.wait()
-    const oracleAddr = res.events[0].args[0]
-
-    const oracle = await new ethers.Contract(oracleAddr, BasicReceiver.abi, signers[0])
-    const tx2 = await oracle.setSigner(signers[0].address, 1000000000000)
-    await tx2.wait()
-
-    const sttl = await oracle.signerTTL(signers[0].address)
-    debug(`sttl: ${sttl}`)
-
-    const oracleChainId = await oracle.chainId()
-    debug(`chainId: ${chainId}, type ${typeof (chainId)}`)
-    debug(`oracleChainId: ${oracleChainId}, type ${typeof (oracleChainId)}`)
-    want(chainId).equal(oracleChainId.toNumber())
-
-    const digest = makeUpdateDigest({
-      tag,
-      val: val,
-      seq: seq,
-      sec: sec,
-      ttl: ttl,
-      chainId: chainId,
-      receiver: oracle.address
-    })
-    debug(`digest: ${Buffer.from(digest).toString('hex')}`)
-
-    const signature = await signers[0].signMessage(digest)
-    debug(`signature ${signature}`)
-    const sig = ethers.utils.splitSignature(signature)
-    // debug(sig);
-    const tx3 = await oracle.submit(tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s)
-  })
-
   it('ttl on read', async function () {
     // debug(signers[0]);
 
@@ -126,10 +83,8 @@ describe('feedbase', () => {
     want(read.val).equal('0x' + val.toString('hex'))
   })
 
-
-  //TODO: auth tests
   describe('some receiver tests', () => {
-    let oracle, chainId;
+    let chainId;
     beforeEach(async () => {
       const BasicReceiverFactoryFactory = await ethers.getContractFactory('BasicReceiverFactory')
       const factory = await BasicReceiverFactoryFactory.deploy(fb.address)
@@ -141,9 +96,63 @@ describe('feedbase', () => {
 
       oracle = await new ethers.Contract(oracleAddr, BasicReceiver.abi, signers[0])
       await oracle.setSigner(signers[0].address, 1000000000000)
+      await oracle.deployed();
 
       chainId = network.config.chainId;
     })
+
+    it('oracle relay', async function () {
+      const { chainId } = network.config
+      debug('chainId: ', chainId)
+
+      const tx2 = await oracle.setSigner(signers[0].address, 1000000000000)
+      await tx2.wait()
+
+      const sttl = await oracle.signerTTL(signers[0].address)
+      debug(`sttl: ${sttl}`)
+
+      const oracleChainId = await oracle.chainId()
+      debug(`chainId: ${chainId}, type ${typeof (chainId)}`)
+      debug(`oracleChainId: ${oracleChainId}, type ${typeof (oracleChainId)}`)
+      want(chainId).equal(oracleChainId.toNumber())
+
+      const digest = makeUpdateDigest({
+        tag,
+        val: val,
+        seq: seq,
+        sec: sec,
+        ttl: ttl,
+        chainId: chainId,
+        receiver: oracle.address
+      })
+      debug(`digest: ${Buffer.from(digest).toString('hex')}`)
+
+      const signature = await signers[0].signMessage(digest)
+      debug(`signature ${signature}`)
+      const sig = ethers.utils.splitSignature(signature)
+      // debug(sig);
+      const tx3 = await oracle.submit(tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s)
+    })
+
+    it('auth', async function () {
+      const auths = async (n) => {
+        use(n);
+        await oracle.setOwner(signers[n].address);
+        await oracle.setCost(tag, cash.address, 1000);
+        await oracle.setRelayFee(tag, cash.address, 1000);
+        await oracle.setSigner(signers[n].address, 1000);
+      }
+
+      want(auths(1)).rejectedWith('bad-owner');
+      await auths(0);
+      await oracle.setOwner(signers[1].address);
+      want(auths(0)).rejectedWith('bad-owner');
+      await auths(1);
+      await oracle.setOwner(signers[0].address);
+      want(auths(1)).rejectedWith('bad-owner');
+      await auths(0);
+
+    });
 
     //sequence number must increase
     it('seq #', async function () {
@@ -177,42 +186,51 @@ describe('feedbase', () => {
       await fail('submit-seq', oracle.submit, tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
     });
 
-    //TODO: cost > relay fee
-    it('collect (cost < relay fee)', async function () {
-      const cost     = 10;
-      const relayFee = 11;
+    describe('collect', async function () {
+      let cost, relayFee;
+      it('cost < relay fee', async function () {
+        cost     = 10;
+        relayFee = 11;
+      });
 
-      const setCost = await oracle.setCost(tag, cash.address, cost);
-      const deposit = await fb.deposit(cash.address, signers[0].address, cost * 2);
-      const request = await fb.request(oracle.address, tag, cash.address, cost * 2);
-      await oracle.setRelayFee(tag, cash.address, relayFee);
+      it('cost > relay fee', async function () {
+        cost     = 11;
+        relayFee = 10;
+      });
 
-      for( let i = 0; i < 2; i++ ) {
-        const digest = makeUpdateDigest({
-          tag,
-          val: val,
-          seq: seq + i,
-          sec: sec,
-          ttl: ttl,
-          chainId: chainId,
-          receiver: oracle.address
-        })
-        debug(`digest: ${Buffer.from(digest).toString('hex')}`)
+      afterEach(async () => {
+        const setCost = await oracle.setCost(tag, cash.address, cost);
+        const deposit = await fb.deposit(cash.address, signers[0].address, cost * 2);
+        const request = await fb.request(oracle.address, tag, cash.address, cost * 2);
+        await oracle.setRelayFee(tag, cash.address, relayFee);
 
-        const signature = await signers[0].signMessage(digest)
-        debug(`signature ${signature}`)
-        const sig = ethers.utils.splitSignature(signature)
-        // debug(sig);
-        await oracle.submit(tag, seq + i, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
-      }
+        for( let i = 0; i < 2; i++ ) {
+          const digest = makeUpdateDigest({
+            tag,
+            val: val,
+            seq: seq + i,
+            sec: sec,
+            ttl: ttl,
+            chainId: chainId,
+            receiver: oracle.address
+          })
+          debug(`digest: ${Buffer.from(digest).toString('hex')}`)
 
-      const bal     = await cash.balanceOf(signers[0].address);
-      const collect = await oracle.collect(cash.address, signers[0].address);
-      await collect.wait()
+          const signature = await signers[0].signMessage(digest)
+          debug(`signature ${signature}`)
+          const sig = ethers.utils.splitSignature(signature)
+          // debug(sig);
+          await oracle.submit(tag, seq + i, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
+        }
 
-      want(await cash.balanceOf(signers[0].address)).to.eql(bal.add(cost * 2));
+        const bal     = await cash.balanceOf(signers[0].address);
+        const collect = await oracle.collect(cash.address, signers[0].address);
+        await collect.wait()
+
+        want(await cash.balanceOf(signers[0].address)).to.eql(bal.add(Math.min(relayFee, cost) * 2));
+      });
     });
-  })
+  });
 
   describe('some fb tests', () => {
 
