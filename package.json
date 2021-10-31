@@ -1,6 +1,6 @@
 {
   "name": "feedbase",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
     "build:ts": "tsc && chmod +x dist/src/cmd.js",
@@ -27,6 +27,7 @@
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "hardhat": "^2.4.3",
+    "minihat": "^0.0.3",
     "ts-mocha": "^8.0.0",
     "ts-standard": "^10.0.0",
     "typescript": "^4.4.2"
