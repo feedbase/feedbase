@@ -75,15 +75,15 @@ describe('feedbase', () => {
 
     // push changes value
     val = Buffer.from('22'.repeat(32), 'hex');
-    ttl = Date.now() + 5;
+    ttl = Math.floor(Date.now() / 1000) + 5;
     await fb.push(tag, val, ttl, cash.address);
     read = await fb.read(ALI, tag);
     want(read.ttl.toNumber()).equal(ttl);
     want(read.val).equal('0x' + val.toString('hex'));
 
-    ttl = Date.now();
+    ttl = Math.floor(Date.now() / 1000) - 1;
     await fb.push(tag, val, ttl, cash.address);
-    want(fb.read(ALI, tag)).rejectedWith('ERR_READ');
+    await want(fb.read(ALI, tag)).rejectedWith('ERR_READ');
   });
 
   it('zero cost too high', async function () {
