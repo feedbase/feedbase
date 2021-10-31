@@ -70,18 +70,39 @@ describe('feedbase', () => {
   it('basics', async function () {})
 
   it('ttl on read', async function () {
-    // debug(signers[0]);
-
-    const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
-    const fb = await FeedbaseFactory.deploy()
-
-    const push = await fb.push(tag, val, ttl, '00'.repeat(20))
+    const push = await fb.push(tag, val, ttl, cash.address)
     const read = await fb.read(signers[0].address, tag)
     debug(`read result ${read}`)
 
     want(read.ttl.toNumber()).equal(ttl)
     want(read.val).equal('0x' + val.toString('hex'))
   })
+
+  it('read successive', async function () {
+    await fb.push(tag, val, ttl, cash.address)
+    let read = await fb.read(signers[0].address, tag)
+    debug(`read result ${read}`)
+
+    want(read.ttl.toNumber()).equal(ttl)
+    want(read.val).equal('0x' + val.toString('hex'))
+
+    // read doesn't change value
+    read = await fb.read(signers[0].address, tag);
+    want(read.ttl.toNumber()).equal(ttl)
+    want(read.val).equal('0x' + val.toString('hex'))
+
+    // push changes value
+    val = Buffer.from('22'.repeat(32), 'hex');
+    ttl--;
+    await fb.push(tag, val, ttl, cash.address);
+    read = await fb.read(signers[0].address, tag);
+    want(read.ttl.toNumber()).equal(ttl);
+    want(read.val).equal('0x' + val.toString('hex'));
+
+    ttl = 0;
+    await fb.push(tag, val, ttl, cash.address);
+    await fail('ERR_READ', fb.read, signers[0].address, tag);
+  });
 
   describe('some receiver tests', () => {
     let chainId;
@@ -134,6 +155,7 @@ describe('feedbase', () => {
       const tx3 = await oracle.submit(tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s)
     })
 
+
     it('auth', async function () {
       const auths = async (n) => {
         use(n);
@@ -185,6 +207,53 @@ describe('feedbase', () => {
       await oracle.submit(tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
       await fail('submit-seq', oracle.submit, tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
     });
+
+    // fail when timestamp < sec or timestamp > ttl
+    describe('submit preconditions', async () => {
+      let msg;
+      it('ttl', async function () {
+        msg = 'ttl';
+        ttl = sec;
+      });
+      it('sec', async function () {
+        msg = 'sec';
+        sec = ttl;
+      });
+      it('signer ttl', async function () {
+        msg = 'bad-signer';
+        await oracle.setSigner(signers[0].address, sec);
+      });
+    
+      afterEach(async () => {
+        const cost     = 10;
+        const relayFee = 11;
+
+        const setCost = await oracle.setCost(tag, cash.address, cost);
+        const deposit = await fb.deposit(cash.address, signers[0].address, cost * 2, {value: cost * 2});
+        const request = await fb.request(oracle.address, tag, cash.address, cost * 2);
+
+        const digest = makeUpdateDigest({
+          tag,
+          val: val,
+          seq: seq,
+          sec: sec,
+          ttl: ttl,
+          chainId: chainId,
+          receiver: oracle.address
+        })
+        debug(`digest: ${Buffer.from(digest).toString('hex')}`)
+
+        const signature = await signers[0].signMessage(digest)
+        debug(`signature ${signature}`)
+        const sig = ethers.utils.splitSignature(signature)
+        // debug(sig);
+
+        await oracle.setRelayFee(tag, cash.address, relayFee);
+
+        await fail(msg, oracle.submit, tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
+      });
+    });
+
 
     describe('collect', async function () {
       let cost, relayFee;

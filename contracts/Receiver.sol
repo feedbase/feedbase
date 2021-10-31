@@ -99,9 +99,6 @@ contract BasicReceiver {
     uint8 v, bytes32 r, bytes32 s
   ) public
   {
-    // verify signer key is live for this signer/ttl
-    require(block.timestamp < ttl, 'receiver-submit-msg-ttl');
-
     bytes32 sighash = digest(tag, seq, sec, ttl, val);
     address signer = ecrecover(sighash, v, r, s);
 
