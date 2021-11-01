@@ -52,6 +52,11 @@ contract BasicReceiver {
   bytes32 public constant SUBMIT_TYPEHASH = 0x704ca89a84579f1c77f8af3ba18d619ac3bfe3ef4b477dd428170b1a3984c5d0;
   bytes32 public immutable DOMAIN_SEPARATOR;
 
+  modifier auth {
+    require(msg.sender == owner, 'receiver-bad-owner');
+    _;
+  }
+
   constructor(Feedbase fb) {
     feedbase = fb;
     owner = msg.sender;
@@ -94,9 +99,6 @@ contract BasicReceiver {
     uint8 v, bytes32 r, bytes32 s
   ) public
   {
-    // verify signer key is live for this signer/ttl
-    require(block.timestamp < ttl, 'receiver-submit-msg-ttl');
-
     bytes32 sighash = digest(tag, seq, sec, ttl, val);
     address signer = ecrecover(sighash, v, r, s);
 
@@ -125,24 +127,20 @@ contract BasicReceiver {
     feedbase.withdraw(cash, dest, bal);
   }
 
-  function setCost(bytes32 tag, address cash, uint cost) public {
-    require(msg.sender == owner, 'receiver-setCost-bad-owner');
+  function setCost(bytes32 tag, address cash, uint cost) public auth {
     feedbase.setCost(tag, cash, cost);
   }
 
-  function setRelayFee(bytes32 tag, address cash, uint256 fee) public {
-    require(msg.sender == owner, 'receiver-setRelayFee-bad-owner');
+  function setRelayFee(bytes32 tag, address cash, uint256 fee) public auth {
     fees[tag][cash] = fee;
   }
 
-  function setOwner(address newOwner) public {
-    require(msg.sender == owner, 'receiver-setOwner-bad-owner');
+  function setOwner(address newOwner) public auth {
     emit OwnerUpdate(owner, newOwner);
     owner = newOwner;
   }
 
-  function setSigner(address who, uint ttl) public {
-    require(msg.sender == owner, 'receiver-setSigner-bad-owner');
+  function setSigner(address who, uint ttl) public auth {
     signerTTL[who] = ttl;
   }
 
