@@ -3,6 +3,7 @@ import { ethers, network } from 'hardhat'
 import { send, fail, chai, want, snapshot, revert } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
+const { hexlify } = ethers.utils
 
 let cash
 let fb
@@ -15,7 +16,6 @@ const use = (n) => {
   cash = cash.connect(signer)
   fb = fb.connect(signer)
 }
-
 
 describe('feedbase', () => {
   const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
@@ -58,7 +58,6 @@ describe('feedbase', () => {
     want(read.val).equal('0x' + val.toString('hex'))
   })
 
-
   it('zero cost too high', async function () {
     const cost = 1
     const setCost = await fb.setCost(tag, cash.address, cost)
@@ -88,7 +87,7 @@ describe('feedbase', () => {
     const setCost = await fb.setCost(tag, cash.address, cost)
     const deposit = await fb.deposit(cash.address, ALI, bal, { value: bal })
     const request = await fb.request(ALI, tag, cash.address, bal)
-    await fb.push(tag, val, ttl, cash.address)
+    const tx = await fb.push(tag, val, ttl, cash.address)
   })
 
   it('deposit zero', async function () {
@@ -126,4 +125,57 @@ describe('feedbase', () => {
     await fail('underflow', fb.withdraw, cash.address, ALI, amt + 1)
   })
 
+  it('Push event', async function () {
+    const bal = 1000
+    await fb.deposit(cash.address, ALI, bal, { value: bal })
+    await fb.request(ALI, tag, cash.address, bal)
+    const tx = await fb.push(tag, val, ttl, cash.address)
+    const { events } = await tx.wait()
+    const [{ args }] = events
+
+    want(args.src).to.eql(ALI)
+    want(hexlify(args.tag)).to.eql(hexlify(tag))
+    want(hexlify(args.val)).to.eql(hexlify(val))
+    want(args.ttl.toNumber()).to.eql(ttl)
+  })
+
+  it('Paid event', async function () {
+    const bal = 1000
+    await fb.deposit(cash.address, ALI, bal, { value: bal })
+    const tx = await fb.request(ALI, tag, cash.address, bal)
+    const { events } = await tx.wait()
+    const [{ args }] = events
+
+    want(args.cash).to.eql(cash.address)
+    want(args.src).to.eql(ALI)
+    want(args.dst).to.eql(ALI)
+    want(args.amt.toNumber()).to.eql(bal)
+  })
+
+  it('Deposit event', async function () {
+    const bal = 1000
+    const tx = await fb.deposit(cash.address, ALI, bal, { value: bal })
+    const { events } = await tx.wait()
+    // ERC20 transfer event is first
+    const [_transfer, { args }] = events
+
+    want(args.caller).to.eql(ALI)
+    want(args.cash).to.eql(cash.address)
+    want(args.recipient).to.eql(ALI)
+    want(args.amount.toNumber()).to.eql(bal)
+  })
+
+  it('Withdrawal event', async function () {
+    const amt = 3
+    await fb.deposit(cash.address, ALI, amt, { value: amt })
+    const tx = await fb.withdraw(cash.address, ALI, amt)
+    const { events } = await tx.wait()
+    // ERC20 transfer event is first
+    const [_transfer, { args }] = events
+
+    want(args.caller).to.eql(ALI)
+    want(args.cash).to.eql(cash.address)
+    want(args.recipient).to.eql(ALI)
+    want(args.amount.toNumber()).to.eql(amt)
+  })
 })
