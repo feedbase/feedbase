@@ -198,5 +198,55 @@ describe('medianizer', () => {
       const [median] = await fb.read(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1100)
     })
+
+    it('Three unordered values', async () => {
+      const vals = [1300, 1000, 1200].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
+      const ttl = 10 * 10 ** 12
+      const sources = [s1, s2, s3]
+      const selectors = sources.map(s => s.address)
+
+      await selector.setSelectors(selectors)
+      await Promise.all(sources.map(async (src, idx) => {
+        const con = fb.connect(src)
+        await con.push(tag, vals[idx], ttl, cash.address)
+      }))
+
+      await medianizer.push(tag)
+      const [median] = await fb.read(medianizer.address, tag)
+      want(BigNumber.from(median).toNumber()).to.eql(1200)
+    })
+
+    it('Four unordered values', async () => {
+      const vals = [1200, 1000, 1300, 1100].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
+      const ttl = 10 * 10 ** 12
+      const sources = [s1, s2, s3, s4]
+      const selectors = sources.map(s => s.address)
+
+      await selector.setSelectors(selectors)
+      await Promise.all(sources.map(async (src, idx) => {
+        const con = fb.connect(src)
+        await con.push(tag, vals[idx], ttl, cash.address)
+      }))
+
+      await medianizer.push(tag)
+      const [median] = await fb.read(medianizer.address, tag)
+      want(BigNumber.from(median).toNumber()).to.eql(1150)
+    })
+
+    it('Five unordered values', async () => {
+      const vals = [1300, 1100, 1400, 1200, 1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
+      const ttl = 10 * 10 ** 12
+      const sources = [s1, s2, s3, s4, s5]
+      const selectors = sources.map(s => s.address)
+      await selector.setSelectors(selectors)
+      await Promise.all(sources.map(async (src, idx) => {
+        const con = fb.connect(src)
+        await con.push(tag, vals[idx], ttl, cash.address)
+      }))
+
+      await medianizer.push(tag)
+      const [median] = await fb.read(medianizer.address, tag)
+      want(BigNumber.from(median).toNumber()).to.eql(1200)
+    })
   })
 })
