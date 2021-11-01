@@ -79,7 +79,7 @@ describe('medianizer', () => {
 
   describe('push', () => {
     it('One value', async () => {
-      const vals = [1000].map(x => formatBytes32String(`${x}`))
+      const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1]
       const selectors = sources.map(s => s.address)
@@ -93,11 +93,11 @@ describe('medianizer', () => {
 
       await medianizer.push(tag)
       const [median] = await fb.read(medianizer.address, tag)
-      want(parseBytes32String(median)).to.eql('1000')
+      want(BigNumber.from(median).toNumber()).to.eql(1000)
     })
 
     it('Two values', async () => {
-      const vals = [1000, 1200].map(x => formatBytes32String(`${x}`))
+      const vals = [1000, 1200].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2]
       const selectors = sources.map(s => s.address)
@@ -110,11 +110,11 @@ describe('medianizer', () => {
 
       await medianizer.push(tag)
       const [median] = await fb.read(medianizer.address, tag)
-      want(parseBytes32String(median)).to.eql('1100')
+      want(BigNumber.from(median).toNumber()).to.eql(1100)
     })
 
     it('Three values', async () => {
-      const vals = [1000, 1200, 1300].map(x => formatBytes32String(`${x}`))
+      const vals = [1000, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3]
       const selectors = sources.map(s => s.address)
@@ -127,11 +127,11 @@ describe('medianizer', () => {
 
       await medianizer.push(tag)
       const [median] = await fb.read(medianizer.address, tag)
-      want(parseBytes32String(median)).to.eql('1200')
+      want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
 
     it('Four values', async () => {
-      const vals = [1000, 1100, 1200, 1300].map(x => formatBytes32String(`${x}`))
+      const vals = [1000, 1100, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4]
       const selectors = sources.map(s => s.address)
@@ -144,12 +144,11 @@ describe('medianizer', () => {
 
       await medianizer.push(tag)
       const [median] = await fb.read(medianizer.address, tag)
-      debug('median: ', median)
-      want(parseBytes32String(median)).to.eql('1150')
+      want(BigNumber.from(median).toNumber()).to.eql(1150)
     })
 
     it('Five values', async () => {
-      const vals = [1000, 1100, 1200, 1300, 1400].map(x => formatBytes32String(`${x}`))
+      const vals = [1000, 1100, 1200, 1300, 1400].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4, s5]
       const selectors = sources.map(s => s.address)
@@ -161,11 +160,11 @@ describe('medianizer', () => {
 
       await medianizer.push(tag)
       const [median] = await fb.read(medianizer.address, tag)
-      want(parseBytes32String(median)).to.eql('1200')
+      want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
 
     it('One expired value', async () => {
-      const vals = [1000].map(x => formatBytes32String(`${x}`))
+      const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 60 * 60 * 24
       const now = Math.ceil(Date.now() / 1000)
       const sources = [s1]
@@ -181,6 +180,23 @@ describe('medianizer', () => {
       ])
 
       await fail("VM Exception while processing transaction: reverted with reason string 'ERR_READ'", medianizer.push, tag)
+    })
+
+    it('Two unordered values', async () => {
+      const vals = [1200, 1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
+      const ttl = 10 * 10 ** 12
+      const sources = [s1, s2]
+      const selectors = sources.map(s => s.address)
+
+      await selector.setSelectors(selectors)
+      await Promise.all(sources.map(async (src, idx) => {
+        const con = fb.connect(src)
+        await con.push(tag, vals[idx], ttl, cash.address)
+      }))
+
+      await medianizer.push(tag)
+      const [median] = await fb.read(medianizer.address, tag)
+      want(BigNumber.from(median).toNumber()).to.eql(1100)
     })
   })
 })

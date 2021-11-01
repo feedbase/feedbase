@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.9;
 
 import '../Feedbase.sol';
 import './SelectorProvider.sol';
@@ -29,10 +29,7 @@ contract MedianizerCombinator {
     uint256 count = 0;
   
     for(uint256 i = 0; i < sources.length; i++) {
-      (bytes32 val, uint256 ttl) = fb.read(sources[i], tag);
-      if (ttl < block.timestamp) {
-        continue;
-      }
+      (bytes32 val, uint256 _ttl) = fb.read(sources[i], tag);
       if (count == 0 || val >= data[count - 1]) {
         data[count] = val;
       } else {
