@@ -28,7 +28,7 @@ contract MedianizerCombinator {
     uint256 minttl = type(uint256).max;
     uint256 count = 0;
   
-    for(uint256 i = 1; i < sources.length; i++) {
+    for(uint256 i = 0; i < sources.length; i++) {
       (bytes32 val, uint256 ttl) = fb.read(sources[i], tag);
       if (ttl < block.timestamp) {
         continue;
@@ -40,7 +40,7 @@ contract MedianizerCombinator {
         while (val >= data[j]) {
           j++;
         }
-        for (uint256 k = count; k > j; k--) {
+        for(uint256 k = count; k > j; k--) {
           data[k] = data[k - 1];
         }
         data[j] = val;
@@ -48,15 +48,15 @@ contract MedianizerCombinator {
       count++;
     }
 
-      bytes32 median;
-      if (count % 2 == 0) {
-        uint256 val1 = uint256(data[(count / 2) - 1]);
-        uint256 val2 = uint256(data[count / 2]);
-        median = bytes32((val1 + val2) / 2);
-      } else {
-        median = data[(count - 1) / 2];
-      }
+    bytes32 median;
+    if (count % 2 == 0) {
+      uint256 val1 = uint256(data[(count / 2) - 1]);
+      uint256 val2 = uint256(data[count / 2]);
+      median = bytes32((val1 + val2) / 2);
+    } else {
+      median = data[(count - 1) / 2];
+    }
 
-      fb.push(tag, median, minttl, address(0));
+    fb.push(tag, median, minttl, address(0));
   }
 }
