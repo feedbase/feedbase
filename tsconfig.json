@@ -4,11 +4,8 @@
     "esModuleInterop": true
   },
   "include": [
-    "src/**/*",
-    "task/*",
+    "src/**/*.ts",
+    "task/**.ts",
     "hardhat.config.ts"
-  ],
-  "exclude": [
-    "test/*"
   ]
 }
