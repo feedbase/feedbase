@@ -61,7 +61,8 @@ describe('feedbase', () => {
   })
 
   it('read successive', async function () {
-    await fb.push(tag, val, ttl, cash.address)
+    const push = await fb.push(tag, val, ttl, cash.address)
+    await push.wait();
     let read = await fb.read(ALI, tag)
     debug(`read result ${read}`)
 
@@ -75,7 +76,12 @@ describe('feedbase', () => {
 
     // push changes value
     val = Buffer.from('22'.repeat(32), 'hex');
-    ttl = Math.floor(Date.now() / 1000) + 5;
+    const timestamp = (await ethers.provider.getBlock(push.blockNumber)).timestamp;
+    await network.provider.request({
+      method: "evm_setNextBlockTimestamp",
+      params: [timestamp + 1]
+    });
+    ttl = timestamp + 2;
     await fb.push(tag, val, ttl, cash.address);
     read = await fb.read(ALI, tag);
     want(read.ttl.toNumber()).equal(ttl);
