@@ -1,16 +1,13 @@
 {
   "name": "feedbase",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
-    "build:ts": "tsc && chmod +x dist/src/cmd.js",
+    "build:ts": "tsc",
     "build:sol": "npx hardhat compile",
     "pretest": "npm run build",
     "test": "ts-mocha test/*.ts test/**/*.ts",
     "fmt": "ts-standard --fix src task test"
-  },
-  "bin": {
-    "feed": "./dist/src/cmd.js"
   },
   "main": "./dist/src/index.js",
   "dependencies": {
