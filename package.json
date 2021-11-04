@@ -6,7 +6,7 @@
     "build:ts": "tsc && chmod +x dist/src/cmd.js",
     "build:sol": "npx hardhat compile",
     "pretest": "npm run build",
-    "test": "ts-mocha test/**/*.ts",
+    "test": "ts-mocha test/*.ts test/**/*.ts",
     "fmt": "ts-standard --fix src task test"
   },
   "bin": {
