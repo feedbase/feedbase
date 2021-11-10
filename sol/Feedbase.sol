@@ -78,7 +78,13 @@ contract Feedbase {
   }
 
   function request(address src, bytes32 tag, address cash, uint256 amt) public {
-    _bals[msg.sender][cash] -= amt;
+    Config storage c = _config[msg.sender][tag][cash];
+    if( c.paid < amt ) {
+      _bals[msg.sender][cash] -= amt - c.paid;
+      c.paid = 0;
+    } else {
+      c.paid -= amt;
+    }
     _config[src][tag][cash].paid += amt;
     emit Paid(cash, msg.sender, src, amt);
   }
