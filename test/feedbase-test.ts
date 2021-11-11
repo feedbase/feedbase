@@ -212,4 +212,24 @@ describe('feedbase', () => {
     want(args.recipient).to.eql(ALI)
     want(args.amount.toNumber()).to.eql(amt)
   })
+
+  describe('timeout', () => {
+    beforeEach(async () => {
+      ttl = Math.floor(Date.now() / 1000) - 1;
+      await send(fb.push, tag, val, ttl, cash.address)
+    });
+
+    it('no toss', async function () {
+      fb.setToss(tag, false);
+      const read = await fb.read(ALI, tag)
+      debug(`read result ${read}`)
+      want(read.ttl.toNumber()).equal(ttl)
+      want(read.val).equal('0x' + val.toString('hex'))
+    });
+
+    it('toss', async function () {
+      await fail('ERR_READ', fb.read, ALI, tag);
+    });
+  });
+
 })

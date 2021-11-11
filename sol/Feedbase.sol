@@ -9,6 +9,7 @@ contract Feedbase {
   struct Feed {
     bytes32 val;
     uint256 ttl;
+    bool    toss;
   }
 
   struct Config {
@@ -54,8 +55,12 @@ contract Feedbase {
 
   function read(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
     Feed storage feed = _feeds[src][tag];
-    require(block.timestamp < feed.ttl, 'ERR_READ');
+    require(!feed.toss || block.timestamp < feed.ttl, 'ERR_READ');
     return (feed.val, feed.ttl);
+  }
+
+  function setToss(bytes32 tag, bool toss) public {
+    _feeds[msg.sender][tag].toss = toss;
   }
 
   function push(bytes32 tag, bytes32 val, uint256 ttl, address cash) public returns (uint256) {
@@ -65,8 +70,9 @@ contract Feedbase {
     config.paid -= config.cost;
     _bals[msg.sender][cash] += config.cost;
    
-    feed.ttl = ttl;
-    feed.val = val; 
+    feed.ttl  = ttl;
+    feed.val  = val;
+    feed.toss = true;
 
     emit Push(msg.sender, tag, val, ttl);
 
