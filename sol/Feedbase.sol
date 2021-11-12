@@ -78,13 +78,23 @@ contract Feedbase {
   }
 
   function request(address src, bytes32 tag, address cash, uint256 amt) public {
+    // draw from the current contract's (msg.sender's) `paid` to src's `paid`
+    // before drawing from msg.sender's balance
+    // this is to handle requests from combinators, where msg.sender is 
+    // also a feed source.  accounts can pay the combinator, and the combinator can
+    // pay src
     Config storage c = _config[msg.sender][tag][cash];
     if( c.paid < amt ) {
-      _bals[msg.sender][cash] -= amt - c.paid;
-      c.paid = 0;
+      // draw all of msg.sender's `paid`
+      uint256 rest = amt - c.paid;
+      c.paid       = 0;
+      // draw what's left from sender's balance
+      _bals[msg.sender][cash] -= rest;
     } else {
+      // draw part of msg.sender's `paid`
       c.paid -= amt;
     }
+    // msg.sender pays to src
     _config[src][tag][cash].paid += amt;
     emit Paid(cash, msg.sender, src, amt);
   }

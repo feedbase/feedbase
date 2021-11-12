@@ -214,6 +214,7 @@ describe('feedbase', () => {
   })
 
   describe('draw from paid', () => {
+    // request from ali, then ali requests from bob
     let bal, cost, base;
     beforeEach(async () => {
       use(0);
@@ -223,28 +224,45 @@ describe('feedbase', () => {
       await fb.deposit(cash.address, ALI, bal, { value: bal })
     });
 
-    it('paid then bal', async function () {
-      base = 1;
+    describe('pass', () => {
+      it('paid then bal', async function () {
+        // when ali requests from bob, fb should draw from what ali received 
+        // from the first request before drawing from ali's balance
+        base = 1;
+      });
+      it('paid alone', async function () {
+        // fb should draw only from what ali received from first request
+        base = 1000;
+      });
+ 
+      afterEach(async () => {
+        await fb.request(ALI, tag, cash.address, base);
+
+        want((await fb.balances(cash.address, ALI)).toNumber()).to.eql(bal - base);
+        await fb.request(BOB, tag, cash.address, bal);
+        want((await fb.balances(cash.address, ALI)).toNumber()).to.eql(0);
+        want((await fb.requested(ALI, tag, cash.address)).toNumber()).to.eql(0);
+
+        want((await fb.requested(BOB, tag, cash.address)).toNumber()).to.eql(bal);
+
+        use(1);
+        await fb.push(tag, val, ttl, cash.address);
+
+        want((await fb.requested(BOB, tag, cash.address)).toNumber()).to.eql(bal);
+      });
+     
     });
 
-    it('paid alone', async function () {
-      base = 1000;
-    });
-
-    afterEach(async () => {
+    it('error from paid and bal', async function () {
+      // not enough in paid+bal to fill the request sent to bob
+      base = 999;
       await fb.request(ALI, tag, cash.address, base);
 
       want((await fb.balances(cash.address, ALI)).toNumber()).to.eql(bal - base);
-      await fb.request(BOB, tag, cash.address, bal);
-      want((await fb.balances(cash.address, ALI)).toNumber()).to.eql(0);
-      want((await fb.requested(ALI, tag, cash.address)).toNumber()).to.eql(0);
+      await fail('underflow', fb.request, BOB, tag, cash.address, bal+1);
+    });
 
-      want((await fb.requested(BOB, tag, cash.address)).toNumber()).to.eql(bal);
-
-      use(1);
-      await fb.push(tag, val, ttl, cash.address);
-
-      want((await fb.requested(BOB, tag, cash.address)).toNumber()).to.eql(bal);
+    afterEach(async () => {
       use(0);
     });
   });
