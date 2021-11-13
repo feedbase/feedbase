@@ -91,8 +91,6 @@ contract Feedbase {
     , uint256         amount
   );
 
-  event Debug(string s);
-
   // TODO: review range convention ( currently [start, ttl) )
   function read(address src, bytes32 tag, uint256 time) public view returns (bytes32 val, uint256 ttl) {
     uint256 feedTime  = _feedHeadTimes[src][tag];
@@ -104,7 +102,13 @@ contract Feedbase {
       require( feed.prev != feedTime, 'read: feed not found (1)' );
     }
 
-    require( time < feed.ttl, 'read: feed not found (2)' );
+    while( feedTime >= feed.ttl ) {
+      feedTime = feed.prev;
+      feed     = _feeds[src][tag][feedTime];
+      require( feed.prev != feedTime, 'read: feed not found (2)' );
+    }
+
+    require( time < feed.ttl, 'read: feed not found (3)' );
 
     require( block.timestamp < feed.ttl, 'ERR_READ' );
     return (feed.val, feed.ttl);
