@@ -4,7 +4,6 @@
 pragma solidity ^0.8.9;
 
 import "./erc20/IERC20.sol";
-import "hardhat/console.sol";
 
 contract Feedbase {
 

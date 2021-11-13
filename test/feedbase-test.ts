@@ -24,6 +24,7 @@ describe('feedbase', () => {
   let tag, seq, sec, ttl, val
   let ali, bob
   let ALI, BOB
+  let BUFFER_TIME;
   before(async () => {
     signers = await ethers.getSigners();
     [ali, bob] = signers;
@@ -31,6 +32,7 @@ describe('feedbase', () => {
 
     const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
     fb = await FeedbaseFactory.deploy()
+    BUFFER_TIME = (await fb.BUFFER_TIME()).toNumber();
 
     const TokenDeployer = await ethers.getContractFactory('MockToken')
     cash = await TokenDeployer.deploy('CASH', 'CASH')
@@ -244,7 +246,6 @@ describe('feedbase', () => {
     const deposit = await fb.deposit(cash.address, ALI, bal, { value: bal })
 
     const timestamp = (await ethers.provider.getBlock(deposit.blockNumber)).timestamp;
-    const BUFFER_TIME = (await fb.BUFFER_TIME()).toNumber();
     const time0 = Math.floor(Date.now() / 1000) + BUFFER_TIME;
     const time1 = Math.floor(Date.now() / 1000) + BUFFER_TIME * 2;
     const time2 = Math.floor(Date.now() / 1000) + BUFFER_TIME * 3;
@@ -286,6 +287,34 @@ describe('feedbase', () => {
     debug(`read result ${read}`)
 
     want(read.ttl.toNumber()).equal(time3+1)
+    want(read.val).equal('0x' + val.toString('hex'))
+  });
+
+  it('fail on ttl', async function () {
+    const bal = 1000
+    const cost = 500
+    const reqAmt = 500;
+
+    use(1);
+    const setCost = await fb.setCost(tag, cash.address, cost)
+    use(0);
+    const deposit = await fb.deposit(cash.address, ALI, bal, { value: bal })
+
+    const time0 = Math.floor(Date.now() / 1000) + BUFFER_TIME * 2;
+    const time1 = Math.floor(Date.now() / 1000) + BUFFER_TIME * 3;;
+    await fb.request(BOB, tag, cash.address, reqAmt, time0);
+    await fb.request(BOB, tag, cash.address, reqAmt, time1);
+
+    use(1);
+    await fail('not enough paid', fb.push, tag, val, ttl, cash.address, time1+1);
+    await fb.push(tag, val, time1, cash.address, time0);
+    val = Buffer.from('22'.repeat(32), 'hex');
+    await fb.push(tag, val, time1+1, cash.address, time0+1);
+
+    // should read the second value
+    const read = await fb.read(BOB, tag, time1);
+    debug(`read result ${read}`)
+    want(read.ttl.toNumber()).equal(time1+1)
     want(read.val).equal('0x' + val.toString('hex'))
   });
 })
