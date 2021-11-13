@@ -112,7 +112,7 @@ contract BasicReceiver {
 
     emit Submit(msg.sender, signer, tag, seq, sec, ttl, val);
 
-    uint paid = feedbase.push(tag, val, ttl, cash);
+    uint paid = feedbase.push(tag, val, ttl, cash, 0);
 
     uint fee = fees[tag][cash];
     if (paid < fee) {

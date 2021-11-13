@@ -52,8 +52,8 @@ describe('feedbase', () => {
   })
 
   it('ttl on read', async function () {
-    const push = await send(fb.push, tag, val, ttl, cash.address)
-    const read = await fb.read(ALI, tag)
+    const push = await send(fb.push, tag, val, ttl, cash.address, 0)
+    const read = await fb.read(ALI, tag, 0)
     debug(`read result ${read}`)
 
     want(read.ttl.toNumber()).equal(ttl)
@@ -61,16 +61,16 @@ describe('feedbase', () => {
   })
 
   it('read successive', async function () {
-    let push = await fb.push(tag, val, ttl, cash.address)
+    let push = await fb.push(tag, val, ttl, cash.address, 0)
     await push.wait()
-    let read = await fb.read(ALI, tag)
+    let read = await fb.read(ALI, tag, 0)
     debug(`read result ${read}`)
 
     want(read.ttl.toNumber()).equal(ttl)
     want(read.val).equal('0x' + val.toString('hex'))
 
     // read doesn't change value
-    read = await fb.read(ALI, tag);
+    read = await fb.read(ALI, tag, 0);
     want(read.ttl.toNumber()).equal(ttl)
     want(read.val).equal('0x' + val.toString('hex'))
 
@@ -82,27 +82,27 @@ describe('feedbase', () => {
       params: [timestamp + 1]
     });
     ttl = timestamp + 2;
-    await fb.push(tag, val, ttl, cash.address);
-    read = await fb.read(ALI, tag);
+    await fb.push(tag, val, ttl, cash.address, 0);
+    read = await fb.read(ALI, tag, 0);
     want(read.ttl.toNumber()).equal(ttl);
     want(read.val).equal('0x' + val.toString('hex'));
 
     ttl = Math.floor(Date.now() / 1000) - 1;
-    await fb.push(tag, val, ttl, cash.address);
-    await want(fb.read(ALI, tag)).rejectedWith('ERR_READ');
+    await fb.push(tag, val, ttl, cash.address, 0);
+    await want(fb.read(ALI, tag, 0)).rejectedWith('ERR_READ');
   });
 
   it('zero cost too high', async function () {
     const cost = 1
     const setCost = await fb.setCost(tag, cash.address, cost)
     fail('VM Exception while processing transaction: reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)',
-      fb.push, tag, val, ttl, cash.address)
+      fb.push, tag, val, ttl, cash.address, 0)
   })
 
   it('zero cost ok', async function () {
     const cost = 0
     const setCost = await fb.setCost(tag, cash.address, cost)
-    await fb.push(tag, val, ttl, cash.address)
+    await fb.push(tag, val, ttl, cash.address, 0)
   })
 
   it('nonzero cost too high', async function () {
@@ -110,9 +110,8 @@ describe('feedbase', () => {
     const cost = 1001
     const setCost = await fb.setCost(tag, cash.address, cost)
     const deposit = await fb.deposit(cash.address, ALI, bal, { value: bal })
-    const request = await fb.request(ALI, tag, cash.address, bal)
-    await fail('VM Exception while processing transaction: reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)',
-      fb.push, tag, val, ttl, cash.address)
+    const request = await fb.request(ALI, tag, cash.address, bal, 0)
+    await fail('not enough paid', fb.push, tag, val, ttl, cash.address, 0)
   })
 
   it('nonzero cost ok', async function () {
@@ -120,8 +119,8 @@ describe('feedbase', () => {
     const cost = 1000
     const setCost = await fb.setCost(tag, cash.address, cost)
     const deposit = await fb.deposit(cash.address, ALI, bal, { value: bal })
-    const request = await fb.request(ALI, tag, cash.address, bal)
-    const tx = await fb.push(tag, val, ttl, cash.address)
+    const request = await fb.request(ALI, tag, cash.address, bal, 0)
+    const tx = await fb.push(tag, val, ttl, cash.address, 0)
   })
 
   it('deposit zero', async function () {
@@ -162,8 +161,8 @@ describe('feedbase', () => {
   it('Push event', async function () {
     const bal = 1000
     await fb.deposit(cash.address, ALI, bal, { value: bal })
-    await fb.request(ALI, tag, cash.address, bal)
-    const tx = await fb.push(tag, val, ttl, cash.address)
+    await fb.request(ALI, tag, cash.address, bal, 0)
+    const tx = await fb.push(tag, val, ttl, cash.address, 0)
     const { events } = await tx.wait()
     const [{ args }] = events
 
@@ -176,7 +175,7 @@ describe('feedbase', () => {
   it('Paid event', async function () {
     const bal = 1000
     await fb.deposit(cash.address, ALI, bal, { value: bal })
-    const tx = await fb.request(ALI, tag, cash.address, bal)
+    const tx = await fb.request(ALI, tag, cash.address, bal, 0)
     const { events } = await tx.wait()
     const [{ args }] = events
 
@@ -212,4 +211,81 @@ describe('feedbase', () => {
     want(args.recipient).to.eql(ALI)
     want(args.amount.toNumber()).to.eql(amt)
   })
+
+  it('request chain', async function () {
+    const bal = 1000
+    const cost = 1000
+    const reqAmt = bal / 2;
+
+    use(1);
+    const setCost = await fb.setCost(tag, cash.address, cost)
+    use(0);
+    const deposit = await fb.deposit(cash.address, ALI, bal, { value: bal })
+
+    const time0 = Math.floor(Date.now() / 1000) * 2;
+    const time1 = Math.floor(Date.now() / 1000) * 3;;
+    await fb.request(BOB, tag, cash.address, reqAmt, time0);
+    await fb.request(BOB, tag, cash.address, reqAmt, time1);
+
+    use(1);
+    await fail('not enough paid', fb.push, tag, val, ttl, cash.address, time1+1);
+    await fb.push(tag, val, ttl, cash.address, time0);
+ 
+  });
+
+  it('request chain cleanup', async function () {
+    const bal = 1000
+    const cost = 500
+    const reqAmt = 250;
+
+    use(1);
+    const setCost = await fb.setCost(tag, cash.address, cost)
+    use(0);
+    const deposit = await fb.deposit(cash.address, ALI, bal, { value: bal })
+
+    const timestamp = (await ethers.provider.getBlock(deposit.blockNumber)).timestamp;
+    const BUFFER_TIME = (await fb.BUFFER_TIME()).toNumber();
+    const time0 = Math.floor(Date.now() / 1000) + BUFFER_TIME;
+    const time1 = Math.floor(Date.now() / 1000) + BUFFER_TIME * 2;
+    const time2 = Math.floor(Date.now() / 1000) + BUFFER_TIME * 3;
+    const time3 = Math.floor(Date.now() / 1000) + BUFFER_TIME * 4;
+    await fb.request(BOB, tag, cash.address, reqAmt, time0);
+    await fb.request(BOB, tag, cash.address, reqAmt, time1);
+    await fb.request(BOB, tag, cash.address, reqAmt, time2);
+    await fb.request(BOB, tag, cash.address, reqAmt, time3);
+
+    await network.provider.request({
+      method: "evm_setNextBlockTimestamp",
+      params: [time0]
+    });
+
+    // buffer time has not passed, only bob can clear
+    await fail('early', fb.clean, BOB, tag, cash.address, time0);
+    use(1);
+    await send(fb.clean, BOB, tag, cash.address, time0);
+    // can't clear twice
+    await fail('not found', fb.clean, BOB, tag, cash.address, time0);
+
+    await network.provider.request({
+      method: "evm_setNextBlockTimestamp",
+      params: [time2]
+    });
+
+    // buffer time has passed, anyone can clear
+    use(0);
+    await send(fb.clean, BOB, tag, cash.address, time1);
+    // can't clear twice
+    await fail('not found', fb.clean, BOB, tag, cash.address, time1);
+
+    use(1);
+    // not enough paid in this time range
+    await fail('not enough paid', fb.push, tag, val, time1+1, cash.address, time0);
+    // bigger range should work
+    await send(fb.push, tag, val, time3+1, cash.address, time0);
+    const read = await fb.read(BOB, tag, time2);
+    debug(`read result ${read}`)
+
+    want(read.ttl.toNumber()).equal(time3+1)
+    want(read.val).equal('0x' + val.toString('hex'))
+  });
 })

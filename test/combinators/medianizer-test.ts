@@ -7,6 +7,7 @@ const debug = require('debug')('feedbase:test')
 const { constants, BigNumber, utils } = ethers
 const { MaxUint256 } = constants
 const { formatBytes32String, parseEther, parseBytes32String } = utils
+const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
 
 describe('medianizer', () => {
   let cash
@@ -64,8 +65,8 @@ describe('medianizer', () => {
     const postdeposit = await fb.balances(cash.address, ali.address)
     want(predeposit.toNumber() + amt).to.eql(postdeposit.toNumber())
 
-    await fb.request(src, tag, cash.address, amt)
-    const paid = await fb.requested(src, tag, cash.address)
+    await fb.request(src, tag, cash.address, amt, 0)
+    const paid = await fb.requested(src, tag, cash.address, 0)
     want(paid.toNumber()).to.eql(amt)
 
     const sources = [s1, s2, s3]
@@ -73,7 +74,7 @@ describe('medianizer', () => {
     await selector.setSelectors(selectors)
     await fb.deposit(cash.address, medianizer.address, amt)
     await medianizer.poke(tag, cash.address)
-    const paidReqs = await Promise.all(sources.map(async s => await fb.requested(s.address, tag, cash.address)))
+    const paidReqs = await Promise.all(sources.map(async s => await fb.requested(s.address, tag, cash.address, 0)))
     want(paidReqs.map((x: typeof BigNumber) => x.toNumber())).to.eql([333, 333, 333])
   })
 
@@ -87,12 +88,12 @@ describe('medianizer', () => {
       await selector.setSelectors(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+        await con.push(tag, vals[idx], ttl, cash.address, 0)
       }))
       await fb.deposit(cash.address, medianizer.address, amt)
 
       await medianizer.push(tag)
-      const [median] = await fb.read(medianizer.address, tag)
+      const [median] = await fb.read(medianizer.address, tag, 0)
       want(BigNumber.from(median).toNumber()).to.eql(1000)
     })
 
@@ -105,11 +106,11 @@ describe('medianizer', () => {
       await selector.setSelectors(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+        await con.push(tag, vals[idx], ttl, cash.address, 0)
       }))
 
       await medianizer.push(tag)
-      const [median] = await fb.read(medianizer.address, tag)
+      const [median] = await fb.read(medianizer.address, tag, 0)
       want(BigNumber.from(median).toNumber()).to.eql(1100)
     })
 
@@ -122,11 +123,11 @@ describe('medianizer', () => {
       await selector.setSelectors(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+        await con.push(tag, vals[idx], ttl, cash.address, 0)
       }))
 
       await medianizer.push(tag)
-      const [median] = await fb.read(medianizer.address, tag)
+      const [median] = await fb.read(medianizer.address, tag, 0)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
 
@@ -139,11 +140,11 @@ describe('medianizer', () => {
       await selector.setSelectors(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+        await con.push(tag, vals[idx], ttl, cash.address, 0)
       }))
 
       await medianizer.push(tag)
-      const [median] = await fb.read(medianizer.address, tag)
+      const [median] = await fb.read(medianizer.address, tag, 0)
       want(BigNumber.from(median).toNumber()).to.eql(1150)
     })
 
@@ -155,11 +156,11 @@ describe('medianizer', () => {
       await selector.setSelectors(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+        await con.push(tag, vals[idx], ttl, cash.address, 0)
       }))
 
       await medianizer.push(tag)
-      const [median] = await fb.read(medianizer.address, tag)
+      const [median] = await fb.read(medianizer.address, tag, 0)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
 
@@ -172,7 +173,7 @@ describe('medianizer', () => {
       await selector.setSelectors(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+        await con.push(tag, vals[idx], ttl, cash.address, 0)
       }))
 
       await hh.network.provider.send('evm_setNextBlockTimestamp', [
@@ -191,11 +192,11 @@ describe('medianizer', () => {
       await selector.setSelectors(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+        await con.push(tag, vals[idx], ttl, cash.address, 0)
       }))
 
       await medianizer.push(tag)
-      const [median] = await fb.read(medianizer.address, tag)
+      const [median] = await fb.read(medianizer.address, tag, 0)
       want(BigNumber.from(median).toNumber()).to.eql(1100)
     })
 
@@ -208,11 +209,11 @@ describe('medianizer', () => {
       await selector.setSelectors(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+        await con.push(tag, vals[idx], ttl, cash.address, 0)
       }))
 
       await medianizer.push(tag)
-      const [median] = await fb.read(medianizer.address, tag)
+      const [median] = await fb.read(medianizer.address, tag, 0)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
 
@@ -225,11 +226,11 @@ describe('medianizer', () => {
       await selector.setSelectors(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+        await con.push(tag, vals[idx], ttl, cash.address, 0)
       }))
 
       await medianizer.push(tag)
-      const [median] = await fb.read(medianizer.address, tag)
+      const [median] = await fb.read(medianizer.address, tag, 0)
       want(BigNumber.from(median).toNumber()).to.eql(1150)
     })
 
@@ -241,11 +242,11 @@ describe('medianizer', () => {
       await selector.setSelectors(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+        await con.push(tag, vals[idx], ttl, cash.address, 0)
       }))
 
       await medianizer.push(tag)
-      const [median] = await fb.read(medianizer.address, tag)
+      const [median] = await fb.read(medianizer.address, tag, 0)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
   })

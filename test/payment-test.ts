@@ -13,7 +13,8 @@ let fb
 let cash
 let signers
 
-const TAG = Buffer.from('USDETH' + ' '.repeat(26))
+const TAG      = Buffer.from('USDETH' + ' '.repeat(26))
+const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
 
 
 const use = (n) => {
@@ -60,11 +61,11 @@ describe('pay flow', () => {
     const bal2 = await cash.balanceOf(BOB)
     want(bal2.toNumber()).equals(500)
 
-    await send(fb.request, ALI, TAG, cash.address, 100)
+    await send(fb.request, ALI, TAG, cash.address, 100, 0)
 
     const fbal1 = await fb.balances(cash.address, BOB);
     want(fbal1.toNumber()).equals(400)
-    const fbal2 = await fb.requested(ALI, TAG, cash.address)
+    const fbal2 = await fb.requested(ALI, TAG, cash.address, 0)
     want(fbal2.toNumber()).equals(100)
 
     use(0)
@@ -74,9 +75,9 @@ describe('pay flow', () => {
     const ttl = 10 ** 10
     const val = Buffer.from('ff'.repeat(32), 'hex')
 
-    await send(fb.push, TAG, val, ttl, cash.address)
+    await send(fb.push, TAG, val, ttl, cash.address, 0)
 
-    const fbal3 = await fb.requested(ALI, TAG, cash.address)
+    const fbal3 = await fb.requested(ALI, TAG, cash.address, 0)
     want(fbal3.toNumber()).equals(0)
 
     const pre = await cash.balanceOf(ALI)

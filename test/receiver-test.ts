@@ -6,6 +6,8 @@ import { want, send, fail, snapshot, revert, U256_MAX } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
 
+const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
+
 describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
   let signers;
   let ali, bob;
@@ -101,7 +103,7 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
 
       const setCost = await rec.setCost(tag, cash.address, cost);
       const deposit = await fb.deposit(cash.address, ALI, cost * 2, {value: cost * 2});
-      const request = await fb.request(rec.address, tag, cash.address, cost * 2);
+      const request = await fb.request(rec.address, tag, cash.address, cost * 2, 0);
 
       const digest = makeUpdateDigest({
         tag,
@@ -141,7 +143,7 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
     afterEach(async () => {
       const setCost = await rec.setCost(tag, cash.address, cost);
       const deposit = await fb.deposit(cash.address, ALI, cost * 2);
-      const request = await fb.request(rec.address, tag, cash.address, cost * 2);
+      const request = await fb.request(rec.address, tag, cash.address, cost * 2, 0);
       await rec.setRelayFee(tag, cash.address, relayFee);
 
       for( let i = 0; i < 2; i++ ) {
@@ -196,7 +198,7 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
 
       const setCost = await rec.setCost(tag, cash.address, cost);
       const deposit = await fb.deposit(cash.address, ALI, cost * 2, {value: cost * 2});
-      const request = await fb.request(rec.address, tag, cash.address, cost * 2);
+      const request = await fb.request(rec.address, tag, cash.address, cost * 2, 0);
 
       const digest = makeUpdateDigest({
         tag, val, seq, sec, ttl,
@@ -220,7 +222,7 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
 
       const setCost = await rec.setCost(tag, cash.address, cost);
       const deposit = await fb.deposit(cash.address, ALI, cost * 2);
-      const request = await fb.request(rec.address, tag, cash.address, cost * 2);
+      const request = await fb.request(rec.address, tag, cash.address, cost * 2, 0);
       await rec.setRelayFee(tag, cash.address, relayFee);
 
       for( let i = 0; i < 2; i++ ) {

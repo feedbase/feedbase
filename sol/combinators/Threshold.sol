@@ -12,9 +12,9 @@ contract ThresholdCombinator {
 
   function poke(bytes32 tag, address cash) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
-    uint balance = fb.requested(address(this), tag, cash);
+    uint balance = fb.requested(address(this), tag, cash, type(uint256).max);
     for( uint i = 0; i < sources.length; i++) {
-      fb.request(sources[i], tag, cash, balance / sources.length);
+      fb.request(sources[i], tag, cash, balance / sources.length, type(uint256).max);
     }
   }
 
@@ -25,7 +25,7 @@ contract ThresholdCombinator {
     uint256 count;
     uint256 minttl = type(uint256).max;
     for( uint i = 0; i < sources.length; i++ ) {
-      (bytes32 val, uint256 ttl) = fb.read(sources[i], tag);
+      (bytes32 val, uint256 ttl) = fb.read(sources[i], tag, type(uint256).max);
       if (ttl < block.timestamp) {
         continue;
       }
@@ -35,7 +35,7 @@ contract ThresholdCombinator {
       if (val == hint) {
         count++;
         if (count >= quorum) {
-          fb.push(tag, val, minttl, address(0));
+          fb.push(tag, val, minttl, address(0), 0);
           return;
         }
       }

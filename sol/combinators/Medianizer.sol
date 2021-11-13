@@ -16,9 +16,9 @@ contract MedianizerCombinator {
 
   function poke(bytes32 tag, address cash) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
-    uint balance = fb.requested(address(this), tag, cash);
+    uint balance = fb.requested(address(this), tag, cash, 0);
     for(uint i = 0; i < sources.length; i++) {
-      fb.request(sources[i], tag, cash, balance / sources.length);
+      fb.request(sources[i], tag, cash, balance / sources.length, 0);
     }
   }
 
@@ -29,7 +29,7 @@ contract MedianizerCombinator {
     uint256 count = 0;
   
     for(uint256 i = 0; i < sources.length; i++) {
-      (bytes32 val, uint256 _ttl) = fb.read(sources[i], tag);
+      (bytes32 val, uint256 _ttl) = fb.read(sources[i], tag, 0);
       if (count == 0 || val >= data[count - 1]) {
         data[count] = val;
       } else {
@@ -54,6 +54,6 @@ contract MedianizerCombinator {
       median = data[(count - 1) / 2];
     }
 
-    fb.push(tag, median, minttl, address(0));
+    fb.push(tag, median, minttl, address(0), 0);
   }
 }
