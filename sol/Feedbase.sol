@@ -1,5 +1,5 @@
 // (c) nikolai mushegian
-// SPDX-License-Identifier: GPL-v3.0
+// SPDX-License-Identifier: AGPL-v3.0
 
 pragma solidity ^0.8.9;
 
@@ -78,7 +78,23 @@ contract Feedbase {
   }
 
   function request(address src, bytes32 tag, address cash, uint256 amt) public {
-    _bals[msg.sender][cash] -= amt;
+    // Draw from the requester's (msg.sender's) `paid` to src's `paid`
+    // before drawing from msg.sender's balance.
+    // This is to simplify requests from combinators, where msg.sender is 
+    // also a feed source. Accounts can pay the combinator, and the combinator can
+    // pay the source.
+    Config storage reqConf = _config[msg.sender][tag][cash];
+    if( reqConf.paid < amt ) {
+      // draw all of msg.sender's `paid`
+      uint256 rest = amt - reqConf.paid;
+      reqConf.paid = 0;
+      // draw what's left from sender's balance
+      _bals[msg.sender][cash] -= rest;
+    } else {
+      // draw part of msg.sender's `paid`
+      reqConf.paid -= amt;
+    }
+    // msg.sender pays to src
     _config[src][tag][cash].paid += amt;
     emit Paid(cash, msg.sender, src, amt);
   }
