@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+import { ethers } from 'hardhat'
 import http from 'http'
 import { makeUpdateDigest } from './index'
 
@@ -14,6 +14,7 @@ class Sensor {
   ttl: number = now() + 600
   val: Buffer = Buffer.alloc(32)
   sig: string = ''
+  cash: string
 
   chainId: number = 1
   receiver: string = '0x' + 'f'.repeat(40)
@@ -29,7 +30,7 @@ class Sensor {
 
   async refresh () {
     debug('refreshing...')
-    this.val = await this.getter()
+    this.val = await this.getter();
     this.sec = now()
     this.ttl = this.sec + 600
     this.seq = this.seq + 1
@@ -44,6 +45,15 @@ class Sensor {
     debug(`  ttl ${this.ttl}`)
     debug(`  val ${this.val.toString('hex')}`)
     debug(`  sig ${this.sig}`)
+
+    let recFac = await ethers.getContractFactory("BasicReceiver");
+    let rec    = new ethers.Contract(this.receiver, recFac.interface, this.signer)
+
+    const { v, r, s } = ethers.utils.splitSignature(this.sig);
+
+    const submit = await rec.submit(this.tag, this.seq, this.sec, this.ttl,
+                     this.val, this.cash, v, r, s);
+    await submit.wait();
   }
 }
 
@@ -51,11 +61,15 @@ export async function serve (getter: Function, opts: any): Promise<void> {
   debug('serve', opts)
   const s = new Sensor(getter)
   s.receiver = opts.receiver
-  s.chainId = opts.chainId
-  s.signer = opts.signer
+  s.chainId  = opts.chainId
+  s.signer   = opts.signer
+  s.cash     = opts.cash
+  s.tag      = opts.tag
 
   await s.refresh()
-  setInterval(async () => await s.refresh(), 3000)
+  if( opts.interval > 0 ) {
+    setInterval(async () => await s.refresh(), opts.interval)
+  }
 
   const server = http.createServer(async (req: any, res: any) => {
     debug('request URL', req.url)
