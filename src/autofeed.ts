@@ -29,7 +29,7 @@ const opdb = {
   toBytes32: (n: any) => {
     debug('WARN toBytes32 sanitize')
     if (n instanceof BigNumber) {
-      return Buffer.from(n.toHexString().padStart(64, '0'), 'hex')
+      return Buffer.from(n.toHexString().slice(2).padStart(64, '0'), 'hex')
     }
     throw new Error(`Unrecognized arg type for toBytes32: ${n} : ${typeof (n)}`)
   },
