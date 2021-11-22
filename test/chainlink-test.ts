@@ -21,6 +21,8 @@ const use = (n) => {
 
 describe('chainlink', () => {
   const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
+  const decimals = 18;
+  const initialAnswer = 0;
   let tag, seq, sec, ttl, val
   let ali, bob
   let ALI, BOB
@@ -49,7 +51,7 @@ describe('chainlink', () => {
     registry = await FeedRegistryFactory.deploy();
 
     const AggregatorFactory = await ethers.getContractFactory('MockAggregator');
-    aggregator = await AggregatorFactory.deploy();
+    aggregator = await AggregatorFactory.deploy(decimals, initialAnswer);
 
     const AdapterFactory = await ethers.getContractFactory('FeedbaseChainlinkAdapter');
     adapter = await AdapterFactory.deploy(fb.address, link.address, registry.address);
@@ -71,14 +73,11 @@ describe('chainlink', () => {
 
   it('basic', async function () {
     const cost = 10;
-    await send(aggregator.setAnswer, 41);
+    await send(aggregator.updateAnswer, 41);
     await send(adapter.setCost, cash.address, cash.address, cost);
     await send(fb.deposit, cash.address, ALI, cost);
     await send(fb.request, adapter.address, tag, cash.address, cost);
     await send(adapter.pushLatestPrice, cash.address, cash.address);
-
-    
-
 
     const read = await adapter.getLatestPrice(cash.address);
 
