@@ -13,18 +13,41 @@ interface ChainlinkAdapterInterface {
   function requested(address oracle, bytes32 specId, address cash) external returns (uint256);
   function callback(bytes32 requestId, bytes32 data) external;
   function read(address oracle, bytes32 specId) external returns (bytes32, uint256);
+
+  function deposit(address cash, address user, uint amt) external payable;
+  function withdraw(address cash, address user, uint amt) external;
 }
 
 // extends ChainlinkClient
 contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   mapping(address=>mapping(bytes32=>bytes32)) tags;
+  mapping(bytes32=>bool) built;
+  mapping(bytes32=>bytes32) reqToSpec;
   uint256 nonce = 1;
   address LINK;
+  mapping(address=>uint256) bals;
   Feedbase fb;
+
+  // _bals   :: tag -> balance
+  mapping(address=>mapping(address=>uint256)) public _bals;
+ 
 
   constructor(address _LINK, address _fb) public {
     LINK = _LINK;
     fb   = Feedbase(_fb);
+  }
+
+  function deposit(address cash, address user, uint amt) public payable {
+    require( cash == LINK, 'request can only pay with link' );
+    bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
+    require(ok, 'ERR_DEPOSIT_PULL');
+    bals[user] += amt;
+    fb.deposit(cash, address(this), amt);
+  }
+
+  function withdraw(address cash, address user, uint amt) public {
+    bals[msg.sender] -= amt;
+    fb.withdraw(cash, user, amt);
   }
 
   function request(address oracle, bytes32 specId, address cash, uint256 amt) public override {
@@ -35,13 +58,19 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
       tags[oracle][specId] = tag;
     }
 
-    Chainlink.Request memory req = buildChainlinkRequest(
-      specId,
-      address(this),
-      this.callback.selector
-    );
+    bals[msg.sender] -= amt;
+    fb.request(address(this), tag, cash, amt);
 
-    sendChainlinkRequestTo( oracle, req, amt );
+    if( reqToSpec[tag] != bytes32(0) ) {
+      Chainlink.Request memory req = buildChainlinkRequest(
+        specId,
+        address(this),
+        this.callback.selector
+      );
+
+      bytes32 reqId = sendChainlinkRequestTo( oracle, req, amt );
+      reqToSpec[reqId] = tag;
+    }
   }
 
   function requested(address oracle, bytes32 specId, address cash) public override returns (uint256) {
@@ -51,7 +80,6 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
     return fb.requested(address(this), tag, cash);
   }
 
-  mapping(bytes32=>bytes32) reqToSpec;
   function callback(bytes32 requestId, bytes32 data) 
     public 
     override {
