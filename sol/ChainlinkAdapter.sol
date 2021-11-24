@@ -66,6 +66,6 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
     bytes32 tag = tags[oracle][specId];
     require( tag != bytes32(0), 'read: invalid oracle,specId pair' );
 
-    return fb.read(oracle, tag);
+    return fb.read(address(this), tag);
   }
 }
