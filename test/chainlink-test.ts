@@ -50,15 +50,6 @@ describe('chainlink', () => {
     const FeedRegistryFactory = await ethers.getContractFactory('MockRegistry');
     registry = await FeedRegistryFactory.deploy();
 
-    const AggregatorFactory = await ethers.getContractFactory('MockAggregator');
-    aggregator = await AggregatorFactory.deploy(decimals, initialAnswer);
-
-    const AdapterFactory = await ethers.getContractFactory('FeedbaseChainlinkAdapter');
-    adapter = await AdapterFactory.deploy(fb.address, link.address, registry.address);
-
-    await registry.proposeFeed(cash.address, link.address, aggregator.address)
-    await registry.confirmFeed(cash.address, link.address, aggregator.address)
-
     await snapshot(hh)
   })
 
@@ -69,18 +60,5 @@ describe('chainlink', () => {
     sec = Math.floor(Date.now() / 1000)
     ttl = 10000000000000
     val = Buffer.from('11'.repeat(32), 'hex')
-  })
-
-  it('basic', async function () {
-    const cost = 10;
-    await send(aggregator.updateAnswer, 41);
-    await send(adapter.setCost, cash.address, cash.address, cost);
-    await send(fb.deposit, cash.address, ALI, cost);
-    await send(fb.request, adapter.address, tag, cash.address, cost);
-    await send(adapter.pushLatestPrice, cash.address, cash.address);
-
-    const read = await adapter.getLatestPrice(cash.address);
-
-    want(read.toNumber()).equal(41);
   })
 })
