@@ -1,36 +1,26 @@
 // (c) nikolai mushegian
 // SPDX-License-Identifier: AGPL-v3.0
-
 pragma solidity ^0.8.9;
 
 import "./Feedbase.sol";
 import "@chainlink/contracts/src/v0.8/dev/ChainlinkClient.sol";
 
-
 interface ChainlinkAdapterInterface {
-  // require cash==LINK
   function request(address oracle, bytes32 specId, address cash, uint256 amt) external;
   function requested(address oracle, bytes32 specId, address cash) external returns (uint256);
   function callback(bytes32 requestId, bytes32 data) external;
   function read(address oracle, bytes32 specId) external returns (bytes32, uint256);
-
   function deposit(address cash, address user, uint amt) external payable;
   function withdraw(address cash, address user, uint amt) external;
 }
 
-// extends ChainlinkClient
 contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   mapping(address=>mapping(bytes32=>bytes32)) tags;
-  mapping(bytes32=>bool) built;
   mapping(bytes32=>bytes32) reqToSpec;
   uint256 nonce = 1;
-  address LINK;
   mapping(address=>uint256) bals;
   Feedbase fb;
-
-  // _bals   :: tag -> balance
-  mapping(address=>mapping(address=>uint256)) public _bals;
- 
+  address LINK;
 
   constructor(address _LINK, address _fb) public {
     LINK = _LINK;
