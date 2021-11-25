@@ -35,20 +35,19 @@ describe('chainlink', () => {
     const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
     fb = await FeedbaseFactory.deploy()
 
-    const TokenDeployer = await ethers.getContractFactory('MockToken')
-    cash = await TokenDeployer.deploy('CASH', 'CASH')
+    const LinkDeployer = await ethers.getContractFactory('MockLink')
+    cash = await LinkDeployer.deploy();
 
-    const LinkDeployer = await ethers.getContractFactory('MockToken')
-    link = await LinkDeployer.deploy('LINK', 'LINK')
+    const AdapterDeployer = await ethers.getContractFactory('ChainlinkAdapter');
+    adapter = await AdapterDeployer.deploy(cash.address, fb.address);
+
+    const OracleDeployer = await ethers.getContractFactory('MockOracle');
+    oracle = await OracleDeployer.deploy(cash.address);
 
     use(0)
 
-
-    await send(cash.mint, ALI, 1000)
-    await send(cash.approve, fb.address, UINT_MAX)
-
-    const FeedRegistryFactory = await ethers.getContractFactory('MockRegistry');
-    registry = await FeedRegistryFactory.deploy();
+    //await send(cash.mint, ALI, 1000)
+    await send(cash.approve, adapter.address, UINT_MAX)
 
     await snapshot(hh)
   })
@@ -61,4 +60,24 @@ describe('chainlink', () => {
     ttl = 10000000000000
     val = Buffer.from('11'.repeat(32), 'hex')
   })
+
+  it('basic', async function () {
+    const amt = 10;
+    const specId = Buffer.from('00'.repeat(32), 'hex');
+    await send(adapter.deposit, cash.address, ALI, amt);
+
+    const request = await adapter.request(oracle.address, specId, cash.address, amt);
+    const evvies = await request.wait()
+    const logs = await oracle.filters.OracleRequest(null, null,null,null,null,null,null,null,null);
+    const _logs = await oracle.queryFilter(logs, 0);
+    const args = _logs[0].args;
+
+    const { events } = evvies
+    
+    await send(oracle.fulfillOracleRequest, Buffer.from(args.requestId.slice(2), 'hex'), args.payment, args.callbackAddr, Buffer.from(args.callbackFunctionId.slice(2), 'hex'), args.cancelExpiration, val);
+
+    const res = await adapter.read(oracle.address, specId);
+
+    want(res.val.slice(2)).equal(val.toString('hex'));
+  });
 })
