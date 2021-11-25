@@ -66,15 +66,29 @@ describe('chainlink', () => {
     const specId = Buffer.from('00'.repeat(32), 'hex');
     await send(adapter.deposit, cash.address, ALI, amt);
 
+    // check balance of user before
+    const bal = await adapter.balances(ALI)
+    debug('balance before: ', bal.toString())
+
     const request = await adapter.request(oracle.address, specId, cash.address, amt);
     const evvies = await request.wait()
+    // check balance of user after
+    const after = await adapter.balances(ALI)
+    debug('balance after: ', after.toString())
+    // check tag
+    const storedTag = await adapter.tags(oracle.address, specId)
+    debug('stored tag: ', storedTag)
+
     const logs = await oracle.filters.OracleRequest(null, null,null,null,null,null,null,null,null);
     const _logs = await oracle.queryFilter(logs, 0);
     const args = _logs[0].args;
 
     const { events } = evvies
     
-    await send(oracle.fulfillOracleRequest, Buffer.from(args.requestId.slice(2), 'hex'), args.payment, args.callbackAddr, Buffer.from(args.callbackFunctionId.slice(2), 'hex'), args.cancelExpiration, val);
+    const requestId = Buffer.from(args.requestId.slice(2), 'hex')
+    await oracle.fulfillOracleRequest(requestId, val)
+    
+    // await send(oracle.fulfillOracleRequest, Buffer.from(args.requestId.slice(2), 'hex'), args.payment, args.callbackAddr, Buffer.from(args.callbackFunctionId.slice(2), 'hex'), args.cancelExpiration, val);
 
     const res = await adapter.read(oracle.address, specId);
 
