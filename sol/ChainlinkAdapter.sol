@@ -18,38 +18,36 @@ interface ChainlinkAdapterInterface {
 }
 
 contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
-  mapping(address=>mapping(bytes32=>bytes32)) tags;
-  mapping(bytes32=>bytes32) reqToSpec;
+  mapping(address=>mapping(bytes32=>bytes32)) _tags;
+  mapping(bytes32=>bytes32) public reqToSpec;
+  mapping(address=>uint256) public _bals;
   uint256 nonce = 1;
-  mapping(address=>uint256) bals;
   Feedbase fb;
-  address LINK;
 
-  constructor(address _LINK, address _fb) public {
-    LINK = _LINK;
-    setChainlinkToken(LINK);
+  constructor(address _LINK, address _fb) {
+    setChainlinkToken(_LINK);
     fb   = Feedbase(_fb);
   }
 
   function deposit(address cash, address user, uint amt) public payable {
-    require( cash == LINK, 'request can only pay with link' );
+    require( cash == chainlinkTokenAddress(), 'request can only pay with link' );
     bool ok = LinkTokenInterface(cash).transferFrom(msg.sender, address(this), amt);
     require(ok, 'ERR_DEPOSIT_PULL');
-    bals[user] += amt;
+    _bals[user] += amt;
   }
 
   function withdraw(address cash, address user, uint amt) public {
-    bals[msg.sender] -= amt;
+    _bals[msg.sender] -= amt;
   }
 
   function request(address oracle, bytes32 specId, address cash, uint256 amt) public override {
-    require( cash == LINK, 'request can only pay with link' );
-    bytes32 tag = tags[oracle][specId];
+    require( cash == chainlinkTokenAddress(), 'request can only pay with link' );
+    bytes32 tag = _tags[oracle][specId];
+
     if( tag == bytes32(0) ) {
       tag = bytes32(nonce++);
-      tags[oracle][specId] = tag;
+      _tags[oracle][specId] = tag;
     }
-
 
     if( reqToSpec[tag] == bytes32(0) ) {
       Chainlink.Request memory req = buildChainlinkRequest(
@@ -59,15 +57,15 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
       );
 
 
-      bals[msg.sender] -= amt;
+      _bals[msg.sender] -= amt;
 
       bytes32 reqId = sendChainlinkRequestTo( oracle, req, amt );
       reqToSpec[reqId] = specId;
     }
   }
 
-  function requested(address oracle, bytes32 specId, address cash) public override returns (uint256) {
-    bytes32 tag = tags[oracle][specId];
+  function requested(address oracle, bytes32 specId, address cash) public view override returns (uint256) {
+    bytes32 tag = _tags[oracle][specId];
     require( tag != bytes32(0), 'requested: invalid oracle,specId pair' );
 
     return fb.requested(address(this), tag, cash);
@@ -77,16 +75,24 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
     public 
     recordChainlinkFulfillment(requestId)
     override {
-    bytes32 tag = tags[msg.sender][reqToSpec[requestId]];
+    bytes32 tag = _tags[msg.sender][reqToSpec[requestId]];
     require( tag != bytes32(0), 'callback: invalid sender,reqId pair' );
 
-    fb.push(tag, data, type(uint256).max, LINK);
+    fb.push(tag, data, type(uint256).max, chainlinkTokenAddress());
   }
 
   function read(address oracle, bytes32 specId) public view override returns (bytes32 val, uint256 ttl) {
-    bytes32 tag = tags[oracle][specId];
+    bytes32 tag = _tags[oracle][specId];
     require( tag != bytes32(0), 'read: invalid oracle,specId pair' );
 
     (val, ttl) = fb.read(address(this), tag);
+  }
+
+  function balances(address who) public view returns (uint) {
+    return _bals[who];
+  }
+
+  function tags(address oracle, bytes32 specId) public view returns (bytes32) {
+    return _tags[oracle][specId];
   }
 }
