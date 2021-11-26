@@ -20,10 +20,9 @@ interface ChainlinkAdapterInterface {
 contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   mapping(address=>mapping(bytes32=>bytes32)) _tags;
   mapping(bytes32=>bytes32) public reqToSpec;
-  // mapping(address=>uint256) public _bals;
-  uint256 nonce = 1;
   // src -> cash -> balance
-  mapping(address=>mapping(address=>uint256)) bals;
+  mapping(address=>mapping(address=>uint256)) _bals;
+  uint256 nonce = 1;
   Feedbase fb;
 
   constructor(address _LINK, address _fb) {
@@ -35,11 +34,11 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
     //require( cash == LINK, 'deposit can only pay with link' );
     bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
     require(ok, 'ERR_DEPOSIT_PULL');
-    bals[user][cash] += amt;
+    _bals[user][cash] += amt;
   }
 
   function withdraw(address cash, address user, uint amt) public {
-    bals[msg.sender][cash] -= amt;
+    _bals[msg.sender][cash] -= amt;
     bool ok = IERC20(cash).transfer(msg.sender, amt);
     require(ok, 'ERR_WITHDRAW');
   }
@@ -59,7 +58,7 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
       this.callback.selector
     );
 
-    bals[msg.sender][cash] -= amt;
+    _bals[msg.sender][cash] -= amt;
 
     bytes32 reqId = sendChainlinkRequestTo( oracle, req, amt );
     reqToSpec[reqId] = specId;
@@ -89,8 +88,8 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
     (val, ttl) = fb.read(address(this), tag);
   }
 
-  function balances(address who) public view returns (uint) {
-    return _bals[who];
+  function balances(address who, address cash) public view returns (uint) {
+    return _bals[who][cash];
   }
 
   function tags(address oracle, bytes32 specId) public view returns (bytes32) {
