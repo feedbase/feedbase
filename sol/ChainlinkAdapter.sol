@@ -20,8 +20,10 @@ interface ChainlinkAdapterInterface {
 contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   mapping(address=>mapping(bytes32=>bytes32)) _tags;
   mapping(bytes32=>bytes32) public reqToSpec;
-  mapping(address=>uint256) public _bals;
+  // mapping(address=>uint256) public _bals;
   uint256 nonce = 1;
+  // src -> cash -> balance
+  mapping(address=>mapping(address=>uint256)) bals;
   Feedbase fb;
 
   constructor(address _LINK, address _fb) {
@@ -30,14 +32,16 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   }
 
   function deposit(address cash, address user, uint amt) public payable {
-    require( cash == chainlinkTokenAddress(), 'request can only pay with link' );
-    bool ok = LinkTokenInterface(cash).transferFrom(msg.sender, address(this), amt);
+    //require( cash == LINK, 'deposit can only pay with link' );
+    bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
     require(ok, 'ERR_DEPOSIT_PULL');
-    _bals[user] += amt;
+    bals[user][cash] += amt;
   }
 
   function withdraw(address cash, address user, uint amt) public {
-    _bals[msg.sender] -= amt;
+    bals[msg.sender][cash] -= amt;
+    bool ok = IERC20(cash).transfer(msg.sender, amt);
+    require(ok, 'ERR_WITHDRAW');
   }
 
   function request(address oracle, bytes32 specId, address cash, uint256 amt) public override {
@@ -49,19 +53,16 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
       _tags[oracle][specId] = tag;
     }
 
-    if( reqToSpec[tag] == bytes32(0) ) {
-      Chainlink.Request memory req = buildChainlinkRequest(
-        specId,
-        address(this),
-        this.callback.selector
-      );
+    Chainlink.Request memory req = buildChainlinkRequest(
+      specId,
+      address(this),
+      this.callback.selector
+    );
 
+    bals[msg.sender][cash] -= amt;
 
-      _bals[msg.sender] -= amt;
-
-      bytes32 reqId = sendChainlinkRequestTo( oracle, req, amt );
-      reqToSpec[reqId] = specId;
-    }
+    bytes32 reqId = sendChainlinkRequestTo( oracle, req, amt );
+    reqToSpec[reqId] = specId;
   }
 
   function requested(address oracle, bytes32 specId, address cash) public view override returns (uint256) {
