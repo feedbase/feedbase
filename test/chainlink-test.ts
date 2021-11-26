@@ -5,6 +5,7 @@ import { send, fail, chai, want, snapshot, revert } from 'minihat'
 const debug = require('debug')('feedbase:test')
 const { hexlify } = ethers.utils
 
+let link
 let cash
 let fb
 let signers
@@ -14,6 +15,7 @@ const use = (n) => {
   const signer = signers[n]
   debug(`using ${n} ${signer.address}`)
 
+  if( link ) link = link.connect(signer);
   if( cash ) cash = cash.connect(signer);
   if( fb ) fb = fb.connect(signer);
   if( oracle ) oracle = oracle.connect(signer);
@@ -27,6 +29,7 @@ describe('chainlink', () => {
   let ali, bob
   let ALI, BOB
   let registry, link, aggregator, adapter;
+  let cash;
   before(async () => {
     signers = await ethers.getSigners();
     [ali, bob] = signers;
@@ -36,48 +39,62 @@ describe('chainlink', () => {
     fb = await FeedbaseFactory.deploy()
 
     const LinkDeployer = await ethers.getContractFactory('MockLink')
-    cash = await LinkDeployer.deploy();
+    link = await LinkDeployer.deploy();
+
+    const TokenDeployer = await ethers.getContractFactory('MockToken')
+    cash = await TokenDeployer.deploy('CASH', 'CASH');
 
     const AdapterDeployer = await ethers.getContractFactory('ChainlinkAdapter');
-    adapter = await AdapterDeployer.deploy(cash.address, fb.address);
+    adapter = await AdapterDeployer.deploy(link.address, fb.address);
 
     const OracleDeployer = await ethers.getContractFactory('MockOracle');
-    oracle = await OracleDeployer.deploy(cash.address);
+    oracle = await OracleDeployer.deploy(link.address);
 
     use(0)
 
-    //await send(cash.mint, ALI, 1000)
+    await send(cash.mint, ALI, 1000)
     await send(cash.approve, adapter.address, UINT_MAX)
+    await send(link.approve, adapter.address, UINT_MAX)
 
     await snapshot(hh)
   })
 
+  let amt, specId;
   beforeEach(async () => {
     await revert(hh)
-    tag = Buffer.from(cash.address.slice(2).padStart(64, '0'), 'hex')
+    tag = Buffer.from(link.address.slice(2).padStart(64, '0'), 'hex')
     seq = 1
     sec = Math.floor(Date.now() / 1000)
     ttl = 10000000000000
     val = Buffer.from('11'.repeat(32), 'hex')
+    amt = 10;
+    specId = Buffer.from('00'.repeat(32), 'hex');
   })
 
-  it('basic', async function () {
-    const amt = 10;
-    const specId = Buffer.from('00'.repeat(32), 'hex');
-    await send(adapter.deposit, cash.address, ALI, amt);
+  describe('e2e', () => {
+    it('basic', async function () {
+      await send(adapter.deposit, link.address, ALI, amt);
+      const request = await adapter.request(oracle.address, specId, link.address, amt);
+      await request.wait()
+    });
 
-    const request = await adapter.request(oracle.address, specId, cash.address, amt);
-    const evvies = await request.wait()
-    const logs = await oracle.filters.OracleRequest(null, null,null,null,null,null,null,null,null);
-    const _logs = await oracle.queryFilter(logs, 0);
-    const args = _logs[0].args;
+    it('non-link tokens', async function () {
+      await send(adapter.deposit, cash.address, ALI, amt);
+      const request = await adapter.request(oracle.address, specId, cash.address, amt);
+      await request.wait()
+    });
 
-    const { events } = evvies
-    
-    await send(oracle.fulfillOracleRequest, Buffer.from(args.requestId.slice(2), 'hex'), args.payment, args.callbackAddr, Buffer.from(args.callbackFunctionId.slice(2), 'hex'), args.cancelExpiration, val);
+    afterEach(async () => {
+      const logs    = await oracle.filters.OracleRequest(null);
+      const _logs   = await oracle.queryFilter(logs, 0);
+      if( logs.length > 0 ) {
+        const args    = _logs[0].args;
 
-    const res = await adapter.read(oracle.address, specId);
+        await send(oracle.fulfillOracleRequest, Buffer.from(args.requestId.slice(2), 'hex'), args.payment, args.callbackAddr, Buffer.from(args.callbackFunctionId.slice(2), 'hex'), args.cancelExpiration, val);
 
-    want(res.val.slice(2)).equal(val.toString('hex'));
+        const res = await adapter.read(oracle.address, specId);
+        want(res.val.slice(2)).equal(val.toString('hex'));
+      }
+    });
   });
 })

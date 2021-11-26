@@ -21,7 +21,8 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   mapping(address=>mapping(bytes32=>bytes32)) tags;
   mapping(bytes32=>bytes32) reqToSpec;
   uint256 nonce = 1;
-  mapping(address=>uint256) bals;
+  // src -> cash -> balance
+  mapping(address=>mapping(address=>uint256)) bals;
   Feedbase fb;
   address LINK;
 
@@ -32,14 +33,16 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   }
 
   function deposit(address cash, address user, uint amt) public payable {
-    require( cash == LINK, 'request can only pay with link' );
-    bool ok = LinkTokenInterface(cash).transferFrom(msg.sender, address(this), amt);
+    //require( cash == LINK, 'deposit can only pay with link' );
+    bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
     require(ok, 'ERR_DEPOSIT_PULL');
-    bals[user] += amt;
+    bals[user][cash] += amt;
   }
 
   function withdraw(address cash, address user, uint amt) public {
-    bals[msg.sender] -= amt;
+    bals[msg.sender][cash] -= amt;
+    bool ok = IERC20(cash).transfer(msg.sender, amt);
+    require(ok, 'ERR_WITHDRAW');
   }
 
   function request(address oracle, bytes32 specId, address cash, uint256 amt) public override {
@@ -50,20 +53,16 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
       tags[oracle][specId] = tag;
     }
 
+    Chainlink.Request memory req = buildChainlinkRequest(
+      specId,
+      address(this),
+      this.callback.selector
+    );
 
-    if( reqToSpec[tag] == bytes32(0) ) {
-      Chainlink.Request memory req = buildChainlinkRequest(
-        specId,
-        address(this),
-        this.callback.selector
-      );
+    bals[msg.sender][cash] -= amt;
 
-
-      bals[msg.sender] -= amt;
-
-      bytes32 reqId = sendChainlinkRequestTo( oracle, req, amt );
-      reqToSpec[reqId] = specId;
-    }
+    bytes32 reqId = sendChainlinkRequestTo( oracle, req, amt );
+    reqToSpec[reqId] = specId;
   }
 
   function requested(address oracle, bytes32 specId, address cash) public override returns (uint256) {
