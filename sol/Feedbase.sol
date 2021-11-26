@@ -9,6 +9,7 @@ contract Feedbase {
   struct Feed {
     bytes32 val;
     uint256 ttl;
+    bool    pending;
   }
 
   struct Config {
@@ -58,23 +59,39 @@ contract Feedbase {
     return (feed.val, feed.ttl);
   }
 
+  function charge(bytes32 tag, address cash) public returns (uint256) {
+    return _push(tag, 0, 0, cash, true);
+  }
+
   function push(bytes32 tag, bytes32 val, uint256 ttl, address cash) public returns (uint256) {
+    return _push(tag, val, ttl, cash, false);
+  }
+
+  function _push(bytes32 tag, bytes32 val, uint256 ttl, address cash, bool pending) private returns (uint256) {
     Feed storage feed = _feeds[msg.sender][tag];
     Config storage config = _config[msg.sender][tag][cash];
 
     config.paid -= config.cost;
     _bals[msg.sender][cash] += config.cost;
    
-    feed.ttl = ttl;
-    feed.val = val; 
-
-    emit Push(msg.sender, tag, val, ttl);
+    feed.pending = pending;
+    if( pending ) {
+      feed.pending = true;
+    } else {
+      feed.ttl     = ttl;
+      feed.val     = val; 
+      emit Push(msg.sender, tag, val, ttl);
+    }
 
     return config.cost;
   }
 
   function requested(address src, bytes32 tag, address cash) public view returns (uint256) {
     return _config[src][tag][cash].paid;
+  }
+
+  function getCost(address src, bytes32 tag, address cash) public view returns (uint256) {
+    return _config[src][tag][cash].cost;
   }
 
   function request(address src, bytes32 tag, address cash, uint256 amt) public {

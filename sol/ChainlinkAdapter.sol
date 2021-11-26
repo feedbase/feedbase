@@ -25,23 +25,32 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   // src -> cash -> balance
   mapping(address=>mapping(address=>uint256)) bals;
   Feedbase fb;
+  address LINK;
+  address owner;
 
   constructor(address _LINK, address _fb) {
     setChainlinkToken(_LINK);
     fb   = Feedbase(_fb);
+    owner = msg.sender;
   }
 
   function deposit(address cash, address user, uint amt) public payable {
     //require( cash == LINK, 'deposit can only pay with link' );
     bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
+    IERC20(cash).approve(address(fb), amt);
+    fb.deposit(cash, address(this), amt);
     require(ok, 'ERR_DEPOSIT_PULL');
     bals[user][cash] += amt;
   }
 
   function withdraw(address cash, address user, uint amt) public {
     bals[msg.sender][cash] -= amt;
-    bool ok = IERC20(cash).transfer(msg.sender, amt);
-    require(ok, 'ERR_WITHDRAW');
+    fb.withdraw(cash, msg.sender, amt);
+  }
+  
+  function setCost(address oracle, bytes32 specId, address cash, uint256 cost) public {
+    require( msg.sender == owner, 'setCost: permission denied' );
+    fb.setCost(tags[oracle][specId], cash, cost);
   }
 
   function request(address oracle, bytes32 specId, address cash, uint256 amt) public override {
@@ -53,16 +62,30 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
       _tags[oracle][specId] = tag;
     }
 
-    Chainlink.Request memory req = buildChainlinkRequest(
-      specId,
-      address(this),
-      this.callback.selector
-    );
+    fb.request(address(this), tag, cash, amt);
 
-    bals[msg.sender][cash] -= amt;
+    uint256 cost = fb.getCost(address(this), tag, cash);
+    if( fb.requested(address(this), tag, cash) >= cost ) {
+      // doing all this in case feedbase is extended
+      fb.charge(tag, cash);
+      fb.withdraw(cash, address(this), cost);
 
-    bytes32 reqId = sendChainlinkRequestTo( oracle, req, amt );
-    reqToSpec[reqId] = specId;
+      //convert to link
+      //...
+
+
+      //send request to oracle
+      Chainlink.Request memory req = buildChainlinkRequest(
+        specId,
+        address(this),
+        this.callback.selector
+      );
+
+      bals[msg.sender][cash] -= amt;
+
+      bytes32 reqId = sendChainlinkRequestTo( oracle, req, cost );
+      reqToSpec[reqId] = specId;
+    }
   }
 
   function requested(address oracle, bytes32 specId, address cash) public view override returns (uint256) {
