@@ -20,10 +20,9 @@ interface ChainlinkAdapterInterface {
 contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   mapping(address=>mapping(bytes32=>bytes32)) _tags;
   mapping(bytes32=>bytes32) public reqToSpec;
-  // mapping(address=>uint256) public _bals;
-  uint256 nonce = 1;
   // src -> cash -> balance
-  mapping(address=>mapping(address=>uint256)) bals;
+  mapping(address=>mapping(address=>uint256)) _bals;
+  uint256 nonce = 1;
   Feedbase fb;
   address LINK;
   address owner;
@@ -40,17 +39,17 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
     IERC20(cash).approve(address(fb), amt);
     fb.deposit(cash, address(this), amt);
     require(ok, 'ERR_DEPOSIT_PULL');
-    bals[user][cash] += amt;
+    _bals[user][cash] += amt;
   }
 
   function withdraw(address cash, address user, uint amt) public {
-    bals[msg.sender][cash] -= amt;
+    _bals[msg.sender][cash] -= amt;
     fb.withdraw(cash, msg.sender, amt);
   }
   
   function setCost(address oracle, bytes32 specId, address cash, uint256 cost) public {
     require( msg.sender == owner, 'setCost: permission denied' );
-    fb.setCost(tags[oracle][specId], cash, cost);
+    fb.setCost(_tags[oracle][specId], cash, cost);
   }
 
   function request(address oracle, bytes32 specId, address cash, uint256 amt) public override {
@@ -73,7 +72,6 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
       //convert to link
       //...
 
-
       //send request to oracle
       Chainlink.Request memory req = buildChainlinkRequest(
         specId,
@@ -81,7 +79,7 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
         this.callback.selector
       );
 
-      bals[msg.sender][cash] -= amt;
+      _bals[msg.sender][cash] -= amt;
 
       bytes32 reqId = sendChainlinkRequestTo( oracle, req, cost );
       reqToSpec[reqId] = specId;
@@ -112,8 +110,8 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
     (val, ttl) = fb.read(address(this), tag);
   }
 
-  function balances(address who) public view returns (uint) {
-    return _bals[who];
+  function balances(address who, address cash) public view returns (uint) {
+    return _bals[who][cash];
   }
 
   function tags(address oracle, bytes32 specId) public view returns (bytes32) {

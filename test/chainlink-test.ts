@@ -95,16 +95,16 @@ describe('chainlink', () => {
     afterEach(async () => {
       const logs    = await oracle.filters.OracleRequest(null);
       const _logs   = await oracle.queryFilter(logs, 0);
-      if( logs.length > 0 ) {
-        const args    = _logs[0].args;
 
-        // const requestId = Buffer.from(args.requestId.slice(2), 'hex')
-        // await oracle.fulfillOracleRequest(requestId, val)
-        await send(oracle.fulfillOracleRequest, Buffer.from(args.requestId.slice(2), 'hex'), args.payment, args.callbackAddr, Buffer.from(args.callbackFunctionId.slice(2), 'hex'), args.cancelExpiration, val);
+      want(logs.length).above(0)
 
-        const res = await adapter.read(oracle.address, specId);
-        want(res.val.slice(2)).equal(val.toString('hex'));
-      }
+      const args    = _logs[0].args;
+      // const requestId = Buffer.from(args.requestId.slice(2), 'hex')
+      // await oracle.fulfillOracleRequest(requestId, val)
+      await send(oracle.fulfillOracleRequest, Buffer.from(args.requestId.slice(2), 'hex'), args.payment, args.callbackAddr, Buffer.from(args.callbackFunctionId.slice(2), 'hex'), args.cancelExpiration, val);
+
+      const res = await adapter.read(oracle.address, specId);
+      want(res.val.slice(2)).equal(val.toString('hex'));
     });
   });
 })
