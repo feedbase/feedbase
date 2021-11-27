@@ -74,7 +74,7 @@ describe('chainlink', () => {
   describe('e2e', () => {
     it('basic', async function () {
       // check balance of user before
-      const bal = await adapter.balances(ALI)
+      const bal = await adapter.balances(ALI, cash.address)
       debug('balance before: ', bal.toString())
 
       await send(adapter.deposit, link.address, ALI, amt);
@@ -82,7 +82,7 @@ describe('chainlink', () => {
       await request.wait()
 
       // check balance of user after
-      const after = await adapter.balances(ALI)
+      const after = await adapter.balances(ALI, cash.address)
       debug('balance after: ', after.toString())
     });
 
@@ -96,12 +96,11 @@ describe('chainlink', () => {
       const logs    = await oracle.filters.OracleRequest(null);
       const _logs   = await oracle.queryFilter(logs, 0);
 
-      want(logs.length).above(0)
+      want(_logs.length).above(0)
 
       const args    = _logs[0].args;
-      // const requestId = Buffer.from(args.requestId.slice(2), 'hex')
-      // await oracle.fulfillOracleRequest(requestId, val)
-      await send(oracle.fulfillOracleRequest, Buffer.from(args.requestId.slice(2), 'hex'), args.payment, args.callbackAddr, Buffer.from(args.callbackFunctionId.slice(2), 'hex'), args.cancelExpiration, val);
+      const requestId = Buffer.from(args.requestId.slice(2), 'hex')
+      await oracle.fulfillOracleRequest(requestId, val)
 
       const res = await adapter.read(oracle.address, specId);
       want(res.val.slice(2)).equal(val.toString('hex'));
