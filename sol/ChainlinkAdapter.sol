@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 
 import "./Feedbase.sol";
 import "@chainlink/contracts/src/v0.8/dev/ChainlinkClient.sol";
+import "@chainlink/contracts/src/v0.8/dev/ConfirmedOwner.sol";
 import "./erc20/IERC20.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
@@ -17,20 +18,17 @@ interface ChainlinkAdapterInterface {
   function withdraw(address cash, address user, uint amt) external;
 }
 
-contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
+contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, ConfirmedOwner {
   mapping(address=>mapping(bytes32=>bytes32)) _tags;
   mapping(bytes32=>bytes32) public reqToSpec;
   // src -> cash -> balance
   mapping(address=>mapping(address=>uint256)) _bals;
   uint256 nonce = 1;
   Feedbase fb;
-  address LINK;
-  address owner;
 
-  constructor(address _LINK, address _fb) {
+  constructor(address _LINK, address _fb) ConfirmedOwner(msg.sender) {
     setChainlinkToken(_LINK);
     fb   = Feedbase(_fb);
-    owner = msg.sender;
   }
 
   function deposit(address cash, address user, uint amt) public payable {
@@ -48,7 +46,7 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   }
   
   function setCost(address oracle, bytes32 specId, address cash, uint256 cost) public {
-    require( msg.sender == owner, 'setCost: permission denied' );
+    require( msg.sender == owner(), 'setCost: permission denied' );
     fb.setCost(_tags[oracle][specId], cash, cost);
   }
 
@@ -83,6 +81,7 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
   }
 
   function requested(address oracle, bytes32 specId, address cash) public view override returns (uint256) {
+    require( cash == chainlinkTokenAddress(), 'request can only pay with link' );
     bytes32 tag = _tags[oracle][specId];
     require( tag != bytes32(0), 'requested: invalid oracle,specId pair' );
 

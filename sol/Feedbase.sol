@@ -75,9 +75,7 @@ contract Feedbase {
     _bals[msg.sender][cash] += config.cost;
    
     feed.pending = pending;
-    if( pending ) {
-      feed.pending = true;
-    } else {
+    if( !pending ) {
       feed.ttl     = ttl;
       feed.val     = val; 
       emit Push(msg.sender, tag, val, ttl);
