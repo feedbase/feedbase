@@ -65,12 +65,8 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface {
 
     uint256 cost = fb.getCost(address(this), tag, cash);
     if( fb.requested(address(this), tag, cash) >= cost ) {
-      // doing all this in case feedbase is extended
       fb.charge(tag, cash);
       fb.withdraw(cash, address(this), cost);
-
-      //convert to link
-      //...
 
       //send request to oracle
       Chainlink.Request memory req = buildChainlinkRequest(
