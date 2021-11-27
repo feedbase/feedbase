@@ -32,7 +32,7 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
   }
 
   function deposit(address cash, address user, uint amt) public payable {
-    //require( cash == LINK, 'deposit can only pay with link' );
+    require( cash == chainlinkTokenAddress(), 'deposit can only pay with link' );
     bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
     IERC20(cash).approve(address(fb), amt);
     fb.deposit(cash, address(this), amt);
@@ -41,13 +41,18 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
   }
 
   function withdraw(address cash, address user, uint amt) public {
+    require( cash == chainlinkTokenAddress(), 'can only withdraw link' );
     _bals[msg.sender][cash] -= amt;
     fb.withdraw(cash, msg.sender, amt);
   }
   
   function setCost(address oracle, bytes32 specId, address cash, uint256 cost) public {
     require( msg.sender == owner(), 'setCost: permission denied' );
+    require( cash == chainlinkTokenAddress(), 'can only setCost link' );
     fb.setCost(_tags[oracle][specId], cash, cost);
+  }
+  function getCost(address oracle, bytes32 specId, address cash) public returns (uint256) {
+    return fb.getCost(address(this), _tags[oracle][specId], cash);
   }
 
   function request(address oracle, bytes32 specId, address cash, uint256 amt) public override {
@@ -96,6 +101,7 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
     require( tag != bytes32(0), 'callback: invalid sender,reqId pair' );
 
     fb.push(tag, data, type(uint256).max, chainlinkTokenAddress());
+    reqToSpec[requestId] = 0;
   }
 
   function read(address oracle, bytes32 specId) public view override returns (bytes32 val, uint256 ttl) {

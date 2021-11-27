@@ -67,15 +67,17 @@ contract Feedbase {
     return _push(tag, val, ttl, cash, false);
   }
 
-  function _push(bytes32 tag, bytes32 val, uint256 ttl, address cash, bool pending) private returns (uint256) {
+  function _push(bytes32 tag, bytes32 val, uint256 ttl, address cash, bool prepay) private returns (uint256) {
     Feed storage feed = _feeds[msg.sender][tag];
     Config storage config = _config[msg.sender][tag][cash];
 
-    config.paid -= config.cost;
-    _bals[msg.sender][cash] += config.cost;
+    if( !feed.pending ) {
+      config.paid -= config.cost;
+      _bals[msg.sender][cash] += config.cost;
+    }
    
-    feed.pending = pending;
-    if( !pending ) {
+    feed.pending = prepay;
+    if( !prepay ) {
       feed.ttl     = ttl;
       feed.val     = val; 
       emit Push(msg.sender, tag, val, ttl);

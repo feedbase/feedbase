@@ -69,13 +69,13 @@ describe('chainlink', () => {
     val = Buffer.from('11'.repeat(32), 'hex')
     amt = 10;
     specId = Buffer.from('00'.repeat(32), 'hex');
-    await send(adapter.setCost, oracle.address, specId, cash.address, amt);
+    await send(adapter.setCost, oracle.address, specId, link.address, amt);
   })
 
   describe('e2e', () => {
     it('basic', async function () {
       // check balance of user before
-      const bal = await adapter.balances(ALI, cash.address)
+      const bal = await adapter.balances(ALI, link.address)
       debug('balance before: ', bal.toString())
 
       await send(adapter.deposit, link.address, ALI, amt);
@@ -83,17 +83,9 @@ describe('chainlink', () => {
       await request.wait()
 
       // check balance of user after
-      const after = await adapter.balances(ALI, cash.address)
+      const after = await adapter.balances(ALI, link.address)
       debug('balance after: ', after.toString())
     });
-
-    /*
-    it('non-link tokens', async function () {
-      await send(adapter.deposit, cash.address, ALI, amt);
-      const request = await adapter.request(oracle.address, specId, cash.address, amt);
-      await request.wait()
-    });
-   */
 
     afterEach(async () => {
       const logs    = await oracle.filters.OracleRequest(null);
