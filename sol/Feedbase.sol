@@ -60,14 +60,17 @@ contract Feedbase {
   }
 
   function charge(bytes32 tag, address cash) public returns (uint256) {
-    return _push(tag, 0, 0, cash, true);
+    Feed storage feed = _feeds[msg.sender][tag];
+    Config storage config = _config[msg.sender][tag][cash];
+    if( !feed.pending ) {
+      config.paid -= config.cost;
+      _bals[msg.sender][cash] += config.cost;
+    }
+    feed.pending = true;
+    return config.cost;
   }
 
   function push(bytes32 tag, bytes32 val, uint256 ttl, address cash) public returns (uint256) {
-    return _push(tag, val, ttl, cash, false);
-  }
-
-  function _push(bytes32 tag, bytes32 val, uint256 ttl, address cash, bool prepay) private returns (uint256) {
     Feed storage feed = _feeds[msg.sender][tag];
     Config storage config = _config[msg.sender][tag][cash];
 
@@ -75,13 +78,11 @@ contract Feedbase {
       config.paid -= config.cost;
       _bals[msg.sender][cash] += config.cost;
     }
+    feed.pending = false;
    
-    feed.pending = prepay;
-    if( !prepay ) {
-      feed.ttl     = ttl;
-      feed.val     = val; 
-      emit Push(msg.sender, tag, val, ttl);
-    }
+    feed.ttl     = ttl;
+    feed.val     = val; 
+    emit Push(msg.sender, tag, val, ttl);
 
     return config.cost;
   }
