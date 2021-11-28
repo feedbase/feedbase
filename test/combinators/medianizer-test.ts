@@ -8,7 +8,7 @@ const { constants, BigNumber, utils } = ethers
 const { MaxUint256 } = constants
 const { formatBytes32String, parseEther, parseBytes32String } = utils
 
-describe('medianizer', () => {
+describe('MedianizerCombinator', () => {
   let cash
   let fb, medianizer, selector
   let ali, s1, s2, s3, s4, s5
