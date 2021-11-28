@@ -4,8 +4,9 @@
 pragma solidity ^0.8.9;
 
 import "./erc20/IERC20.sol";
+import "./interfaces/Readable.sol";
 
-contract Feedbase {
+contract Feedbase is Readable {
   struct Feed {
     bytes32 val;
     uint256 ttl;
@@ -53,7 +54,7 @@ contract Feedbase {
     , uint256         amount
   );
 
-  function read(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
+  function read(address src, bytes32 tag) public view override returns (bytes32 val, uint256 ttl) {
     Feed storage feed = _feeds[src][tag];
     require(block.timestamp < feed.ttl, 'ERR_READ');
     return (feed.val, feed.ttl);

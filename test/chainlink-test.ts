@@ -230,22 +230,26 @@ describe('chainlink', () => {
 
       const vals = [1000, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
-      const sources = [fb, rec, adapter]
+      const sources = [bob, rec, oracle]
       const selectors = sources.map(s => s.address)
+      const readers = [fb.address, fb.address, adapter.address];
 
-      await selector.setSelectors(selectors)
+      debug('selectors');
+      await selector.setSelectors(selectors, readers)
       use(1);
 
-
+      debug('pushing...');
       await Promise.all([
         async () => {
           await fb.push(tag, vals[0], ttl, link.address);
+          debug('direct feed done');
         },
         async () => {
-          console.log("HIHII");
+          //TODO do we need this?
+          const valBuf = Buffer.from(vals[1].slice(2), 'hex');
           const digest = makeUpdateDigest({
             tag,
-            val: vals[1],
+            val: valBuf,
             seq: seq,
             sec: sec,
             ttl: ttl,
@@ -254,14 +258,21 @@ describe('chainlink', () => {
           })
           const signature = await bob.signMessage(digest)
           const sig = ethers.utils.splitSignature(signature)
-          await send(rec.submit, tag, seq, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s)
+          await send(rec.connect(ali).setSigner, BOB, ttl);
+          await send(rec.submit, tag, seq, sec, ttl, valBuf, link.address, sig.v, sig.r, sig.s)
+          debug('receiver submit done');
         },
         async () => {
+          await send(adapter.connect(ali).deposit, link.address, BOB, amt);
+          await send(adapter.request, oracle.address, tag, link.address, amt);
           await fulfill(vals[2]);
+          debug('oracle fulfillment done');
         }
       ].map(x => x()));
     
+      debug('medianizer push');
       await medianizer.push(tag)
+      debug('read from medianizer');
       const [median] = await fb.read(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     });

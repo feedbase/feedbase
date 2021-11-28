@@ -9,11 +9,9 @@ import "./erc20/IERC20.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 
-interface ChainlinkAdapterInterface {
-  function request(address oracle, bytes32 specId, address cash, uint256 amt) external;
+interface ChainlinkAdapterInterface is Readable {
   function requested(address oracle, bytes32 specId, address cash) external returns (uint256);
   function callback(bytes32 requestId, bytes32 data) external;
-  function read(address oracle, bytes32 specId) external view returns (bytes32, uint256);
   function deposit(address cash, address user, uint amt) external payable;
   function withdraw(address cash, address user, uint amt) external;
 }
