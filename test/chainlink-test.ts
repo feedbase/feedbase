@@ -1,5 +1,7 @@
+import { makeUpdateDigest } from '../src'
 import * as hh from 'hardhat'
 import { ethers, network } from 'hardhat'
+const { constants, BigNumber, utils } = ethers
 import { send, fail, chai, want, snapshot, revert } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
@@ -11,6 +13,9 @@ let fb
 let signers
 let oracle
 let adapter
+let rec
+let selector
+let medianizer
 
 const use = (n) => {
   const signer = signers[n]
@@ -21,6 +26,20 @@ const use = (n) => {
   if( fb ) fb = fb.connect(signer);
   if( oracle ) oracle = oracle.connect(signer);
   if( adapter ) adapter = adapter.connect(signer);
+  if( rec ) rec = rec.connect(signer);
+  if( selector ) selector = selector.connect(signer);
+  if( medianizer ) medianizer = medianizer.connect(signer);
+}
+
+let fulfill = async (x) => {
+  const logs    = await oracle.filters.OracleRequest(null);
+  const _logs   = await oracle.queryFilter(logs, 0);
+
+  want(_logs.length).above(0)
+
+  const args    = _logs[_logs.length - 1].args;
+  const requestId = Buffer.from(args.requestId.slice(2), 'hex')
+  await oracle.fulfillOracleRequest(requestId, x)
 }
 
 describe('chainlink', () => {
@@ -51,6 +70,17 @@ describe('chainlink', () => {
 
     const OracleDeployer = await ethers.getContractFactory('MockOracle');
     oracle = await OracleDeployer.deploy(link.address);
+
+    const rec_type = await ethers.getContractFactory('BasicReceiver');
+    rec = await rec_type.deploy(fb.address);
+
+    const FixedSelectorProviderFactory = await ethers.getContractFactory('FixedSelectorProvider')
+    selector = await FixedSelectorProviderFactory.deploy()
+
+    const MedianizerFactory = await ethers.getContractFactory('MedianizerCombinator')
+    medianizer = await MedianizerFactory.deploy(selector.address, fb.address)
+
+
 
     use(0)
 
@@ -158,11 +188,6 @@ describe('chainlink', () => {
     });
   });
 
-  describe('core', () => {
-
-
-  });
-
   it('read', async function () {
     await fail('read: invalid oracle,specId', adapter.read, oracle.address, specId);
 
@@ -182,17 +207,6 @@ describe('chainlink', () => {
     const after = await adapter.balances(ALI, link.address)
     debug('balance after: ', after.toString())
 
-    let fulfill = async (x) => {
-      const logs    = await oracle.filters.OracleRequest(null);
-      const _logs   = await oracle.queryFilter(logs, 0);
-
-      want(_logs.length).above(0)
-
-      const args    = _logs[_logs.length - 1].args;
-      const requestId = Buffer.from(args.requestId.slice(2), 'hex')
-      await oracle.fulfillOracleRequest(requestId, x)
-    }
-
     await fulfill(val);
 
     let res = await adapter.read(oracle.address, specId);
@@ -209,14 +223,47 @@ describe('chainlink', () => {
     await fulfill(newVal);
     res = await adapter.read(oracle.address, specId);
     want(res.val.slice(2)).equal(newVal.toString('hex'));
+  });
+
+  describe('all', () => {
+    it('receiver adapter direct', async function () {
+
+      const vals = [1000, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
+      const ttl = 10 * 10 ** 12
+      const sources = [fb, rec, adapter]
+      const selectors = sources.map(s => s.address)
+
+      await selector.setSelectors(selectors)
+      use(1);
 
 
-
-
-
-
-
-
-
+      await Promise.all([
+        async () => {
+          await fb.push(tag, vals[0], ttl, link.address);
+        },
+        async () => {
+          console.log("HIHII");
+          const digest = makeUpdateDigest({
+            tag,
+            val: vals[1],
+            seq: seq,
+            sec: sec,
+            ttl: ttl,
+            chainId: hh.network.config.chainId,
+            receiver: rec.address
+          })
+          const signature = await bob.signMessage(digest)
+          const sig = ethers.utils.splitSignature(signature)
+          await send(rec.submit, tag, seq, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s)
+        },
+        async () => {
+          await fulfill(vals[2]);
+        }
+      ].map(x => x()));
+    
+      await medianizer.push(tag)
+      const [median] = await fb.read(medianizer.address, tag)
+      want(BigNumber.from(median).toNumber()).to.eql(1200)
+    });
   });
 });
