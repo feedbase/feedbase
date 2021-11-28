@@ -8,7 +8,7 @@ const { constants, BigNumber, utils } = ethers
 const { MaxUint256 } = constants
 const { formatBytes32String, parseEther, parseBytes32String } = utils
 
-describe('medianizer', () => {
+describe('DynamicMedianizerCombinator', () => {
   let cash, usdc, dai, tokens
   let fb, medianizer, tagProvider
   let selector
@@ -16,11 +16,6 @@ describe('medianizer', () => {
   const fee = 5
   const amt = 1000
   const tag = formatBytes32String('DYN_MED_CASH')
-  const tags = [
-    formatBytes32String('CASH'), 
-    formatBytes32String('USDC'), 
-    formatBytes32String('DAI')
-  ]
 
   before(async () => {
     [ali, bob] = await ethers.getSigners()
@@ -62,6 +57,12 @@ describe('medianizer', () => {
   })
 
   it('TagProvider', async function () {
+    const tags = [
+      formatBytes32String('CASH'), 
+      formatBytes32String('USDC'), 
+      formatBytes32String('DAI')
+    ]
+
     const owner = await tagProvider.owner()
     want(owner).to.eql(ali.address)
     await tagProvider.setTags(tags)
@@ -70,6 +71,12 @@ describe('medianizer', () => {
   })
 
   it('poke', async function () {
+    const tags = [
+      formatBytes32String('CASH'), 
+      formatBytes32String('USDC'), 
+      formatBytes32String('DAI')
+    ]
+
     await tagProvider.setTags(tags)
 
     // ali deposits amt into feedbase
@@ -102,13 +109,17 @@ describe('medianizer', () => {
 
   describe('push', () => {
     it('One value', async () => {
-      const val = utils.hexZeroPad(utils.hexValue(1000), 32)
+      const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
-      const [t1] = tags
+      const tags = [
+        formatBytes32String('CASH')
+      ]
 
-      await tagProvider.setTags([t1])
+      await tagProvider.setTags(tags)
       const con = fb.connect(ali)
-      await con.push(t1, val, ttl, cash.address)
+      await Promise.all(tags.map(async (t, idx) => {
+        await con.push(t, vals[idx], ttl, cash.address)
+      }))
       await fb.deposit(cash.address, medianizer.address, amt)
 
       await medianizer.push(ali.address, tag)
@@ -116,14 +127,17 @@ describe('medianizer', () => {
       want(BigNumber.from(median).toNumber()).to.eql(1000)
     })
 
-    it('Two values (different tags)', async () => {
+    it('Two values', async () => {
       const vals = [1000, 1200].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
-      const [t1, t2] = tags
+      const tags = [
+        formatBytes32String('CASH'), 
+        formatBytes32String('USDC')
+      ]
 
-      await tagProvider.setTags([t1, t2])
+      await tagProvider.setTags(tags)
       const con = fb.connect(ali)
-      await Promise.all([t1, t2].map(async (t, idx) => {
+      await Promise.all(tags.map(async (t, idx) => {
         await con.push(t, vals[idx], ttl, cash.address)
       }))
       await medianizer.push(ali.address, tag)
@@ -131,139 +145,161 @@ describe('medianizer', () => {
       want(BigNumber.from(median).toNumber()).to.eql(1100)
     })
 
-    it.skip('Three values (different tags)', async () => {
+    it('Three values', async () => {
       const vals = [1000, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
-      const sources = [s1, s2, s3]
-      const selectors = sources.map(s => s.address)
-      const tags = []
+      const tags = [
+        formatBytes32String('CASH'), 
+        formatBytes32String('USDC'), 
+        formatBytes32String('DAI')
+      ]
 
-      await selector.setSelectors(selectors)
-      await Promise.all(sources.map(async (src, idx) => {
-        const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+      await tagProvider.setTags(tags)
+      const con = fb.connect(ali)
+      await Promise.all(tags.map(async (t, idx) => {
+        await con.push(t, vals[idx], ttl, cash.address)
       }))
-
-      await medianizer.push(tag)
+      await medianizer.push(ali.address, tag)
       const [median] = await fb.read(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
 
-    it.skip('Four values', async () => {
+    it('Four values', async () => {
       const vals = [1000, 1100, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
-      const sources = [s1, s2, s3, s4]
-      const selectors = sources.map(s => s.address)
+      const tags = [
+        formatBytes32String('CASH'), 
+        formatBytes32String('USDC'), 
+        formatBytes32String('DAI'),
+        formatBytes32String('STABLE')
+      ]
 
-      await selector.setSelectors(selectors)
-      await Promise.all(sources.map(async (src, idx) => {
-        const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+      await tagProvider.setTags(tags)
+      const con = fb.connect(ali)
+      await Promise.all(tags.map(async (t, idx) => {
+        await con.push(t, vals[idx], ttl, cash.address)
       }))
-
-      await medianizer.push(tag)
+      await medianizer.push(ali.address, tag)
       const [median] = await fb.read(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1150)
     })
 
-    it.skip('Five values', async () => {
+    it('Five values', async () => {
       const vals = [1000, 1100, 1200, 1300, 1400].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
-      const sources = [s1, s2, s3, s4, s5]
-      const selectors = sources.map(s => s.address)
-      await selector.setSelectors(selectors)
-      await Promise.all(sources.map(async (src, idx) => {
-        const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
-      }))
+      const tags = [
+        formatBytes32String('CASH'), 
+        formatBytes32String('USDC'), 
+        formatBytes32String('DAI'),
+        formatBytes32String('STABLE'),
+        formatBytes32String('USDT')
+      ]
 
-      await medianizer.push(tag)
+      await tagProvider.setTags(tags)
+      const con = fb.connect(ali)
+      await Promise.all(tags.map(async (t, idx) => {
+        await con.push(t, vals[idx], ttl, cash.address)
+      }))
+      await medianizer.push(ali.address, tag)
       const [median] = await fb.read(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
 
-    it.skip('One expired value', async () => {
+    it('One expired value', async () => {
       const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 60 * 60 * 24
       const now = Math.ceil(Date.now() / 1000)
-      const sources = [s1]
-      const selectors = sources.map(s => s.address)
-      await selector.setSelectors(selectors)
-      await Promise.all(sources.map(async (src, idx) => {
-        const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+      const tags = [
+        formatBytes32String('CASH')
+      ]
+
+      await tagProvider.setTags(tags)
+      const con = fb.connect(ali)
+      await Promise.all(tags.map(async (t, idx) => {
+        await con.push(t, vals[idx], ttl, cash.address)
       }))
 
       await hh.network.provider.send('evm_setNextBlockTimestamp', [
         now + 2 * ttl
       ])
 
-      await fail("VM Exception while processing transaction: reverted with reason string 'ERR_READ'", medianizer.push, tag)
+      await fail("VM Exception while processing transaction: reverted with reason string 'ERR_READ'", medianizer.push, medianizer.address, tag)
     })
 
-    it.skip('Two unordered values', async () => {
+    it('Two unordered values', async () => {
       const vals = [1200, 1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
-      const sources = [s1, s2]
-      const selectors = sources.map(s => s.address)
+      const tags = [
+        formatBytes32String('CASH'), 
+        formatBytes32String('USDC')
+      ]
 
-      await selector.setSelectors(selectors)
-      await Promise.all(sources.map(async (src, idx) => {
-        const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+      await tagProvider.setTags(tags)
+      const con = fb.connect(ali)
+      await Promise.all(tags.map(async (t, idx) => {
+        await con.push(t, vals[idx], ttl, cash.address)
       }))
-
-      await medianizer.push(tag)
+      await medianizer.push(ali.address, tag)
       const [median] = await fb.read(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1100)
     })
 
-    it.skip('Three unordered values', async () => {
+    it('Three unordered values', async () => {
       const vals = [1300, 1000, 1200].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
-      const sources = [s1, s2, s3]
-      const selectors = sources.map(s => s.address)
+      const tags = [
+        formatBytes32String('CASH'), 
+        formatBytes32String('USDC'),
+        formatBytes32String('DAI')
+      ]
 
-      await selector.setSelectors(selectors)
-      await Promise.all(sources.map(async (src, idx) => {
-        const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+      await tagProvider.setTags(tags)
+      const con = fb.connect(ali)
+      await Promise.all(tags.map(async (t, idx) => {
+        await con.push(t, vals[idx], ttl, cash.address)
       }))
-
-      await medianizer.push(tag)
+      await medianizer.push(ali.address, tag)
       const [median] = await fb.read(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
 
-    it.skip('Four unordered values', async () => {
+    it('Four unordered values', async () => {
       const vals = [1200, 1000, 1300, 1100].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
-      const sources = [s1, s2, s3, s4]
-      const selectors = sources.map(s => s.address)
+      const tags = [
+        formatBytes32String('CASH'), 
+        formatBytes32String('USDC'), 
+        formatBytes32String('DAI'),
+        formatBytes32String('STABLE')
+      ]
 
-      await selector.setSelectors(selectors)
-      await Promise.all(sources.map(async (src, idx) => {
-        const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
+      await tagProvider.setTags(tags)
+      const con = fb.connect(ali)
+      await Promise.all(tags.map(async (t, idx) => {
+        await con.push(t, vals[idx], ttl, cash.address)
       }))
-
-      await medianizer.push(tag)
+      await medianizer.push(ali.address, tag)
       const [median] = await fb.read(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1150)
     })
 
-    it.skip('Five unordered values', async () => {
+    it('Five unordered values', async () => {
       const vals = [1300, 1100, 1400, 1200, 1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
-      const sources = [s1, s2, s3, s4, s5]
-      const selectors = sources.map(s => s.address)
-      await selector.setSelectors(selectors)
-      await Promise.all(sources.map(async (src, idx) => {
-        const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl, cash.address)
-      }))
+      const tags = [
+        formatBytes32String('CASH'), 
+        formatBytes32String('USDC'), 
+        formatBytes32String('DAI'),
+        formatBytes32String('STABLE'),
+        formatBytes32String('USDT')
+      ]
 
-      await medianizer.push(tag)
+      await tagProvider.setTags(tags)
+      const con = fb.connect(ali)
+      await Promise.all(tags.map(async (t, idx) => {
+        await con.push(t, vals[idx], ttl, cash.address)
+      }))
+      await medianizer.push(ali.address, tag)
       const [median] = await fb.read(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
