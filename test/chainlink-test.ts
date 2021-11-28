@@ -10,6 +10,7 @@ let cash
 let fb
 let signers
 let oracle
+let adapter
 
 const use = (n) => {
   const signer = signers[n]
@@ -19,16 +20,17 @@ const use = (n) => {
   if( cash ) cash = cash.connect(signer);
   if( fb ) fb = fb.connect(signer);
   if( oracle ) oracle = oracle.connect(signer);
+  if( adapter ) adapter = adapter.connect(signer);
 }
 
 describe('chainlink', () => {
+  const ZERO = ethers.BigNumber.from(0);
   const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
   const decimals = 18;
   const initialAnswer = 0;
   let tag, seq, sec, ttl, val
   let ali, bob
   let ALI, BOB
-  let registry, link, aggregator, adapter;
   let cash;
   before(async () => {
     signers = await ethers.getSigners();
@@ -68,37 +70,153 @@ describe('chainlink', () => {
     ttl = 10000000000000
     val = Buffer.from('11'.repeat(32), 'hex')
     amt = 10;
-    specId = Buffer.from('00'.repeat(32), 'hex');
-    await send(adapter.setCost, oracle.address, specId, link.address, amt);
+    specId = Buffer.from('ff'.repeat(32), 'hex');
+    use(0);
   })
 
-  describe('e2e', () => {
-    it('basic', async function () {
-      // check balance of user before
-      const bal = await adapter.balances(ALI, link.address)
-      debug('balance before: ', bal.toString())
+  describe('setup', () => {
+    describe('deposit', () => {
+      let bal;
+      beforeEach(async () => {
+        bal = 1000;
+      });
 
-      await send(adapter.deposit, link.address, ALI, amt);
-      const request = await adapter.request(oracle.address, specId, link.address, amt);
-      await request.wait()
+      it('success', async function () {
+        want((await adapter.balances(ALI, link.address)).toNumber()).to.eql(0);
+        await send(adapter.deposit, link.address, BOB, bal);
+        want((await adapter.balances(BOB, link.address)).toNumber()).to.equal(bal);
+      });
 
-      // check balance of user after
-      const after = await adapter.balances(ALI, link.address)
-      debug('balance after: ', after.toString())
+      // TODO transferFrom return value tests
+      it('erc20 transfer fail', async function () {
+        await send(link.transfer, BOB, bal);
+        use(1);
+        await fail('', adapter.deposit, link.address, BOB, bal+1);
+      });
     });
 
-    afterEach(async () => {
+    describe('withdraw', () => {
+      let bal, prev;
+      beforeEach(async () => {
+        bal = 1000
+        prev = await link.balanceOf(ALI);
+      });
+
+      it('withdraw', async function () {
+        await send(adapter.deposit, link.address, ALI, bal);
+        await send(adapter.withdraw, link.address, ALI, bal);
+        want(await adapter.balances(ALI, link.address)).to.eql(ZERO);
+      });
+
+      it('withdraw to other user', async function () {
+        await send(adapter.deposit, link.address, ALI, bal);
+        await send(adapter.withdraw, link.address, BOB, bal);
+        want(await adapter.balances(ALI, link.address)).to.eql(ZERO);
+        want(await link.balanceOf(BOB)).to.eql(ethers.BigNumber.from(bal));
+      });
+
+      it('withdraw underflow', async function () {
+        await send(adapter.deposit, link.address, ALI, bal);
+        await fail('underflow', adapter.withdraw, link.address, BOB, bal+1);
+      });
+    });
+
+    // TODO permissions
+    it('get/setCost', async function () {
+      const cost = 1;
+      want((await adapter.getCost(oracle.address, specId, link.address)).toNumber()).to.equal(0);
+      await send(adapter.setCost, oracle.address, specId, link.address, cost);
+      want((await adapter.getCost(oracle.address, specId, link.address)).toNumber()).to.equal(cost);
+    });
+
+    describe('requested', () => {
+      beforeEach(async () => {
+        await send(adapter.setCost, oracle.address, specId, link.address, amt);
+        // check balance of user before
+        const bal = await adapter.balances(ALI, link.address)
+        debug('balance before: ', bal.toString())
+
+        await send(adapter.deposit, link.address, ALI, amt);
+        const request = await adapter.request(oracle.address, specId, link.address, amt);
+        await request.wait()
+
+        // check balance of user after
+        const after = await adapter.balances(ALI, link.address)
+        debug('balance after: ', after.toString())
+      });
+
+      it('not found', async function () {
+        await fail('invalid oracle,specId pair', adapter.requested, oracle.address, Buffer.from('00'.repeat(32), 'hex'), link.address);
+        await fail('invalid oracle,specId pair', adapter.requested, cash.address, specId, link.address);
+        await fail('invalid oracle,specId pair', adapter.requested, cash.address, Buffer.from('00'.repeat(32), 'hex'), link.address);
+      });
+
+      it('found', async function () {
+        const requested = await adapter.requested(oracle.address, specId, link.address);
+        want(requested.toNumber()).to.equal(amt);
+      });
+    });
+  });
+
+  describe('core', () => {
+
+
+  });
+
+  it('read', async function () {
+    await fail('read: invalid oracle,specId', adapter.read, oracle.address, specId);
+
+    await send(adapter.setCost, oracle.address, specId, link.address, amt);
+    // check balance of user before
+    const bal = await adapter.balances(ALI, link.address)
+    debug('balance before: ', bal.toString())
+
+    await send(adapter.deposit, link.address, ALI, amt);
+    const request = await adapter.request(oracle.address, specId, link.address, amt);
+    await request.wait()
+
+    // pending
+    await fail('ERR_READ', adapter.read, oracle.address, specId);
+
+    // check balance of user after
+    const after = await adapter.balances(ALI, link.address)
+    debug('balance after: ', after.toString())
+
+    let fulfill = async (x) => {
       const logs    = await oracle.filters.OracleRequest(null);
       const _logs   = await oracle.queryFilter(logs, 0);
 
       want(_logs.length).above(0)
 
-      const args    = _logs[0].args;
+      const args    = _logs[_logs.length - 1].args;
       const requestId = Buffer.from(args.requestId.slice(2), 'hex')
-      await oracle.fulfillOracleRequest(requestId, val)
+      await oracle.fulfillOracleRequest(requestId, x)
+    }
 
-      const res = await adapter.read(oracle.address, specId);
-      want(res.val.slice(2)).equal(val.toString('hex'));
-    });
+    await fulfill(val);
+
+    let res = await adapter.read(oracle.address, specId);
+    want(res.val.slice(2)).equal(val.toString('hex'));
+
+    await send(adapter.deposit, link.address, ALI, amt);
+    await send(adapter.request, oracle.address, specId, link.address, amt);
+
+    // pending
+    res = await adapter.read(oracle.address, specId);
+    want(res.val.slice(2)).equal(val.toString('hex'));
+
+    let newVal = Buffer.from('44'.repeat(32), 'hex')
+    await fulfill(newVal);
+    res = await adapter.read(oracle.address, specId);
+    want(res.val.slice(2)).equal(newVal.toString('hex'));
+
+
+
+
+
+
+
+
+
   });
-})
+});

@@ -34,16 +34,16 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
   function deposit(address cash, address user, uint amt) public payable {
     require( cash == chainlinkTokenAddress(), 'deposit can only pay with link' );
     bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
+    require(ok, 'ERR_DEPOSIT_PULL');
     IERC20(cash).approve(address(fb), amt);
     fb.deposit(cash, address(this), amt);
-    require(ok, 'ERR_DEPOSIT_PULL');
     _bals[user][cash] += amt;
   }
 
   function withdraw(address cash, address user, uint amt) public {
     require( cash == chainlinkTokenAddress(), 'can only withdraw link' );
     _bals[msg.sender][cash] -= amt;
-    fb.withdraw(cash, msg.sender, amt);
+    fb.withdraw(cash, user, amt);
   }
   
   function setCost(address oracle, bytes32 specId, address cash, uint256 cost) public {
@@ -51,7 +51,7 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
     require( cash == chainlinkTokenAddress(), 'can only setCost link' );
     fb.setCost(_tags[oracle][specId], cash, cost);
   }
-  function getCost(address oracle, bytes32 specId, address cash) public returns (uint256) {
+  function getCost(address oracle, bytes32 specId, address cash) public view returns (uint256) {
     return fb.getCost(address(this), _tags[oracle][specId], cash);
   }
 
