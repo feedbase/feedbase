@@ -75,10 +75,14 @@ describe('chainlink', () => {
     const rec_type = await ethers.getContractFactory('BasicReceiver')
     rec = await rec_type.deploy(fb.address)
 
-    const FixedSelectorProviderFactory = await ethers.getContractFactory('FixedSelectorProvider')
+    const FixedSelectorProviderFactory = await ethers.getContractFactory(
+      'FixedSelectorProvider'
+    )
     selector = await FixedSelectorProviderFactory.deploy()
 
-    const MedianizerFactory = await ethers.getContractFactory('MedianizerCombinator')
+    const MedianizerFactory = await ethers.getContractFactory(
+      'MedianizerCombinator'
+    )
     medianizer = await MedianizerFactory.deploy(selector.address, fb.address)
 
     use(0)
@@ -171,8 +175,7 @@ describe('chainlink', () => {
         debug('balance before: ', bal.toString())
 
         await send(adapter.deposit, link.address, ALI, amt)
-        const request = await adapter.request(oracle.address, specId, link.address, amt)
-        await request.wait()
+        await send(adapter.request, oracle.address, specId, link.address, amt)
 
         // check balance of user after
         const after = await adapter.balances(ALI, link.address)
@@ -180,9 +183,27 @@ describe('chainlink', () => {
       })
 
       it('not found', async function () {
-        await fail('invalid oracle,specId pair', adapter.requested, oracle.address, Buffer.from('00'.repeat(32), 'hex'), link.address)
-        await fail('invalid oracle,specId pair', adapter.requested, cash.address, specId, link.address)
-        await fail('invalid oracle,specId pair', adapter.requested, cash.address, Buffer.from('00'.repeat(32), 'hex'), link.address)
+        await fail(
+          'invalid oracle,specId pair',
+          adapter.requested,
+          oracle.address,
+          Buffer.from('00'.repeat(32), 'hex'),
+          link.address
+        )
+        await fail(
+          'invalid oracle,specId pair',
+          adapter.requested,
+          cash.address,
+          specId,
+          link.address
+        )
+        await fail(
+          'invalid oracle,specId pair',
+          adapter.requested,
+          cash.address,
+          Buffer.from('00'.repeat(32), 'hex'),
+          link.address
+        )
       })
 
       it('found', async function () {
@@ -201,8 +222,7 @@ describe('chainlink', () => {
     debug('balance before: ', bal.toString())
 
     await send(adapter.deposit, link.address, ALI, amt)
-    const request = await adapter.request(oracle.address, specId, link.address, amt)
-    await request.wait()
+    await send(adapter.request, oracle.address, specId, link.address, amt)
 
     // pending
     await fail('ERR_READ', adapter.read, oracle.address, specId)
@@ -223,7 +243,7 @@ describe('chainlink', () => {
     res = await adapter.read(oracle.address, specId)
     want(res.val.slice(2)).equal(val.toString('hex'))
 
-    let newVal = Buffer.from('44'.repeat(32), 'hex')
+    const newVal = Buffer.from('44'.repeat(32), 'hex')
     await fulfill(newVal)
     res = await adapter.read(oracle.address, specId)
     want(res.val.slice(2)).equal(newVal.toString('hex'))
@@ -232,7 +252,9 @@ describe('chainlink', () => {
   describe('all', () => {
     it('receiver adapter direct', async function () {
 
-      const vals = [1000, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
+      const vals = [1000, 1200, 1300].map(
+        x => utils.hexZeroPad(utils.hexValue(x), 32)
+      )
       const ttl = 10 * 10 ** 12
       const sources = [bob, rec, oracle]
       const selectors = sources.map(s => s.address)
@@ -240,6 +262,11 @@ describe('chainlink', () => {
 
       debug('selectors')
       await selector.setSelectors(selectors, readers)
+
+      debug('set costs')
+      await send(adapter.setCost, oracle.address, specId, link.address, amt);
+      await send(rec.setCost, tag, link.address, amt);
+      await send(fb.connect(bob).setCost, tag, link.address, amt);
 
       debug('deposit fb...')
       await send(link.approve, fb.address, amt*3)
@@ -275,7 +302,16 @@ describe('chainlink', () => {
           const signature = await bob.signMessage(digest)
           const sig = ethers.utils.splitSignature(signature)
           await send(rec.connect(ali).setSigner, BOB, ttl)
-          await send(rec.submit, tag, seq, sec, ttl, valBuf, link.address, sig.v, sig.r, sig.s)
+          await send(
+            rec.submit,
+            tag,
+            seq,
+            sec,
+            ttl,
+            valBuf,
+            link.address,
+            sig.v, sig.r, sig.s
+          )
           debug('receiver submit done')
         },
         async () => {

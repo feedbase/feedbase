@@ -60,6 +60,10 @@ contract Feedbase is Readable {
     return (feed.val, feed.ttl);
   }
 
+  //charge for pending request
+  //this is to handle oracles that need to be paid upfront by token transfer
+  //the feed is set to pending and future payments are blocked until the 
+  //request is served
   function charge(bytes32 tag, address cash) public returns (uint256) {
     Feed storage feed = _feeds[msg.sender][tag];
     Config storage config = _config[msg.sender][tag][cash];
@@ -76,6 +80,7 @@ contract Feedbase is Readable {
     Config storage config = _config[msg.sender][tag][cash];
 
     if( !feed.pending ) {
+      // pending request must be served before msg.sender can get paid again
       config.paid -= config.cost;
       _bals[msg.sender][cash] += config.cost;
     }
