@@ -236,6 +236,18 @@ describe('chainlink', () => {
 
       debug('selectors');
       await selector.setSelectors(selectors, readers)
+
+      debug('deposit fb...');
+      await send(link.approve, fb.address, amt*3);
+      await send(fb.deposit, link.address, ALI, amt*3);
+      debug('requesting...');
+      //TODO medianizer needs to be updated
+      await send(fb.request, medianizer.address, tag, link.address, amt*3)
+      await send(link.approve, adapter.address, amt);
+      await send(adapter.deposit, link.address, medianizer.address, amt)
+      debug('poke...');
+      await send(medianizer.poke, tag, link.address)
+
       use(1);
 
       debug('pushing...');
@@ -263,8 +275,6 @@ describe('chainlink', () => {
           debug('receiver submit done');
         },
         async () => {
-          await send(adapter.connect(ali).deposit, link.address, BOB, amt);
-          await send(adapter.request, oracle.address, tag, link.address, amt);
           await fulfill(vals[2]);
           debug('oracle fulfillment done');
         }
