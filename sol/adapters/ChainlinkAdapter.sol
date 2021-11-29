@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: AGPL-v3.0
 pragma solidity ^0.8.9;
 
-import "./Feedbase.sol";
+import "../Feedbase.sol";
 import "@chainlink/contracts/src/v0.8/dev/ChainlinkClient.sol";
 import "@chainlink/contracts/src/v0.8/dev/ConfirmedOwner.sol";
-import "./erc20/IERC20.sol";
+import "../erc20/IERC20.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 
