@@ -263,6 +263,11 @@ describe('chainlink', () => {
       debug('selectors')
       await selector.setSelectors(selectors, readers)
 
+      debug('set costs')
+      await send(adapter.setCost, oracle.address, specId, link.address, amt);
+      await send(rec.setCost, tag, link.address, amt);
+      await send(fb.connect(bob).setCost, tag, link.address, amt);
+
       debug('deposit fb...')
       await send(link.approve, fb.address, amt*3)
       await send(fb.deposit, link.address, ALI, amt*3)
