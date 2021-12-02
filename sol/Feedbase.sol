@@ -99,6 +99,10 @@ contract Feedbase {
     emit Paid(cash, msg.sender, src, amt);
   }
 
+  function getCost(address src, bytes32 tag, address cash) public view returns (uint256) {
+    return _config[src][tag][cash].cost;
+  }
+
   function deposit(address cash, address user, uint amt) public payable {
     bool ok = IERC20(cash).transferFrom(msg.sender, address(this), amt);
     require(ok, 'ERR_DEPOSIT_PULL');

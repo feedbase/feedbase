@@ -15,12 +15,16 @@ describe('UniswapV3Adapter', () => {
   let tokens, cash, usdc, weth
   let fb, adapter, pool, POOL
   let nftDescriptor, nonFungiblePositionManager, tokenDescriptor, uniswapFactory
-  let deployer, ali
-  const amt = 1000
+  let deployer, ali, bob
+  let DEPLOYER, ALI, BOB
+  let CASH
   const tag = formatBytes32String('UNI_V3_DAI_USDC')
 
   before(async () => {
-    [deployer, ali] = await ethers.getSigners()
+    ;[ali, bob, deployer] = await ethers.getSigners()
+    DEPLOYER = deployer.address
+    ALI = ali.address
+    BOB = bob.address
 
     const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
     fb = await FeedbaseFactory.deploy()
@@ -33,6 +37,9 @@ describe('UniswapV3Adapter', () => {
     cash = await TokenDeployer.deploy('CASH', 'CASH')
     usdc = await TokenDeployer.deploy('USDC', 'USD Coin')
     weth = await TokenDeployer.deploy('WETH', 'Wrapped Ether')
+    
+    CASH = cash.address
+
     tokens = [usdc, weth]
     // Sort tokens for ordering params in uniswap pool creation
     tokens.sort((a, b) => (a.address.toLowerCase() < b.address.toLowerCase() ? -1 : 1))
@@ -41,11 +48,11 @@ describe('UniswapV3Adapter', () => {
     debug('USDC => ', usdc.address)
     debug('WETH => ', weth.address)
 
-    await cash.mint(ali.address, 10000)
-    await cash.approve(fb.address, MaxUint256)
+    await cash.mint(ALI, 10000)
+    await cash.approve(adapter.address, MaxUint256)
 
-    await usdc.mint(ali.address, 10000)
-    await weth.mint(ali.address, 10000)
+    await usdc.mint(ALI, 10000)
+    await weth.mint(ALI, 10000)
 
     // Setup Mock Uniswap Pool
     const UniswapV3FactoryFactory = await ethers.getContractFactory(
@@ -83,6 +90,10 @@ describe('UniswapV3Adapter', () => {
     await snapshot(hh)
   })
 
+  beforeEach(async () => {
+    await revert(hh)
+  })
+
   it('basic', async () => {
     debug('USDC_WETH_POOL:')
     const liquidity = await pool.liquidity()
@@ -101,5 +112,104 @@ describe('UniswapV3Adapter', () => {
 
     // const mint = await pool.mint(ali.address, TickMath.MIN_TICK, TickMath.MAX_TICK, 1000, [])
     // debug('mint => ', mint)
+  })
+
+  describe('deposit', async () => {
+    const amt = 1000
+
+    beforeEach(async () => {
+      const before = await adapter.balances(CASH, ALI)
+      want(before.toNumber()).to.eql(0)
+    })
+
+    it('success - for self', async () => {
+      await adapter.deposit(CASH, ALI, amt)
+      const res = await Promise.all([
+        await adapter.balances(CASH, ALI),
+        await fb.balances(CASH, adapter.address)
+      ])
+      const bals = res.map(x => x.toNumber())
+      want(bals).to.eql([amt, amt])
+    })
+
+    it('success - for other', async () => {
+      await adapter.deposit(CASH, BOB, amt)
+      const res = await Promise.all([
+        await adapter.balances(CASH, BOB),
+        await fb.balances(CASH, adapter.address)
+      ])
+      const bals = res.map(x => x.toNumber())
+      want(bals).to.eql([amt, amt])
+    })
+
+    it('fail - erc20 transfer', async () => {
+      const con = adapter.connect(bob)
+      await fail('', con.deposit, CASH, BOB, amt)
+    })
+  })
+
+  describe('withdraw', async () => {
+    const amt = 1000
+    const withdraw = 700
+
+    const getBalances = async (usr) => (await Promise.all([
+      await adapter.balances(CASH, usr),
+      await fb.balances(CASH, adapter.address)
+    ])).map(x => x.toNumber())
+
+    beforeEach(async () => {
+      await adapter.deposit(CASH, ALI, amt)
+      const before = await getBalances(ALI)
+      want(before).to.eql([amt, amt])
+    })
+
+    it('success - to self', async () => {
+      await adapter.withdraw(CASH, ALI, withdraw)
+      const after = await getBalances(ALI)
+      want(after).to.eql([amt - withdraw, amt - withdraw])
+    })
+
+    it('success - to other', async () => {
+      const before = await getBalances(BOB)
+      want(before).to.eql([0, amt])
+      want((await cash.balanceOf(BOB)).toNumber()).to.eql(0)
+      await adapter.withdraw(CASH, BOB, withdraw)
+      want(await getBalances(ALI)).to.eql([amt - withdraw, amt - withdraw])
+      want((await cash.balanceOf(BOB)).toNumber()).to.eql(withdraw)
+    })
+
+    it('fail - underflow', async () => {
+      await fail('underflow', adapter.withdraw, CASH, BOB, amt + 1)
+    })
+  })
+
+  describe('setCost', async () => {
+    it('success', async () => {
+
+    })
+
+    it('fail - not owner', async () => {
+
+    })
+
+    it('fail - cash address', async () => {
+
+    })
+  })
+
+  describe('getCost', async () => {
+    it('success', async () => {
+
+    })
+  })
+
+  describe('setOwner', async () => {
+    it('success', async () => {
+
+    })
+
+    it('fail - not owner', async () => {
+      
+    })
   })
 })
