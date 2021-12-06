@@ -16,7 +16,7 @@ contract MedianizerCombinator {
   }
 
   function poke(bytes32 tag, address cash) public {
-    (uint256 quorum, address[] memory sources, address[] memory readers) = gov.getSelectors();
+    (, address[] memory sources, address[] memory readers) = gov.getSelectors();
     uint balance = fb.requested(address(this), tag, cash);
     for(uint i = 0; i < sources.length; i++) {
       Readable(readers[i]).request(sources[i], tag, cash, balance / sources.length);
@@ -24,13 +24,13 @@ contract MedianizerCombinator {
   }
 
   function push(bytes32 tag) public {
-    (uint256 quorum, address[] memory sources, address[] memory readers) = gov.getSelectors();
+    (, address[] memory sources, address[] memory readers) = gov.getSelectors();
     bytes32[] memory data = new bytes32[](sources.length);
     uint256 minttl = type(uint256).max;
     uint256 count = 0;
   
     for(uint256 i = 0; i < sources.length; i++) {
-      (bytes32 val, uint256 _ttl) = Readable(readers[i]).read(sources[i], tag);
+      (bytes32 val,) = Readable(readers[i]).read(sources[i], tag);
       if (count == 0 || val >= data[count - 1]) {
         data[count] = val;
       } else {
