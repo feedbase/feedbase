@@ -115,9 +115,9 @@ describe('chainlink', () => {
       })
 
       it('success', async function () {
-        want((await adapter.balances(ALI, link.address)).toNumber()).to.eql(0)
+        want((await adapter.balances(link.address, ALI)).toNumber()).to.eql(0)
         await send(adapter.deposit, link.address, BOB, bal)
-        want((await adapter.balances(BOB, link.address)).toNumber()).to.eql(bal)
+        want((await adapter.balances(link.address, BOB)).toNumber()).to.eql(bal)
       })
 
       // TODO transferFrom return value tests
@@ -138,14 +138,14 @@ describe('chainlink', () => {
       it('withdraw', async function () {
         await send(adapter.deposit, link.address, ALI, bal)
         await send(adapter.withdraw, link.address, ALI, bal)
-        const aliBalance = (await adapter.balances(ALI, link.address)).toNumber()
+        const aliBalance = (await adapter.balances(link.address, ALI)).toNumber()
         want(aliBalance).to.eql(0)
       })
 
       it('withdraw to other user', async function () {
         await send(adapter.deposit, link.address, ALI, bal)
         await send(adapter.withdraw, link.address, BOB, bal)
-        const aliBalance = (await adapter.balances(ALI, link.address)).toNumber()
+        const aliBalance = (await adapter.balances(link.address, ALI)).toNumber()
         const bobBalance = (await link.balanceOf(BOB)).toNumber()
         want(aliBalance).to.eql(0)
         want(bobBalance).to.eql(bal)
@@ -171,14 +171,14 @@ describe('chainlink', () => {
       beforeEach(async () => {
         await send(adapter.setCost, oracle.address, specId, link.address, amt)
         // check balance of user before
-        const bal = await adapter.balances(ALI, link.address)
+        const bal = await adapter.balances(link.address, ALI)
         debug('balance before: ', bal.toString())
 
         await send(adapter.deposit, link.address, ALI, amt)
         await send(adapter.request, oracle.address, specId, link.address, amt)
 
         // check balance of user after
-        const after = await adapter.balances(ALI, link.address)
+        const after = await adapter.balances(link.address, ALI)
         debug('balance after: ', after.toString())
       })
 
@@ -218,7 +218,7 @@ describe('chainlink', () => {
 
     await send(adapter.setCost, oracle.address, specId, link.address, amt)
     // check balance of user before
-    const bal = await adapter.balances(ALI, link.address)
+    const bal = await adapter.balances(link.address, ALI)
     debug('balance before: ', bal.toString())
 
     await send(adapter.deposit, link.address, ALI, amt)
@@ -228,7 +228,7 @@ describe('chainlink', () => {
     await fail('ERR_READ', adapter.read, oracle.address, specId)
 
     // check balance of user after
-    const after = await adapter.balances(ALI, link.address)
+    const after = await adapter.balances(link.address, ALI)
     debug('balance after: ', after.toString())
 
     await fulfill(val)

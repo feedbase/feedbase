@@ -140,7 +140,7 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
     (val, ttl) = fb.read(address(this), tag);
   }
 
-  function balances(address who, address cash) public view returns (uint) {
+  function balances(address cash, address who) public view returns (uint) {
     return _bals[who][cash];
   }
 
