@@ -6,6 +6,7 @@ import { send, fail, chai, want, snapshot, revert } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
 const { hexZeroPad, hexlify, hexValue } = ethers.utils
+const { AddressZero, HashZero } = ethers.constants
 
 let link
 let cash
@@ -164,9 +165,11 @@ describe('chainlink', () => {
         const before = await adapter.tags(oracle.address, specId)
         await send(adapter.setCost, oracle.address, specId, link.address, cost)
         const after = await adapter.tags(oracle.address, specId)
-        want(before.toString()).to.eql(hexZeroPad(hexValue(0), 32))
+        want(before.toString()).to.eql(HashZero)
         want(after.toString()).to.eql(hexZeroPad(hexValue(1), 32))
       })
+
+      it.skip('sets tag on request', async () => {})
     })
 
     describe('get/setCost', () => {
@@ -190,18 +193,38 @@ describe('chainlink', () => {
     })
 
     describe('requested', () => {
+      const n_deposit = 10
+      const n_requests = 3
       beforeEach(async () => {
         await send(adapter.setCost, oracle.address, specId, link.address, amt)
         // check balance of user before
-        const bal = await adapter.balances(link.address, ALI)
-        debug('balance before: ', bal.toString())
+        const aliBalanceBefore = await adapter.balances(link.address, ALI)
+        const adapterBalanceBefore = await fb.balances(link.address, adapter.address)
+        const adapterPaidBefore = await adapter.requested(oracle.address, specId, link.address)
+        want(aliBalanceBefore.toNumber()).to.eql(0)
+        want(adapterBalanceBefore.toNumber()).to.eql(0)
+        want(adapterPaidBefore.toNumber()).to.eql(0)
 
-        await send(adapter.deposit, link.address, ALI, amt)
-        await send(adapter.request, oracle.address, specId, link.address, amt)
+        // deposit
+        await send(adapter.deposit, link.address, ALI, amt * n_deposit)
+
+        const aliBalanceMiddle = await adapter.balances(link.address, ALI)
+        const adapterBalanceMiddle = await fb.balances(link.address, adapter.address)
+        const adapterPaidMiddle = await adapter.requested(oracle.address, specId, link.address)
+        want(aliBalanceMiddle.toNumber()).to.eql(amt * n_deposit)
+        want(adapterBalanceMiddle.toNumber()).to.eql(amt * n_deposit)
+        want(adapterPaidMiddle.toNumber()).to.eql(0)
+
+        // request
+        await send(adapter.request, oracle.address, specId, link.address, amt * n_requests)
 
         // check balance of user after
-        const after = await adapter.balances(link.address, ALI)
-        debug('balance after: ', after.toString())
+        const aliBalanceAfter = await adapter.balances(link.address, ALI)
+        const adapterBalanceAfter = await fb.balances(link.address, adapter.address)
+        const adapterPaidAfter = await adapter.requested(oracle.address, specId, link.address)
+        want(aliBalanceAfter.toNumber()).to.eql(amt * (n_deposit - n_requests))
+        want(adapterBalanceAfter.toNumber()).to.eql(amt * (n_deposit - n_requests))
+        want(adapterPaidAfter.toNumber()).to.eql(amt * (n_requests - 1))
       })
 
       it('not found', async function () {
@@ -230,7 +253,7 @@ describe('chainlink', () => {
 
       it('found', async function () {
         const requested = await adapter.requested(oracle.address, specId, link.address)
-        want(requested.toNumber()).to.equal(amt)
+        want(requested.toNumber()).to.equal(amt * (3 -1))
       })
     })
   })
