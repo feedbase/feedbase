@@ -190,6 +190,27 @@ describe('chainlink', () => {
         const after = (await adapter.getCost(oracle.address, specId, link.address)).toNumber()
         want(after).to.equal(cost)
       })
+
+      it('setCost not owner', async () => {
+        const con = adapter.connect(bob)
+        await fail('setCost: permission denied', con.setCost, oracle.address, specId, link.address, cost)
+      })
+
+      it('setCost oracle is zero address', async () => {
+        await fail('ERR_INV_ORACLE', adapter.setCost, AddressZero, specId, link.address, cost)
+      })
+
+      it('setCost specId is zero hash', async () => {
+        await fail('ERR_INV_SPECID', adapter.setCost, oracle.address, HashZero, link.address, cost)
+      })
+
+      it('setCost cash is zero address', async () => {
+        await fail('can only setCost link', adapter.setCost, oracle.address, specId, AddressZero, cost)
+      })
+
+      it('setCost cash is not LINK token address', async () => {
+        await fail('can only setCost link', adapter.setCost, oracle.address, specId, cash.address, cost)
+      })
     })
 
     describe('requested', () => {

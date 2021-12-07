@@ -147,6 +147,8 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
   }
 
   function checkTag(address oracle, bytes32 specId) private returns (bytes32 tag) {
+    require( oracle != address(0), 'ERR_INV_ORACLE' );
+    require( specId != bytes32(0), 'ERR_INV_SPECID' );
     tag = _tags[oracle][specId];
     if( tag == bytes32(0) ) {
       tag = bytes32(nonce++);
