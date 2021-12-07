@@ -18,9 +18,11 @@ interface ChainlinkAdapterInterface is Readable {
 }
 
 contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, ConfirmedOwner {
+  // _tags     :: oracle -> specId -> tag
   mapping(address=>mapping(bytes32=>bytes32)) _tags;
+  // reqToSpec :: reqId -> specId
   mapping(bytes32=>bytes32) public reqToSpec;
-  // src -> cash -> balance
+  // _bals     :: src -> cash -> balance
   mapping(address=>mapping(address=>uint256)) _bals;
   uint256 nonce = 1;
   Feedbase fb;
@@ -49,7 +51,8 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
     public {
     require( msg.sender == owner(), 'setCost: permission denied' );
     require( cash == chainlinkTokenAddress(), 'can only setCost link' );
-    fb.setCost(_tags[oracle][specId], cash, cost);
+    bytes32 tag = checkTag(oracle, specId);
+    fb.setCost(tag, cash, cost);
   }
 
   function getCost(address oracle, bytes32 specId, address cash)
@@ -67,18 +70,13 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
       cash == chainlinkTokenAddress(),
       'request can only pay with link'
     );
-    bytes32 tag = _tags[oracle][specId];
+    bytes32 tag = checkTag(oracle, specId);
 
     //push indexes msg.sender as src, so this adapter can only push to its 
     //own feeds.  since adapter can't push to oracle's feed, tag has to index
     //oracle and specId.
     //create a new tag from (oracle, specId) and push to 
     //feed(address(this), tag(oracle, specId))
-    if( tag == bytes32(0) ) {
-      tag = bytes32(nonce++);
-      _tags[oracle][specId] = tag;
-    }
-
     fb.request(address(this), tag, cash, amt);
 
     //send Chainlink request to oracle
@@ -146,5 +144,13 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
 
   function tags(address oracle, bytes32 specId) public view returns (bytes32) {
     return _tags[oracle][specId];
+  }
+
+  function checkTag(address oracle, bytes32 specId) private returns (bytes32 tag) {
+    tag = _tags[oracle][specId];
+    if( tag == bytes32(0) ) {
+      tag = bytes32(nonce++);
+      _tags[oracle][specId] = tag;
+    }
   }
 }

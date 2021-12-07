@@ -5,7 +5,7 @@ const { constants, BigNumber, utils } = ethers
 import { send, fail, chai, want, snapshot, revert } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
-const { hexlify } = ethers.utils
+const { hexZeroPad, hexlify, hexValue } = ethers.utils
 
 let link
 let cash
@@ -108,6 +108,7 @@ describe('chainlink', () => {
   })
 
   describe('setup', () => {
+
     describe('deposit', () => {
       let bal
       beforeEach(async () => {
@@ -157,14 +158,35 @@ describe('chainlink', () => {
       })
     })
 
-    // TODO permissions
-    it('get/setCost', async function () {
-      const cost = 1
-      const before = (await adapter.getCost(oracle.address, specId, link.address)).toNumber()
-      want(before).to.equal(0)
-      await send(adapter.setCost, oracle.address, specId, link.address, cost)
-      const after = (await adapter.getCost(oracle.address, specId, link.address)).toNumber()
-      want(after).to.equal(cost)
+    describe('checkTag', () => {
+      it('sets tag on setCost', async () => {
+        const cost = 5
+        const before = await adapter.tags(oracle.address, specId)
+        await send(adapter.setCost, oracle.address, specId, link.address, cost)
+        const after = await adapter.tags(oracle.address, specId)
+        want(before.toString()).to.eql(hexZeroPad(hexValue(0), 32))
+        want(after.toString()).to.eql(hexZeroPad(hexValue(1), 32))
+      })
+    })
+
+    describe('get/setCost', () => {
+      const cost = 7
+      
+      it('initialized', async () => {
+        const before = (await adapter.getCost(oracle.address, specId, link.address)).toNumber()
+        want(before).to.equal(0)
+      })
+
+      it('setCost', async () => {
+        const { status } = await send(adapter.setCost, oracle.address, specId, link.address, cost)
+        want(status).to.eql(1)
+      })
+
+      it('getCost', async () => {
+        await send(adapter.setCost, oracle.address, specId, link.address, cost)
+        const after = (await adapter.getCost(oracle.address, specId, link.address)).toNumber()
+        want(after).to.equal(cost)
+      })
     })
 
     describe('requested', () => {
