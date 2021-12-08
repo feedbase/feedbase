@@ -35,11 +35,11 @@ const use = (n) => {
 let fulfill = async (x) => {
   const logs    = await oracle.filters.OracleRequest(null)
   const _logs   = await oracle.queryFilter(logs, 0)
-
   want(_logs.length).above(0)
 
   const args    = _logs[_logs.length - 1].args
   const requestId = Buffer.from(args.requestId.slice(2), 'hex')
+  debug('requestId => ', requestId)
   await oracle.fulfillOracleRequest(requestId, x)
 }
 
@@ -318,7 +318,7 @@ describe('chainlink', () => {
   describe('all', () => {
     it('receiver adapter direct', async function () {
 
-      const vals = [1000, 1200, 1300].map(
+      const vals = [1200, 1000, 1300].map(
         x => utils.hexZeroPad(utils.hexValue(x), 32)
       )
       const ttl = 10 * 10 ** 12
@@ -332,29 +332,55 @@ describe('chainlink', () => {
       debug('set costs')
       await send(adapter.setCost, oracle.address, specId, link.address, amt);
       await send(rec.setCost, tag, link.address, amt);
-      await send(fb.connect(bob).setCost, tag, link.address, amt);
+      await send(fb.connect(bob).setCost, tag, link.address, amt)
+      const _tag = await adapter.tags(oracle.address, specId)
+      debug(`_tag => ${hexlify(_tag)}`)
+      const adapter_cost = await fb.getCost(adapter.address, _tag, link.address)
+      debug(`adapter cost => ${adapter_cost}`)
+      const bob_cost = await fb.getCost(BOB, tag, link.address)
+      debug(`bob cost => ${bob_cost}`)
 
-      debug('deposit fb...')
+      debug('ali deposit into fb...')
       await send(link.approve, fb.address, amt*3)
       await send(fb.deposit, link.address, ALI, amt*3)
+
       debug('requesting...')
-      //TODO medianizer needs to be updated
       await send(fb.request, medianizer.address, tag, link.address, amt*3)
       await send(link.approve, adapter.address, amt)
       await send(adapter.deposit, link.address, medianizer.address, amt)
+      
+      const m_bal_before = await fb.requested(medianizer.address, tag, link.address)
+      debug(`medianizer paid => ${m_bal_before}`)
+      
       debug('poke...')
       await send(medianizer.poke, tag, link.address)
 
+      const m_bal_after = await fb.requested(medianizer.address, tag, link.address)
+      debug(`medianizer paid => ${m_bal_after}`)
+
+      const ali_paid = await fb.requested(ALI, tag, link.address)
+      debug(`ali paid => ${ali_paid}`)
+
+      const bob_paid = await fb.requested(BOB, tag, link.address)
+      debug(`bob paid => ${bob_paid}`)
+
+      const rec_paid = await fb.requested(rec.address, tag, link.address)
+      debug(`rec paid => ${rec_paid}`)
+
+      const adapter_paid = await adapter.requested(oracle.address, specId, link.address)
+      debug(`adapter paid => ${adapter_paid}`)
+
+      // Bob is signer
       use(1)
 
       debug('pushing...')
       await Promise.all([
         async () => {
           await fb.push(tag, vals[0], ttl, link.address)
-          debug('direct feed done')
+          const [val] = await fb.read(BOB, tag)
+          debug(`direct feed done => ${val}`)
         },
         async () => {
-          //TODO do we need this?
           const valBuf = Buffer.from(vals[1].slice(2), 'hex')
           const digest = makeUpdateDigest({
             tag,
@@ -378,18 +404,23 @@ describe('chainlink', () => {
             link.address,
             sig.v, sig.r, sig.s
           )
-          debug('receiver submit done')
+          const [val] = await fb.read(rec.address, tag)
+          debug(`receiver submit done => ${val}`)
         },
         async () => {
           await fulfill(vals[2])
-          debug('oracle fulfillment done')
+          // const _tag = await adapter.tags(oracle.address, specId)
+          // const [val] = await fb.read(adapter.address, _tag)
+          const [val] = await adapter.read(oracle.address, tag)
+          debug(`oracle fulfillment done => ${val}`)
         }
       ].map(x => x()))
     
-      debug('medianizer push')
+      debug(`medianizer push(${hexlify(tag)})`)
       await medianizer.push(tag)
       debug('read from medianizer')
       const [median] = await fb.read(medianizer.address, tag)
+      debug(`median => `, median)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
   })
