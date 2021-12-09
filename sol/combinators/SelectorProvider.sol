@@ -3,13 +3,13 @@
 pragma solidity ^0.8.6;
 
 interface SelectorProvider {
-  function getSelectors() external returns (uint quorum, address[] calldata selectors, address[] calldata readers);
+  function getSelectors() external returns (uint quorum, address[] calldata selectors);
 }
 
 contract FixedSelectorProvider is SelectorProvider {
   address public owner;
   address[] selectors;
-  address[] readers;
+
   constructor() {
     owner = msg.sender;
   }
@@ -17,15 +17,14 @@ contract FixedSelectorProvider is SelectorProvider {
     require(msg.sender == owner, 'ERR_OWNER');
     owner = newOwner;
   }
-  function setSelectors(address[] calldata _selectors, address[] calldata _readers) public {
+  function setSelectors(address[] calldata _selectors) public {
     require(msg.sender == owner, 'ERR_OWNER');
     selectors = _selectors;
-    readers   = _readers;
   }
   function getSelectors() external view override
-    returns (uint quorum, address[] memory set, address[] memory reads)
+    returns (uint quorum, address[] memory set)
   {
-    return (1, selectors, readers);
+    return (1, selectors);
   }
 }
 

@@ -4,7 +4,6 @@ pragma solidity ^0.8.9;
 
 import '../Feedbase.sol';
 import './SelectorProvider.sol';
-import '../interfaces/Readable.sol';
 
 contract MedianizerCombinator {
   SelectorProvider public gov;
@@ -16,21 +15,24 @@ contract MedianizerCombinator {
   }
 
   function poke(bytes32 tag, address cash) public {
-    (, address[] memory sources, address[] memory readers) = gov.getSelectors();
+    (, address[] memory sources) = gov.getSelectors();
     uint256 balance = fb.requested(address(this), tag, cash);
     for(uint96 i = 0; i < sources.length; i++) {
-      // TODO: fix request colliding when tag == specId
-      Readable(readers[i]).request(sources[i], tag, cash, balance / sources.length);
+      uint256 cost = fb.getCost(sources[i], tag, cash);
+      require(balance >= cost, 'ERR_LOW_BAL');
+      fb.request(sources[i], tag, cash, cost);
+      balance -= cost;
+      // TODO: best way to handle insufficient balance
     }
   }
 
   function push(bytes32 tag) public {
-    (, address[] memory sources, address[] memory readers) = gov.getSelectors();
+    (, address[] memory sources) = gov.getSelectors();
     bytes32[] memory data = new bytes32[](sources.length);
     uint96 count = 0;
   
     for(uint96 i = 0; i < sources.length; i++) {
-      (bytes32 val,) = Readable(readers[i]).read(sources[i], tag);
+      (bytes32 val,) = fb.read(sources[i], tag);
       if (count == 0 || val >= data[count - 1]) {
         data[count] = val;
       } else {

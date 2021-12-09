@@ -1,31 +1,29 @@
 // SPDX-License-Identifier: GPL-v3.0
-
 import '../Feedbase.sol';
-
 import './SelectorProvider.sol';
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.9;
 
 contract ThresholdCombinator {
   SelectorProvider public gov;
   Feedbase public fb;
 
   function poke(bytes32 tag, address cash) public {
-    (uint256 quorum, address[] memory sources, address[] memory readers) = gov.getSelectors();
+    (, address[] memory sources) = gov.getSelectors();
     uint balance = fb.requested(address(this), tag, cash);
     for( uint i = 0; i < sources.length; i++) {
-      Readable(readers[i]).request(sources[i], tag, cash, balance / sources.length);
+      fb.request(sources[i], tag, cash, balance / sources.length);
     }
   }
 
   function push(bytes32 tag, bytes32 hint) public {
-    (uint256 quorum, address[] memory sources, address[] memory readers) = gov.getSelectors();
+    (uint256 quorum, address[] memory sources) = gov.getSelectors();
     require(quorum > sources.length / 2, 'ERR_QUORUM');
 
     uint256 count;
     uint256 minttl = type(uint256).max;
     for( uint i = 0; i < sources.length; i++ ) {
-      (bytes32 val, uint256 ttl) = Readable(readers[i]).read(sources[i], tag);
+      (bytes32 val, uint256 ttl) = fb.read(sources[i], tag);
       if (ttl < block.timestamp) {
         continue;
       }
