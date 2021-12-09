@@ -17,17 +17,25 @@ interface ChainlinkAdapterInterface is Readable {
   function withdraw(address cash, address user, uint amt) external;
 }
 
-contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, ConfirmedOwner {
+contract ChainlinkAdapter is ChainlinkClient, ConfirmedOwner {
+  struct TagConfig {
+    address oracle;
+    bytes32 job;
+    uint256 fee;
+  }
+
   // _tags     :: oracle -> specId -> tag
   mapping(address=>mapping(bytes32=>bytes32)) _tags;
   // reqToSpec :: reqId -> specId
-  mapping(bytes32=>bytes32) public reqToSpec;
+  mapping(bytes32=>bytes32) public reqToTag;
+  // _config   :: tag -> TagConfig
+  mapping(bytes32=>TagConfig) _config;
   // _bals     :: src -> cash -> balance
   mapping(address=>mapping(address=>uint256)) _bals;
   uint256 nonce = 1;
   Feedbase fb;
 
-  constructor(address _LINK, address _fb) ConfirmedOwner(msg.sender) {
+  constructor(address _LINK, address _fb, address _owner) ConfirmedOwner(_owner) {
     setChainlinkToken(_LINK);
     fb   = Feedbase(_fb);
   }
@@ -47,30 +55,28 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
     fb.withdraw(cash, user, amt);
   }
   
-  function setCost(address oracle, bytes32 specId, address cash, uint256 cost)
-    public {
+  function setCost(bytes32 tag, address cash, uint256 cost) public {
     require( msg.sender == owner(), 'setCost: permission denied' );
     require( cash == chainlinkTokenAddress(), 'can only setCost link' );
-    bytes32 tag = checkTag(oracle, specId);
     fb.setCost(tag, cash, cost);
   }
 
-  function getCost(address oracle, bytes32 specId, address cash)
+  function getCost(bytes32 tag, address cash)
     public
     view
     returns (uint256) {
-    return fb.getCost(address(this), _tags[oracle][specId], cash);
+    return fb.getCost(address(this), tag, cash);
   }
 
   //specId = Chainlink Job Specification Id
-  function request(address oracle, bytes32 specId, address cash, uint256 amt)
-    public
-    override {
+  function request(bytes32 tag, address cash, uint256 amt) public {
     require(
       cash == chainlinkTokenAddress(),
       'request can only pay with link'
     );
-    bytes32 tag = checkTag(oracle, specId);
+    TagConfig storage tagConf = _config[tag];
+    address oracle = tagConf.oracle;
+    bytes32 specId = tagConf.job;
 
     //push indexes msg.sender as src, so this adapter can only push to its 
     //own feeds.  since adapter can't push to oracle's feed, tag has to index
@@ -95,46 +101,38 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
 
       //store requestId->specId to generate tag on callback
       bytes32 reqId = sendChainlinkRequestTo( oracle, req, cost );
-      reqToSpec[reqId] = specId;
+      reqToTag[reqId] = tag;
     }
   }
 
-  function requested(address oracle, bytes32 specId, address cash)
+  function requested(address src, bytes32 tag, address cash)
     public
     view
-    override
     returns (uint256) {
     require(
       cash == chainlinkTokenAddress(),
       'request can only pay with link'
     );
-    bytes32 tag = _tags[oracle][specId];
-    require( tag != bytes32(0), 'requested: invalid oracle,specId pair' );
-
-    return fb.requested(address(this), tag, cash);
+    return fb.requested(src, tag, cash);
   }
 
   //oracle calls this when fulfilling a request
   //push the data to feedbase and delete requestId->specId entry
   function callback(bytes32 requestId, bytes32 data) 
     public 
-    recordChainlinkFulfillment(requestId)
-    override {
-    bytes32 tag = _tags[msg.sender][reqToSpec[requestId]];
-    require( tag != bytes32(0), 'callback: invalid sender,reqId pair' );
+    recordChainlinkFulfillment(requestId) {
+
+    bytes32 tag = reqToTag[requestId];
+    require( tag != bytes32(0), 'ERR_REQ_TAG' );
 
     fb.push(tag, data, type(uint256).max, chainlinkTokenAddress());
-    reqToSpec[requestId] = 0;
+    reqToTag[requestId] = bytes32(0);
   }
 
-  function read(address oracle, bytes32 specId)
+  function read(bytes32 tag)
     public
-    view
-    override 
+    view 
     returns (bytes32 val, uint256 ttl) {
-    bytes32 tag = _tags[oracle][specId];
-    require( tag != bytes32(0), 'read: invalid oracle,specId pair' );
-
     (val, ttl) = fb.read(address(this), tag);
   }
 
@@ -142,17 +140,27 @@ contract ChainlinkAdapter is ChainlinkClient, ChainlinkAdapterInterface, Confirm
     return _bals[who][cash];
   }
 
-  function tags(address oracle, bytes32 specId) public view returns (bytes32) {
-    return _tags[oracle][specId];
+  function addTag(bytes32 tag, address oracle, bytes32 specId, uint256 fee) public {
+    TagConfig storage config = _config[tag];
+    config.oracle = oracle;
+    config.job = specId;
+    config.fee = fee;
+    // TODO: emit tag added event
+  }
+}
+
+contract ChainlinkAdapterFactory {
+  mapping(address=>bool) public builtHere;
+  address public link;
+  address public fb;
+
+  constructor(address _LINK, address _fb) {
+    link = _LINK;
+    fb = _fb;
   }
 
-  function checkTag(address oracle, bytes32 specId) private returns (bytes32 tag) {
-    require( oracle != address(0), 'ERR_INV_ORACLE' );
-    require( specId != bytes32(0), 'ERR_INV_SPECID' );
-    tag = _tags[oracle][specId];
-    if( tag == bytes32(0) ) {
-      tag = bytes32(nonce++);
-      _tags[oracle][specId] = tag;
-    }
+  function build() public returns (ChainlinkAdapter) {
+    ChainlinkAdapter cla = new ChainlinkAdapter(link, fb, msg.sender);
+    return cla;
   }
 }

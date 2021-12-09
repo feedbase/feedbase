@@ -5,7 +5,7 @@ const { constants, BigNumber, utils } = ethers
 import { send, fail, chai, want, snapshot, revert } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
-const { hexZeroPad, hexlify, hexValue } = ethers.utils
+const { formatBytes32String, hexZeroPad, hexlify, hexValue, parseUnits } = ethers.utils
 const { AddressZero, HashZero } = ethers.constants
 
 let link
@@ -13,7 +13,7 @@ let cash
 let fb
 let signers
 let oracle
-let adapter
+let adapter, adapterFactory
 let rec
 let selector
 let medianizer
@@ -27,6 +27,7 @@ const use = (n) => {
   if( fb ) fb = fb.connect(signer)
   if( oracle ) oracle = oracle.connect(signer)
   if( adapter ) adapter = adapter.connect(signer)
+  if( adapterFactory ) adapterFactory = adapterFactory.connect(signer)
   if( rec ) rec = rec.connect(signer)
   if( selector ) selector = selector.connect(signer)
   if( medianizer ) medianizer = medianizer.connect(signer)
@@ -68,7 +69,12 @@ describe('chainlink', () => {
     cash = await TokenDeployer.deploy('CASH', 'CASH')
 
     const AdapterDeployer = await ethers.getContractFactory('ChainlinkAdapter')
-    adapter = await AdapterDeployer.deploy(link.address, fb.address)
+    adapter = await AdapterDeployer.deploy(link.address, fb.address, ALI)
+
+    const AdapterFactoryDeployer = await ethers.getContractFactory('ChainlinkAdapterFactory')
+    adapterFactory = await AdapterFactoryDeployer.deploy(link.address, fb.address)
+    // TODO: use adapter factory
+    // const adapterAddress = await adapterFactory.build()
 
     const OracleDeployer = await ethers.getContractFactory('MockOracle')
     oracle = await OracleDeployer.deploy(link.address)
@@ -92,19 +98,26 @@ describe('chainlink', () => {
     await send(cash.approve, adapter.address, UINT_MAX)
     await send(link.approve, adapter.address, UINT_MAX)
 
+    tag = formatBytes32String('LINK')
+    specId = Buffer.from('ff'.repeat(32), 'hex')
+
+    // Chainlink fee structure
+    // testnet: 0.1 LINK
+    // mainnet: 1.0 LINK
+    const fee = parseUnits('1', 'wei')
+    await adapter.addTag(tag, oracle.address, specId, fee)
+
     await snapshot(hh)
   })
 
   let amt, specId
   beforeEach(async () => {
     await revert(hh)
-    tag = Buffer.from(link.address.slice(2).padStart(64, '0'), 'hex')
     seq = 1
     sec = Math.floor(Date.now() / 1000)
     ttl = 10000000000000
     val = Buffer.from('11'.repeat(32), 'hex')
     amt = 10
-    specId = Buffer.from('ff'.repeat(32), 'hex')
     use(0)
   })
 
@@ -159,57 +172,36 @@ describe('chainlink', () => {
       })
     })
 
-    describe('checkTag', () => {
-      it('sets tag on setCost', async () => {
-        const cost = 5
-        const before = await adapter.tags(oracle.address, specId)
-        await send(adapter.setCost, oracle.address, specId, link.address, cost)
-        const after = await adapter.tags(oracle.address, specId)
-        want(before.toString()).to.eql(HashZero)
-        want(after.toString()).to.eql(hexZeroPad(hexValue(1), 32))
-      })
-
-      it.skip('sets tag on request', async () => {})
-    })
-
     describe('get/setCost', () => {
       const cost = 7
       
       it('initialized', async () => {
-        const before = (await adapter.getCost(oracle.address, specId, link.address)).toNumber()
+        const before = (await adapter.getCost(tag, link.address)).toNumber()
         want(before).to.equal(0)
       })
 
       it('setCost', async () => {
-        const { status } = await send(adapter.setCost, oracle.address, specId, link.address, cost)
+        const { status } = await send(adapter.setCost, tag, link.address, cost)
         want(status).to.eql(1)
       })
 
       it('getCost', async () => {
-        await send(adapter.setCost, oracle.address, specId, link.address, cost)
-        const after = (await adapter.getCost(oracle.address, specId, link.address)).toNumber()
+        await send(adapter.setCost, tag, link.address, cost)
+        const after = (await adapter.getCost(tag, link.address)).toNumber()
         want(after).to.equal(cost)
       })
 
       it('setCost not owner', async () => {
         const con = adapter.connect(bob)
-        await fail('setCost: permission denied', con.setCost, oracle.address, specId, link.address, cost)
-      })
-
-      it('setCost oracle is zero address', async () => {
-        await fail('ERR_INV_ORACLE', adapter.setCost, AddressZero, specId, link.address, cost)
-      })
-
-      it('setCost specId is zero hash', async () => {
-        await fail('ERR_INV_SPECID', adapter.setCost, oracle.address, HashZero, link.address, cost)
+        await fail('setCost: permission denied', con.setCost, tag, link.address, cost)
       })
 
       it('setCost cash is zero address', async () => {
-        await fail('can only setCost link', adapter.setCost, oracle.address, specId, AddressZero, cost)
+        await fail('can only setCost link', adapter.setCost, tag, AddressZero, cost)
       })
 
       it('setCost cash is not LINK token address', async () => {
-        await fail('can only setCost link', adapter.setCost, oracle.address, specId, cash.address, cost)
+        await fail('can only setCost link', adapter.setCost, tag, cash.address, cost)
       })
     })
 
@@ -217,11 +209,11 @@ describe('chainlink', () => {
       const n_deposit = 10
       const n_requests = 3
       beforeEach(async () => {
-        await send(adapter.setCost, oracle.address, specId, link.address, amt)
+        await send(adapter.setCost, tag, link.address, amt)
         // check balance of user before
         const aliBalanceBefore = await adapter.balances(link.address, ALI)
         const adapterBalanceBefore = await fb.balances(link.address, adapter.address)
-        const adapterPaidBefore = await adapter.requested(oracle.address, specId, link.address)
+        const adapterPaidBefore = await adapter.requested(oracle.address, tag, link.address)
         want(aliBalanceBefore.toNumber()).to.eql(0)
         want(adapterBalanceBefore.toNumber()).to.eql(0)
         want(adapterPaidBefore.toNumber()).to.eql(0)
@@ -231,67 +223,42 @@ describe('chainlink', () => {
 
         const aliBalanceMiddle = await adapter.balances(link.address, ALI)
         const adapterBalanceMiddle = await fb.balances(link.address, adapter.address)
-        const adapterPaidMiddle = await adapter.requested(oracle.address, specId, link.address)
+        const adapterPaidMiddle = await adapter.requested(oracle.address, tag, link.address)
         want(aliBalanceMiddle.toNumber()).to.eql(amt * n_deposit)
         want(adapterBalanceMiddle.toNumber()).to.eql(amt * n_deposit)
         want(adapterPaidMiddle.toNumber()).to.eql(0)
 
         // request
-        await send(adapter.request, oracle.address, specId, link.address, amt * n_requests)
+        await send(adapter.request, tag, link.address, amt * n_requests)
 
         // check balance of user after
         const aliBalanceAfter = await adapter.balances(link.address, ALI)
         const adapterBalanceAfter = await fb.balances(link.address, adapter.address)
-        const adapterPaidAfter = await adapter.requested(oracle.address, specId, link.address)
+        const adapterPaidAfter = await adapter.requested(adapter.address, tag, link.address)
         want(aliBalanceAfter.toNumber()).to.eql(amt * (n_deposit - n_requests))
         want(adapterBalanceAfter.toNumber()).to.eql(amt * (n_deposit - n_requests))
         want(adapterPaidAfter.toNumber()).to.eql(amt * (n_requests - 1))
       })
 
-      it('not found', async function () {
-        await fail(
-          'invalid oracle,specId pair',
-          adapter.requested,
-          oracle.address,
-          Buffer.from('00'.repeat(32), 'hex'),
-          link.address
-        )
-        await fail(
-          'invalid oracle,specId pair',
-          adapter.requested,
-          cash.address,
-          specId,
-          link.address
-        )
-        await fail(
-          'invalid oracle,specId pair',
-          adapter.requested,
-          cash.address,
-          Buffer.from('00'.repeat(32), 'hex'),
-          link.address
-        )
-      })
-
       it('found', async function () {
-        const requested = await adapter.requested(oracle.address, specId, link.address)
+        const requested = await adapter.requested(adapter.address, tag, link.address)
         want(requested.toNumber()).to.equal(amt * (3 -1))
       })
     })
   })
 
   it('read', async function () {
-    await fail('read: invalid oracle,specId', adapter.read, oracle.address, specId)
-
-    await send(adapter.setCost, oracle.address, specId, link.address, amt)
+    await send(adapter.setCost, tag, link.address, amt)
     // check balance of user before
     const bal = await adapter.balances(link.address, ALI)
     debug('balance before: ', bal.toString())
 
     await send(adapter.deposit, link.address, ALI, amt)
-    await send(adapter.request, oracle.address, specId, link.address, amt)
+    await send(adapter.request, tag, link.address, amt)
 
+    // TODO: break out these test cases
     // pending
-    await fail('ERR_READ', adapter.read, oracle.address, specId)
+    await fail('ERR_READ', adapter.read, tag)
 
     // check balance of user after
     const after = await adapter.balances(link.address, ALI)
@@ -299,64 +266,78 @@ describe('chainlink', () => {
 
     await fulfill(val)
 
-    let res = await adapter.read(oracle.address, specId)
+    let res = await adapter.read(tag)
+    debug('res => ', res)
     want(res.val.slice(2)).equal(val.toString('hex'))
 
     await send(adapter.deposit, link.address, ALI, amt)
-    await send(adapter.request, oracle.address, specId, link.address, amt)
+    await send(adapter.request, tag, link.address, amt)
 
     // pending
-    res = await adapter.read(oracle.address, specId)
+    res = await adapter.read(tag)
+    debug('res => ', res)
     want(res.val.slice(2)).equal(val.toString('hex'))
 
     const newVal = Buffer.from('44'.repeat(32), 'hex')
     await fulfill(newVal)
-    res = await adapter.read(oracle.address, specId)
+    res = await adapter.read(tag)
+    debug('res => ', res)
     want(res.val.slice(2)).equal(newVal.toString('hex'))
   })
 
+  // TODO: add assertions for state mutatioons
   describe('all', () => {
     it('receiver adapter direct', async function () {
 
       const vals = [1200, 1000, 1300].map(
-        x => utils.hexZeroPad(utils.hexValue(x), 32)
+        x => hexZeroPad(hexValue(x), 32)
       )
       const ttl = 10 * 10 ** 12
-      const sources = [bob, rec, oracle]
+      const sources = [bob, rec, adapter]
       const selectors = sources.map(s => s.address)
-      const readers = [fb.address, fb.address, adapter.address]
 
       debug('selectors')
-      await selector.setSelectors(selectors, readers)
+      await selector.setSelectors(selectors)
 
       debug('set costs')
-      await send(adapter.setCost, oracle.address, specId, link.address, amt);
-      await send(rec.setCost, tag, link.address, amt);
+      await send(adapter.setCost, tag, link.address, amt)
+      await send(rec.setCost, tag, link.address, amt)
       await send(fb.connect(bob).setCost, tag, link.address, amt)
-      const _tag = await adapter.tags(oracle.address, specId)
-      debug(`_tag => ${hexlify(_tag)}`)
-      const adapter_cost = await fb.getCost(adapter.address, _tag, link.address)
+
+      const adapter_cost = await fb.getCost(adapter.address, tag, link.address)
       debug(`adapter cost => ${adapter_cost}`)
       const bob_cost = await fb.getCost(BOB, tag, link.address)
       debug(`bob cost => ${bob_cost}`)
 
-      debug('ali deposit into fb...')
-      await send(link.approve, fb.address, amt*3)
-      await send(fb.deposit, link.address, ALI, amt*3)
+      debug('ali chainlink adapter deposit & request')
+      await send(link.approve, adapter.address, amt*2)
+      await send(adapter.deposit, link.address, ALI, amt*2)
+      await send(adapter.request, tag, link.address, amt)
 
-      debug('requesting...')
+      debug('ali deposit into fb for medianizer')
+      await send(link.approve, fb.address, amt*5)
+      await send(fb.deposit, link.address, ALI, amt*5)
+      debug('ali makes request for medianizer')
       await send(fb.request, medianizer.address, tag, link.address, amt*3)
-      await send(link.approve, adapter.address, amt)
-      await send(adapter.deposit, link.address, medianizer.address, amt)
+
+      const m_bal_before = await fb.balances(link.address, medianizer.address)
+      debug(`medianizer balance => ${m_bal_before}`)
       
-      const m_bal_before = await fb.requested(medianizer.address, tag, link.address)
-      debug(`medianizer paid => ${m_bal_before}`)
+      const m_paid_before = await fb.requested(medianizer.address, tag, link.address)
+      debug(`medianizer paid => ${m_paid_before}`)
+      const src_costs = await Promise.all(
+        selectors.map(async s => await fb.getCost(s, tag, link.address))
+      )
+      src_costs.forEach((c, idx) => debug(`src ${idx} cost => ${c}`))
       
-      debug('poke...')
+      debug('poke medianizer')
       await send(medianizer.poke, tag, link.address)
 
-      const m_bal_after = await fb.requested(medianizer.address, tag, link.address)
-      debug(`medianizer paid => ${m_bal_after}`)
+      const m_bal_after = await fb.balances(link.address, medianizer.address)
+      debug(`medianizer balance => ${m_bal_after}`)
+
+      const m_paid_after = await fb.requested(medianizer.address, tag, link.address)
+      debug(`medianizer paid => ${m_paid_after}`)
 
       const ali_paid = await fb.requested(ALI, tag, link.address)
       debug(`ali paid => ${ali_paid}`)
@@ -367,7 +348,7 @@ describe('chainlink', () => {
       const rec_paid = await fb.requested(rec.address, tag, link.address)
       debug(`rec paid => ${rec_paid}`)
 
-      const adapter_paid = await adapter.requested(oracle.address, specId, link.address)
+      const adapter_paid = await fb.requested(adapter.address, tag, link.address)
       debug(`adapter paid => ${adapter_paid}`)
 
       // Bob is signer
@@ -409,9 +390,7 @@ describe('chainlink', () => {
         },
         async () => {
           await fulfill(vals[2])
-          // const _tag = await adapter.tags(oracle.address, specId)
-          // const [val] = await fb.read(adapter.address, _tag)
-          const [val] = await adapter.read(oracle.address, tag)
+          const [val] = await fb.read(adapter.address, tag)
           debug(`oracle fulfillment done => ${val}`)
         }
       ].map(x => x()))
@@ -420,8 +399,9 @@ describe('chainlink', () => {
       await medianizer.push(tag)
       debug('read from medianizer')
       const [median] = await fb.read(medianizer.address, tag)
-      debug(`median => `, median)
-      want(BigNumber.from(median).toNumber()).to.eql(1200)
+      const res = BigNumber.from(median).toNumber()
+      debug(`median => ${res}`)
+      want(res).to.eql(1200)
     })
   })
 })
