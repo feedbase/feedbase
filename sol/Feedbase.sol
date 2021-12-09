@@ -4,11 +4,13 @@
 pragma solidity ^0.8.9;
 
 import "./erc20/IERC20.sol";
+import "./interfaces/Readable.sol";
 
-contract Feedbase {
+contract Feedbase is Readable {
   struct Feed {
     bytes32 val;
     uint256 ttl;
+    bool    pending;
   }
 
   struct Config {
@@ -52,22 +54,40 @@ contract Feedbase {
     , uint256         amount
   );
 
-  function read(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
+  function read(address src, bytes32 tag) public view override returns (bytes32 val, uint256 ttl) {
     Feed storage feed = _feeds[src][tag];
     require(block.timestamp < feed.ttl, 'ERR_READ');
     return (feed.val, feed.ttl);
+  }
+
+  //charge for pending request
+  //this is to handle oracles that need to be paid upfront by token transfer
+  //the feed is set to pending and future payments are blocked until the 
+  //request is served
+  function charge(bytes32 tag, address cash) public returns (uint256) {
+    Feed storage feed = _feeds[msg.sender][tag];
+    Config storage config = _config[msg.sender][tag][cash];
+    if( !feed.pending ) {
+      config.paid -= config.cost;
+      _bals[msg.sender][cash] += config.cost;
+    }
+    feed.pending = true;
+    return config.cost;
   }
 
   function push(bytes32 tag, bytes32 val, uint256 ttl, address cash) public returns (uint256) {
     Feed storage feed = _feeds[msg.sender][tag];
     Config storage config = _config[msg.sender][tag][cash];
 
-    config.paid -= config.cost;
-    _bals[msg.sender][cash] += config.cost;
+    if( !feed.pending ) {
+      // pending request must be served before msg.sender can get paid again
+      config.paid -= config.cost;
+      _bals[msg.sender][cash] += config.cost;
+    }
+    feed.pending = false;
    
-    feed.ttl = ttl;
-    feed.val = val; 
-
+    feed.ttl     = ttl;
+    feed.val     = val; 
     emit Push(msg.sender, tag, val, ttl);
 
     return config.cost;
@@ -75,6 +95,10 @@ contract Feedbase {
 
   function requested(address src, bytes32 tag, address cash) public view returns (uint256) {
     return _config[src][tag][cash].paid;
+  }
+
+  function getCost(address src, bytes32 tag, address cash) public view returns (uint256) {
+    return _config[src][tag][cash].cost;
   }
 
   function request(address src, bytes32 tag, address cash, uint256 amt) public {

@@ -9,6 +9,7 @@ interface SelectorProvider {
 contract FixedSelectorProvider is SelectorProvider {
   address public owner;
   address[] selectors;
+
   constructor() {
     owner = msg.sender;
   }
@@ -16,9 +17,9 @@ contract FixedSelectorProvider is SelectorProvider {
     require(msg.sender == owner, 'ERR_OWNER');
     owner = newOwner;
   }
-  function setSelectors(address[] calldata set) public {
+  function setSelectors(address[] calldata _selectors) public {
     require(msg.sender == owner, 'ERR_OWNER');
-    selectors = set;
+    selectors = _selectors;
   }
   function getSelectors() external view override
     returns (uint quorum, address[] memory set)

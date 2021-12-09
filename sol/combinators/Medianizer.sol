@@ -15,29 +15,32 @@ contract MedianizerCombinator {
   }
 
   function poke(bytes32 tag, address cash) public {
-    (uint256 quorum, address[] memory sources) = gov.getSelectors();
-    uint balance = fb.requested(address(this), tag, cash);
-    for(uint i = 0; i < sources.length; i++) {
-      fb.request(sources[i], tag, cash, balance / sources.length);
+    (, address[] memory sources) = gov.getSelectors();
+    uint256 balance = fb.requested(address(this), tag, cash);
+    for(uint96 i = 0; i < sources.length; i++) {
+      uint256 cost = fb.getCost(sources[i], tag, cash);
+      require(balance >= cost, 'ERR_LOW_BAL');
+      fb.request(sources[i], tag, cash, cost);
+      balance -= cost;
+      // TODO: best way to handle insufficient balance
     }
   }
 
   function push(bytes32 tag) public {
-    (uint256 quorum, address[] memory sources) = gov.getSelectors();
+    (, address[] memory sources) = gov.getSelectors();
     bytes32[] memory data = new bytes32[](sources.length);
-    uint256 minttl = type(uint256).max;
-    uint256 count = 0;
+    uint96 count = 0;
   
-    for(uint256 i = 0; i < sources.length; i++) {
-      (bytes32 val, uint256 _ttl) = fb.read(sources[i], tag);
+    for(uint96 i = 0; i < sources.length; i++) {
+      (bytes32 val,) = fb.read(sources[i], tag);
       if (count == 0 || val >= data[count - 1]) {
         data[count] = val;
       } else {
-        uint256 j = 0;
+        uint96 j = 0;
         while (val >= data[j]) {
           j++;
         }
-        for(uint256 k = count; k > j; k--) {
+        for(uint96 k = count; k > j; k--) {
           data[k] = data[k - 1];
         }
         data[j] = val;
@@ -54,6 +57,6 @@ contract MedianizerCombinator {
       median = data[(count - 1) / 2];
     }
 
-    fb.push(tag, median, minttl, address(0));
+    fb.push(tag, median, type(uint256).max, address(0));
   }
 }

@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: GPL-v3.0
-
 import '../Feedbase.sol';
-
 import './SelectorProvider.sol';
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.9;
 
 contract ThresholdCombinator {
   SelectorProvider public gov;
   Feedbase public fb;
 
   function poke(bytes32 tag, address cash) public {
-    (uint256 quorum, address[] memory sources) = gov.getSelectors();
+    (, address[] memory sources) = gov.getSelectors();
     uint balance = fb.requested(address(this), tag, cash);
     for( uint i = 0; i < sources.length; i++) {
       fb.request(sources[i], tag, cash, balance / sources.length);
