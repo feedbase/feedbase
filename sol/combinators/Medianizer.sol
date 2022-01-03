@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.10;
 
 import '../Feedbase.sol';
 import './SelectorProvider.sol';
@@ -14,6 +14,7 @@ contract MedianizerCombinator {
     fb = Feedbase(fb_);
   }
 
+/*
   function poke(bytes32 tag, address cash) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
     uint balance = fb.requested(address(this), tag, cash);
@@ -21,6 +22,7 @@ contract MedianizerCombinator {
       fb.request(sources[i], tag, cash, balance / sources.length);
     }
   }
+*/
 
   function push(bytes32 tag) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
@@ -54,6 +56,6 @@ contract MedianizerCombinator {
       median = data[(count - 1) / 2];
     }
 
-    fb.push(tag, median, minttl, address(0));
+    fb.push(tag, median, minttl);
   }
 }

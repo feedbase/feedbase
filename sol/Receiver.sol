@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.10;
 
 import './Feedbase.sol';
 
@@ -112,15 +112,13 @@ contract BasicReceiver {
 
     emit Submit(msg.sender, signer, tag, seq, sec, ttl, val);
 
-    uint paid = feedbase.push(tag, val, ttl, cash);
+    feedbase.push(tag, val, ttl);
 
     uint fee = fees[tag][cash];
-    if (paid < fee) {
-      fee = paid;
-    }
     collected[msg.sender][cash] += fee;
   }
 
+/*
   function collect(address cash, address dest) public {
     uint bal = collected[msg.sender][cash];
     collected[msg.sender][cash] = 0;
@@ -130,6 +128,7 @@ contract BasicReceiver {
   function setCost(bytes32 tag, address cash, uint cost) public auth {
     feedbase.setCost(tag, cash, cost);
   }
+*/
 
   function setRelayFee(bytes32 tag, address cash, uint256 fee) public auth {
     fees[tag][cash] = fee;
