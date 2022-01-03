@@ -29,12 +29,6 @@ contract BasicReceiver {
   mapping(address=>uint)   public signerTTL; // isSigner
   mapping(address=>uint)   public signerSeq;
 
-  // relayer's flat fee  
-  // tag -> cash -> cost
-  mapping(bytes32=>mapping(address=>uint)) public fees;
-  // relayer -> cash -> collected
-  mapping(address=>mapping(address=>uint)) public collected;
-
   event OwnerUpdate(address indexed oldOwner, address indexed newOwner);
   event SignerUpdate(address indexed signer, uint signerTTL);
 
@@ -95,7 +89,6 @@ contract BasicReceiver {
     uint256 sec,
     uint256 ttl,
     bytes32 val,
-    address cash,
     uint8 v, bytes32 r, bytes32 s
   ) public
   {
@@ -113,25 +106,6 @@ contract BasicReceiver {
     emit Submit(msg.sender, signer, tag, seq, sec, ttl, val);
 
     feedbase.push(tag, val, ttl);
-
-    uint fee = fees[tag][cash];
-    collected[msg.sender][cash] += fee;
-  }
-
-/*
-  function collect(address cash, address dest) public {
-    uint bal = collected[msg.sender][cash];
-    collected[msg.sender][cash] = 0;
-    feedbase.withdraw(cash, dest, bal);
-  }
-
-  function setCost(bytes32 tag, address cash, uint cost) public auth {
-    feedbase.setCost(tag, cash, cost);
-  }
-*/
-
-  function setRelayFee(bytes32 tag, address cash, uint256 fee) public auth {
-    fees[tag][cash] = fee;
   }
 
   function setOwner(address newOwner) public auth {

@@ -15,7 +15,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
   let fb, fb_type;
   let rec, rec_type;
   let recfab, recfab_type;
-  let cash,  cash_type;
   let opts = { receiver:undefined, chainId:undefined, signer:undefined};
 
   let tag, seq, sec, ttl, val;
@@ -25,7 +24,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
     const signer = signers[n]
     debug(`using ${n} ${signer.address}`)
 
-    if( cash ) cash = cash.connect(signer);
     if( fb ) fb = fb.connect(signer);
     if( rec ) rec = rec.connect(signer);
   }
@@ -40,12 +38,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
 
     rec_type = await ethers.getContractFactory('BasicReceiver');
     rec = await rec_type.deploy(fb.address);
-
-    cash_type = await ethers.getContractFactory('MockToken');
-    cash = await cash_type.deploy('CASH', 'CASH');
-
-    await send(cash.mint, ALI, 1000)
-    await send(cash.approve, fb.address, U256_MAX)
 
     await send(rec.setSigner, BOB, 1000000000000)
 
@@ -67,7 +59,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
       opts.receiver = rec.address;
       opts.chainId  = chainId;
       opts.signer   = bob;
-      opts.cash     = cash.address;
       opts.interval = 0;
       opts.tag      = tag;
       use(0);
@@ -76,17 +67,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
       use(0);
     });
 
-    it('cost too high', async () => {
-      const digest = makeUpdateDigest({
-        tag, val, seq, sec, ttl,
-        chainId: chainId,
-        receiver: rec.address
-      })
-      const setCost = await rec.setCost(tag, cash.address, 10000000);
-      await setCost.wait();
-
-      await want(sensor.serve(getter, opts)).rejectedWith('underflowed');
-    });
   })
 });
 
