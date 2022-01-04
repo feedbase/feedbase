@@ -23,6 +23,7 @@
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
+    "dpack": "github:dapphub/dpack",
     "hardhat": "^2.4.3",
     "minihat": "^0.0.3",
     "ts-mocha": "^8.0.0",
