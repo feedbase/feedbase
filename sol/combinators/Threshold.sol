@@ -4,12 +4,13 @@ import '../Feedbase.sol';
 
 import './SelectorProvider.sol';
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.10;
 
 contract ThresholdCombinator {
   SelectorProvider public gov;
   Feedbase public fb;
 
+/*
   function poke(bytes32 tag, address cash) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
     uint balance = fb.requested(address(this), tag, cash);
@@ -17,6 +18,7 @@ contract ThresholdCombinator {
       fb.request(sources[i], tag, cash, balance / sources.length);
     }
   }
+*/
 
   function push(bytes32 tag, bytes32 hint) public {
     (uint256 quorum, address[] memory sources) = gov.getSelectors();
@@ -35,7 +37,7 @@ contract ThresholdCombinator {
       if (val == hint) {
         count++;
         if (count >= quorum) {
-          fb.push(tag, val, minttl, address(0));
+          fb.push(tag, val, minttl);
           return;
         }
       }
@@ -43,9 +45,11 @@ contract ThresholdCombinator {
     require(false, 'ERR_QUORUM');
   }
 
+/*
   function topUp(IERC20 cash, uint amt) public {
     cash.transferFrom(msg.sender, address(this), amt);
     cash.approve(address(fb), amt);
     fb.deposit(address(cash), address(this), amt);
   }
+*/
 }

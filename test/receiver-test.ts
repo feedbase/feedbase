@@ -13,7 +13,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
   let fb, fb_type;
   let rec, rec_type;
   let recfab, recfab_type;
-  let cash,  cash_type;
 
   let tag, seq, sec, ttl, val;
   let chainId;
@@ -22,7 +21,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
     const signer = signers[n]
     debug(`using ${n} ${signer.address}`)
 
-    if( cash ) cash = cash.connect(signer);
     if( fb ) fb = fb.connect(signer);
     if( rec ) rec = rec.connect(signer);
   }
@@ -37,12 +35,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
 
     rec_type = await ethers.getContractFactory('BasicReceiver');
     rec = await rec_type.deploy(fb.address);
-
-    cash_type = await ethers.getContractFactory('MockToken');
-    cash = await cash_type.deploy('CASH', 'CASH');
-
-    await send(cash.mint, ALI, 1000)
-    await send(cash.approve, fb.address, U256_MAX)
 
     await send(rec.setSigner, ALI, 1000000000000)
 
@@ -63,8 +55,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
     const auths = async (n) => {
       use(n);
       await rec.setOwner(signers[n].address);
-      await rec.setCost(tag, cash.address, 1000);
-      await rec.setRelayFee(tag, cash.address, 1000);
       await rec.setSigner(signers[n].address, 1000);
     }
 
@@ -99,10 +89,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
       const cost     = 10;
       const relayFee = 11;
 
-      const setCost = await rec.setCost(tag, cash.address, cost);
-      const deposit = await fb.deposit(cash.address, ALI, cost * 2, {value: cost * 2});
-      const request = await fb.request(rec.address, tag, cash.address, cost * 2);
-
       const digest = makeUpdateDigest({
         tag,
         val: val,
@@ -119,55 +105,7 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
       const sig = ethers.utils.splitSignature(signature)
       // debug(sig);
 
-      await rec.setRelayFee(tag, cash.address, relayFee);
-
-      await fail(msg, rec.submit, tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
-    });
-
-  });
-
-  describe('collect', () => {
-    let cost, relayFee;
-    it('cost < relay fee', async function () {
-      cost     = 10;
-      relayFee = 11;
-    });
-
-    it('cost > relay fee', async function () {
-      cost     = 11;
-      relayFee = 10;
-    });
-
-    afterEach(async () => {
-      const setCost = await rec.setCost(tag, cash.address, cost);
-      const deposit = await fb.deposit(cash.address, ALI, cost * 2);
-      const request = await fb.request(rec.address, tag, cash.address, cost * 2);
-      await rec.setRelayFee(tag, cash.address, relayFee);
-
-      for( let i = 0; i < 2; i++ ) {
-        const digest = makeUpdateDigest({
-          tag,
-          val: val,
-          seq: seq + i,
-          sec: sec,
-          ttl: ttl,
-          chainId: chainId,
-          receiver: rec.address
-        })
-        debug(`digest: ${Buffer.from(digest).toString('hex')}`)
-
-        const signature = await ali.signMessage(digest)
-        debug(`signature ${signature}`)
-        const sig = ethers.utils.splitSignature(signature)
-        // debug(sig);
-        await rec.submit(tag, seq + i, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
-      }
-
-      const bal     = await cash.balanceOf(ALI);
-      const collect = await rec.collect(cash.address, ALI);
-      await collect.wait()
-
-      want(await cash.balanceOf(ALI)).to.eql(bal.add(Math.min(relayFee, cost) * 2));
+      await fail(msg, rec.submit, tag, seq, sec, ttl, val, sig.v, sig.r, sig.s);
     });
 
   });
@@ -186,18 +124,11 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
 
       const signature = await ali.signMessage(digest)
       const sig = ethers.utils.splitSignature(signature)
-      await send(rec.submit, tag, seq, sec, ttl, val, '0'.repeat(40), sig.v, sig.r, sig.s)
+      await send(rec.submit, tag, seq, sec, ttl, val, sig.v, sig.r, sig.s)
     });
 
     //sequence number must increase
     it('seq must increase / setCost deposit request submit', async function () {
-      const cost     = 10;
-      const relayFee = 11;
-
-      const setCost = await rec.setCost(tag, cash.address, cost);
-      const deposit = await fb.deposit(cash.address, ALI, cost * 2, {value: cost * 2});
-      const request = await fb.request(rec.address, tag, cash.address, cost * 2);
-
       const digest = makeUpdateDigest({
         tag, val, seq, sec, ttl,
         chainId: chainId,
@@ -206,44 +137,9 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
       const signature = await ali.signMessage(digest)
       const sig = ethers.utils.splitSignature(signature)
 
-      await rec.setRelayFee(tag, cash.address, relayFee);
-
       //submit twice with same seq
-      await rec.submit(tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
-      await fail('submit-seq', rec.submit, tag, seq, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
-    });
-
-    //TODO: cost > relay fee
-    it('collect (cost < relay fee)', async function () {
-      const cost     = 10;
-      const relayFee = 11;
-
-      const setCost = await rec.setCost(tag, cash.address, cost);
-      const deposit = await fb.deposit(cash.address, ALI, cost * 2);
-      const request = await fb.request(rec.address, tag, cash.address, cost * 2);
-      await rec.setRelayFee(tag, cash.address, relayFee);
-
-      for( let i = 0; i < 2; i++ ) {
-        const digest = makeUpdateDigest({
-          tag,
-          val: val,
-          seq: seq + i,
-          sec: sec,
-          ttl: ttl,
-          chainId: chainId,
-          receiver: rec.address
-        })
-
-        const signature = await ali.signMessage(digest)
-        const sig = ethers.utils.splitSignature(signature)
-        await rec.submit(tag, seq + i, sec, ttl, val, cash.address, sig.v, sig.r, sig.s);
-      }
-
-      const bal     = await cash.balanceOf(ALI);
-      const collect = await rec.collect(cash.address, ALI);
-      await collect.wait()
-
-      want(await cash.balanceOf(ALI)).to.eql(bal.add(cost * 2));
+      await rec.submit(tag, seq, sec, ttl, val, sig.v, sig.r, sig.s);
+      await fail('submit-seq', rec.submit, tag, seq, sec, ttl, val, sig.v, sig.r, sig.s);
     });
 
   })
