@@ -34,6 +34,7 @@ contract Feedbase {
 
   function push(bytes32 tag, bytes32 val, uint256 ttl) external {
     _feeds[msg.sender][tag] = Feed({val: val, ttl: ttl});
+    emit Push(msg.sender, tag, val, ttl);
   }
 }
 
