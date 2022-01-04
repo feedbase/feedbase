@@ -5,8 +5,8 @@ import { HardhatRuntimeEnvironment, TaskArguments } from 'hardhat/types'
 
 import { PackBuilder } from 'dpack'
 
-task('deploy-feedbase', 'deploy Feedbase and BasicReceiverFactory')
-  .setAction(async (args: TaskArguments, hre: HardhatRuntimeEnvironment) => {
+task('deploy-feedbase', 'deploy Feedbase')
+  .setAction(async (args: TaskArguments, hre: any) => {
     const { ethers, network } = hre
 
     const [acct] = await hre.ethers.getSigners()
@@ -14,11 +14,12 @@ task('deploy-feedbase', 'deploy Feedbase and BasicReceiverFactory')
 
     debug(`Deploying contracts using ${deployer} to ${network.name}`)
 
-    const FeedbaseDeployer = await hre.ethers.getContractFactory('Feedbase')
+    const FeedbaseArtifact = require('../artifacts/sol/Feedbase.sol/Feedbase.json')
+    debug(`Loaded artifact`)
+    const FeedbaseDeployer = ethers.ContractFactory.fromSolidity(FeedbaseArtifact, acct)
     const fb = await FeedbaseDeployer.deploy()
     await fb.deployed()
     debug('Feedbase deployed to : ', fb.address)
-    const FeedbaseArtifact = await hre.artifacts.readArtifact('Feedbase')
 
     const pb = new PackBuilder(network.name);
     await pb.packObject({
