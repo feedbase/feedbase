@@ -12,7 +12,7 @@ contract Feedbase {
   }
 
   // src -> tag -> Feed
-  mapping(address=>mapping(bytes32=>Feed)) public _feeds;
+  mapping(address=>mapping(bytes32=>Feed)) _feeds;
 
   event Push(
       address indexed src
@@ -23,7 +23,7 @@ contract Feedbase {
 
   function read(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
     Feed storage feed = _feeds[src][tag];
-    require(block.timestamp < ttl, 'ERR_READ');
+    require(block.timestamp < feed.ttl, 'ERR_READ');
     return (feed.val, feed.ttl);
   }
 
