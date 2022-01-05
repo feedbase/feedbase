@@ -6,6 +6,8 @@ import { HardhatRuntimeEnvironment, TaskArguments } from 'hardhat/types'
 import { PackBuilder } from 'dpack'
 
 task('deploy-feedbase', 'deploy Feedbase')
+  .addFlag('stdout', 'print the dpack to stdout')
+  .addOptionalParam('outfile', 'save the dpack to this path')
   .setAction(async (args: TaskArguments, hre: any) => {
     const { ethers, network } = hre
 
@@ -27,15 +29,16 @@ task('deploy-feedbase', 'deploy Feedbase')
       address: fb.address,
       typename: 'Feedbase',
       artifact: FeedbaseArtifact
-    });
-    await pb.packType({
-      typename: 'Feedbase',
-      artifact: FeedbaseArtifact
-    });
+    }, true); // alsoPackType
     
     const pack = await pb.build();
-    console.log(JSON.stringify(pack, null, 2))
-
+    const str = JSON.stringify(pack, null, 2);
+    if (args.stdout) {
+        console.log(str)
+    }
+    if (args.outfile) {
+        require('fs').writeFileSync(args.outfile, str)
+    }
     return pack
   })
 
