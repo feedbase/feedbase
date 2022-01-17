@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "scripts": {
     "build": "npm run build:ts && npm run build:sol",
-    "build:ts": "tsc",
+    "build:ts": "npx tsc -b",
     "build:sol": "npx hardhat compile",
     "pretest": "npm run build",
     "test": "ts-mocha test/*.ts test/**/*.ts",
