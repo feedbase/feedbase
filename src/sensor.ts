@@ -30,7 +30,7 @@ class Sensor {
 
   async refresh () {
     debug('refreshing...')
-    this.val = await this.getter();
+    this.val = await this.getter()
     this.sec = now()
     this.ttl = this.sec + 600
     this.seq = this.seq + 1
@@ -46,14 +46,13 @@ class Sensor {
     debug(`  val ${this.val.toString('hex')}`)
     debug(`  sig ${this.sig}`)
 
-    let recFac = await ethers.getContractFactory("BasicReceiver");
-    let rec    = new ethers.Contract(this.receiver, recFac.interface, this.signer)
+    const recFac = await ethers.getContractFactory('BasicReceiver')
+    const rec    = new ethers.Contract(this.receiver, recFac.interface, this.signer)
 
-    const { v, r, s } = ethers.utils.splitSignature(this.sig);
+    const { v, r, s } = ethers.utils.splitSignature(this.sig)
 
-    const submit = await rec.submit(this.tag, this.seq, this.sec, this.ttl,
-                     this.val, this.cash, v, r, s);
-    await submit.wait();
+    const submit = await rec.submit(this.tag, this.seq, this.sec, this.ttl, this.val, this.cash, v, r, s)
+    await submit.wait()
   }
 }
 

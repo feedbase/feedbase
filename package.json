@@ -2,6 +2,7 @@
   "name": "feedbase",
   "version": "0.3.0",
   "scripts": {
+    "initialize": "npm i && npm run build",
     "build": "npm run build:ts && npm run build:sol",
     "build:ts": "npx tsc -b",
     "build:sol": "npx hardhat compile",
@@ -18,12 +19,12 @@
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {
+    "@etherpacks/dpack": "^0.0.27",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@types/chai": "^4.2.22",
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
-    "dpack": "github:dapphub/dpack",
     "hardhat": "^2.4.3",
     "minihat": "^0.0.3",
     "ts-mocha": "^8.0.0",
