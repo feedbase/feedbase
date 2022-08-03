@@ -2,7 +2,10 @@
 
 ##### `(src,tag) -> (val,ttl)`
 
-Feedbase is a simple and general contract layer for oracle systems.
+Feedbase is a simple and general contract layer for oracle systems. Feedbase is an old idea [1](https://www.npmjs.com/package/feedbase) [2](http://github.com/nexusdev/feedbase) that directly inspired much of the oracle ecosystem today, but it has been revised with modern design patterns.
+
+[1] https://www.npmjs.com/package/feedbase
+[2] http://github.com/nexusdev/feedbase
 
 Use Feedbase to:
 
@@ -10,7 +13,7 @@ Use Feedbase to:
 * buy data feed updates from an ecosystem of data sources and aggregators
 
 The idea is to factor the oracle problem into modular sub-problems which can be composed and evolved in the market.
-Feedbase just provides a common data and payment routing object which can be manipulated by arbitrary contract code.
+Feedbase just provides a common data layer which can be manipulated by arbitrary contract code, similar to the way [dmap](https://github.com/dapphub/dmap) provides a base contract for arbitrary namespace logic.
 
 You can deploy your own oracle system or create a new aggregator from existing oracle systems.
 
