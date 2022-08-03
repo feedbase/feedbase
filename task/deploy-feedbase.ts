@@ -1,9 +1,8 @@
-const debug = require('debug')('feedbase:task')
-
 import { task } from 'hardhat/config'
 import { HardhatRuntimeEnvironment, TaskArguments } from 'hardhat/types'
 
-import { PackBuilder } from 'dpack'
+const debug = require('debug')('feedbase:task')
+const dpack = require('@etherpacks/dpack')
 
 task('deploy-feedbase', 'deploy Feedbase')
   .addFlag('stdout', 'print the dpack to stdout')
@@ -17,27 +16,27 @@ task('deploy-feedbase', 'deploy Feedbase')
     debug(`Deploying contracts using ${deployer} to ${network.name}`)
 
     const FeedbaseArtifact = require('../artifacts/sol/Feedbase.sol/Feedbase.json')
-    debug(`Loaded artifact`)
+    debug('Loaded artifact')
     const FeedbaseDeployer = ethers.ContractFactory.fromSolidity(FeedbaseArtifact, acct)
     const fb = await FeedbaseDeployer.deploy()
     await fb.deployed()
     debug('Feedbase deployed to : ', fb.address)
 
-    const pb = new PackBuilder(network.name);
+    const pb = new dpack.PackBuilder(network.name)
     await pb.packObject({
       objectname: 'feedbase',
       address: fb.address,
       typename: 'Feedbase',
       artifact: FeedbaseArtifact
-    }, true); // alsoPackType
-    
-    const pack = await pb.build();
-    const str = JSON.stringify(pack, null, 2);
+    }, true) // alsoPackType
+
+    const pack = await pb.build()
+    const str = JSON.stringify(pack, null, 2)
     if (args.stdout) {
-        console.log(str)
+      console.log(str)
     }
     if (args.outfile) {
-        require('fs').writeFileSync(args.outfile, str)
+      require('fs').writeFileSync(args.outfile, str)
     }
     return pack
   })
