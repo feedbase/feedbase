@@ -5,7 +5,15 @@ import './task/deploy-feedbase.ts'
  * @type import('hardhat/config').HardhatUserConfig
  */
 export default {
-  solidity: '0.8.10',
+  solidity: {
+    version: "0.8.15",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 10000,
+      },
+    },
+  },
   paths: {
     sources: "sol"
   }

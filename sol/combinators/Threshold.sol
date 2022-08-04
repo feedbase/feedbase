@@ -4,7 +4,7 @@ import '../Feedbase.sol';
 
 import './SelectorProvider.sol';
 
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.15;
 
 contract ThresholdCombinator {
   SelectorProvider public gov;
