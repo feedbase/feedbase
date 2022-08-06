@@ -1,7 +1,7 @@
 // (c) nikolai mushegian
 // SPDX-License-Identifier: AGPL-v3.0
 
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.15;
 
 import "./erc20/IERC20.sol";
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.15;
 
 interface SelectorProvider {
   function getSelectors() external returns (uint quorum, address[] calldata selectors);
