@@ -47,7 +47,7 @@ class Sensor {
     debug(`  sig ${this.sig}`)
 
     const recFac = await ethers.getContractFactory('BasicReceiver')
-    const rec    = new ethers.Contract(this.receiver, recFac.interface, this.signer)
+    const rec = new ethers.Contract(this.receiver, recFac.interface, this.signer)
 
     const { v, r, s } = ethers.utils.splitSignature(this.sig)
 
@@ -60,13 +60,13 @@ export async function serve (getter: Function, opts: any): Promise<void> {
   debug('serve', opts)
   const s = new Sensor(getter)
   s.receiver = opts.receiver
-  s.chainId  = opts.chainId
-  s.signer   = opts.signer
-  s.cash     = opts.cash
-  s.tag      = opts.tag
+  s.chainId = opts.chainId
+  s.signer = opts.signer
+  s.cash = opts.cash
+  s.tag = opts.tag
 
   await s.refresh()
-  if( opts.interval > 0 ) {
+  if (opts.interval > 0) {
     setInterval(async () => await s.refresh(), opts.interval)
   }
 
