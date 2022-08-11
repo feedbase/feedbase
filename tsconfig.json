@@ -5,7 +5,7 @@
     "esModuleInterop": true
   },
   "include": [
-    "src/**/*.ts",
+    "scripts/**/*.ts",
     "task/**.ts",
     "hardhat.config.ts"
   ]

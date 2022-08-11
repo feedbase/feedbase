@@ -1,9 +1,9 @@
-import { makeUpdateDigest } from '../src'
+import { makeUpdateDigest } from '../scripts'
 
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
-import { getter } from '../src/sensors/USDETH_coingecko'
-import * as sensor from '../src/sensor'
+import { getter } from '../scripts/sensors/USDETH_coingecko'
+import * as sensor from '../scripts/sensor'
 import { want, send, fail, snapshot, revert, U256_MAX } from 'minihat'
 
 const debug = require('debug')('feedbase:sensor')
