@@ -28,7 +28,7 @@ contract MockToken {
               //= keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
             0x7e93b3de711138b10fadfa22024b96a0a3a08f812d3afdf331786949e62c5c5a,
               //= keccak256("GemPermit"),  //bytes(name)),
-            0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470, 
+            0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470,
               //= keccak256(bytes("0")),    // TODO gas regression test
             block.chainid,
             address(this)
@@ -103,4 +103,3 @@ contract MockToken {
         emit Approval(owner, spender, value);
     }
 }
-

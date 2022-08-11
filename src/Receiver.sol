@@ -72,7 +72,7 @@ contract BasicReceiver {
   // EIP712 digest
   function digest(bytes32 tag, uint seq, uint sec, uint ttl, bytes32 val) public view returns (bytes32) {
     string memory header = "\x19Ethereum Signed Message:\n32";
-    bytes32 sighash = keccak256(abi.encodePacked(header, 
+    bytes32 sighash = keccak256(abi.encodePacked(header,
       keccak256(abi.encodePacked(
         "\x19\x01", DOMAIN_SEPARATOR,
         keccak256(abi.encode(

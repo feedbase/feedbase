@@ -37,4 +37,3 @@ contract Feedbase {
     emit Push(msg.sender, tag, val, ttl);
   }
 }
-

@@ -29,7 +29,7 @@ contract MedianizerCombinator {
     bytes32[] memory data = new bytes32[](sources.length);
     uint256 minttl = type(uint256).max;
     uint256 count = 0;
-  
+
     for(uint256 i = 0; i < sources.length; i++) {
       (bytes32 val, uint256 _ttl) = fb.read(sources[i], tag);
       if (count == 0 || val >= data[count - 1]) {
