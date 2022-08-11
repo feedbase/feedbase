@@ -1,4 +1,4 @@
-import { makeUpdateDigest } from '../src'
+import { makeUpdateDigest } from '../scripts'
 
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
