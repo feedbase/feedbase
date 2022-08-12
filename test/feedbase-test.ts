@@ -55,6 +55,12 @@ describe('feedbase', () => {
     want(read.val).equal('0x' + val.toString('hex'))
   })
 
+  it('fail read with block timestamp > ttl', async function () {
+    ttl = 1
+    const push = await send(fb.push, tag, val, ttl)
+    await want(fb.read(ALI, tag)).rejectedWith('ERR_READ');
+  })
+
   it('read successive', async function () {
     let push = await fb.push(tag, val, ttl)
     await push.wait()
