@@ -15,7 +15,7 @@ task('deploy-feedbase', 'deploy Feedbase')
 
     debug(`Deploying contracts using ${deployer} to ${network.name}`)
 
-    const FeedbaseArtifact = require('../artifacts/sol/Feedbase.sol/Feedbase.json')
+    const FeedbaseArtifact = require('../artifacts/src/Feedbase.sol/Feedbase.json')
     debug('Loaded artifact')
     const FeedbaseDeployer = ethers.ContractFactory.fromSolidity(FeedbaseArtifact, acct)
     const fb = await FeedbaseDeployer.deploy()

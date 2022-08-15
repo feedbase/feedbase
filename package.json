@@ -10,7 +10,7 @@
     "test": "ts-mocha test/*.ts test/**/*.ts",
     "fmt": "ts-standard --fix src task test"
   },
-  "main": "./dist/src/index.js",
+  "main": "./dist/scripts/index.js",
   "dependencies": {
     "commander": "^9.4.0",
     "debug": "^4.3.4",
