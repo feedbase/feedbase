@@ -2,15 +2,9 @@
 
 ##### `(src,tag) -> (val,ttl)`
 
-Feedbase is a simple and general contract layer for oracle systems. Feedbase is an old idea (see [1](https://www.npmjs.com/package/feedbase), [2](http://github.com/nexusdev/feedbase)) that directly inspired much of the oracle ecosystem today, but it has been revised with a simple design pattern to make the oracle problem more modular and composable.
-
-Use Feedbase to:
-
-* sell your unique data feeds into an ecosystem of consumers
-* buy data feed updates from an ecosystem of data sources and aggregators
-
-The idea is to factor the oracle problem into modular sub-problems which can be composed and evolved in the market.
-Feedbase just provides a common data layer which can be manipulated by arbitrary contract code, similar to the way [dmap](https://github.com/dapphub/dmap) provides a base contract for arbitrary namespace logic.
+Feedbase is a simple and general contract layer for oracle systems.
+Feedbase is an old idea (see [1](https://www.npmjs.com/package/feedbase),
+revised with a simple design pattern to make the oracle ecosystem more modular and composable.
 
 You can deploy your own oracle system or create a new aggregator from existing oracle systems.
 
@@ -20,24 +14,47 @@ Feedbase is a labor of love. There are no protocol fees and no protocol token.
 Feedbase espouses composability and rejects vertical integration.
 It is a true protocol, not a broker or service provider.
 
+Use Feedbase to:
+
+* sell your unique data feeds into an ecosystem of consumers
+* buy data feed updates from an ecosystem of data sources and aggregators
+
+Feedbase factors the oracle workflow into several modular components:
+
+- A `sensor` is anything that provides signed data, providing an attestation about some real-world value.
+- A `relay` is anything that takes a signed message from a sensor, and
+- A `receiver` is a contract that takes a signed message, verifies the signature, then records the value in the feedbase contract. One example is the BasicReceiver contract in this repo. Another example could be a contract that interprets Coinbase's signed price data, verifies the signature, and pushes it to feedbase. We encourage using a Receiver contract to keep a persistent oracle identity while still allowing key rotations.
+- An `adapter` is a contract that takes some existing on-chain data source, and pushes the data into feedbase, where it can utilize the network effect of various combinators. Two examples of adapters could be a Chainlink adapter, which pays LINK and ETH gas costs to copy data from the Chainlink oracle network, or a Uniswap TWAP adapter, which pays gas fees to copy Uniswap TWAP values.
+- A `combinator` is a contract that pulls some values from the core feedbase contract, and pushes some aggregated result. The most familiar example is a `Medianizer`. Another example is a TWAP of other feedbase values.
+
+At time of writing, different oracles services perform one or all of these functions, in a vertically integrated manner.
+
+We imagine the ideal oracle flow to look like this:
+
+1) Exchanges act as spot price sensors, exposing a traditional web API that publishes *signed* data.
+2) Any dapp or user, when they need this data, *relay* it into the appropriate *receiver*.
+3) In cases where more than one data feed need to be aggregated, like with a medianizer, the same dapp or user can poke the appropriate *combinator*.
+
+A combinator can itself combine values from other combinators. Receivers and combinators can also manager their own payment flow, using whatever token makes the most sense for them.
 
 ### What's inside
 
-It comes with:
+The initial release comes with:
 
 * The core Feedbase object
-* A few basic combinators (time-delay, medianizer, quorum value)
+* A medianizer, configurable by any owner contract
 * A "receiver" contract that interprets EIP712 signed messages, to decouple sensors and relays and manage key rotations for persistent oracle identities
 * Basic sensor utilities to easily convert existing web 2.0 APIs into feedbase signed message streams
 
-Here are some things that can be built over feedbase:
+Here are some more ideas of what you can build:
 
-* Direct push
-* Basic streamer / receiver / relayer
-* Medianizer, immutable or dynamic/owned
+* Uniswap TWAP adapter
 * Chainlink adapter
-* General 'private' MPT state stealer (aka MakerDAO adapter)
 * Coinbase EIP712 adapter
-* Prism node selection
-* Other stake mode node selection
+* General "private state stealer", using merkle proofs and the `BLOCKHASH` opcode.
 
+### Oracle selection
+
+The problem of selecting which `src` values to count as unique data sources can be solved in many ways.
+Existing governance solutions, like Chainlink's multisig or Uniswap's token-vote, are one example.
+An approval voting system like the one used in the Rico system is another promising approach.
