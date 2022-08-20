@@ -19,13 +19,7 @@ contract Feedbase {
     , uint256         ttl
   );
 
-  function read(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
-    Feed storage feed = _feeds[src][tag];
-    require(block.timestamp < feed.ttl, 'ERR_READ');
-    return (feed.val, feed.ttl);
-  }
-
-  function peek(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
+  function pull(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
     Feed storage feed = _feeds[src][tag];
     return (feed.val, feed.ttl);
   }
