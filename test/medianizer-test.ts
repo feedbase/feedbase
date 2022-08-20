@@ -31,7 +31,7 @@ describe('medianizer', () => {
     await revert(hh)
   })
 
-  describe('push', () => {
+  describe('poke', () => {
     it('One value', async () => {
       const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
@@ -44,7 +44,7 @@ describe('medianizer', () => {
         await con.push(tag, vals[idx], ttl)
       }))
 
-      await medianizer.push(tag)
+      await medianizer.poke(tag)
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1000)
     })
@@ -61,7 +61,7 @@ describe('medianizer', () => {
         await con.push(tag, vals[idx], ttl)
       }))
 
-      await medianizer.push(tag)
+      await medianizer.poke(tag)
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1100)
     })
@@ -78,7 +78,7 @@ describe('medianizer', () => {
         await con.push(tag, vals[idx], ttl)
       }))
 
-      await medianizer.push(tag)
+      await medianizer.poke(tag)
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
@@ -95,7 +95,7 @@ describe('medianizer', () => {
         await con.push(tag, vals[idx], ttl)
       }))
 
-      await medianizer.push(tag)
+      await medianizer.poke(tag)
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1150)
     })
@@ -111,7 +111,7 @@ describe('medianizer', () => {
         await con.push(tag, vals[idx], ttl)
       }))
 
-      await medianizer.push(tag)
+      await medianizer.poke(tag)
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
@@ -149,7 +149,7 @@ describe('medianizer', () => {
         await con.push(tag, vals[idx], ttl)
       }))
 
-      await medianizer.push(tag)
+      await medianizer.poke(tag)
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1100)
     })
@@ -166,7 +166,7 @@ describe('medianizer', () => {
         await con.push(tag, vals[idx], ttl)
       }))
 
-      await medianizer.push(tag)
+      await medianizer.poke(tag)
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
@@ -183,7 +183,7 @@ describe('medianizer', () => {
         await con.push(tag, vals[idx], ttl)
       }))
 
-      await medianizer.push(tag)
+      await medianizer.poke(tag)
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1150)
     })
@@ -199,7 +199,7 @@ describe('medianizer', () => {
         await con.push(tag, vals[idx], ttl)
       }))
 
-      await medianizer.push(tag)
+      await medianizer.poke(tag)
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })

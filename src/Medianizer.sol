@@ -30,7 +30,7 @@ contract Medianizer {
     quorum = newQuorum;
   }
 
-  function push(bytes32 tag) public {
+  function poke(bytes32 tag) public {
     bytes32[] memory data = new bytes32[](sources.length);
     uint256 minttl = type(uint256).max;
     uint256 count = 0;
