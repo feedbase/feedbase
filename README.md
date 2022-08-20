@@ -3,7 +3,7 @@
 ##### `(src,tag) -> (val,ttl)`
 
 Feedbase is a simple and general contract layer for oracle systems.
-Feedbase is an old idea (see [1](https://www.npmjs.com/package/feedbase),
+Feedbase is an [old idea](https://www.npmjs.com/package/feedbase),
 revised with a simple design pattern to make the oracle ecosystem more modular and composable.
 
 You can deploy your own oracle system or create a new aggregator from existing oracle systems.
