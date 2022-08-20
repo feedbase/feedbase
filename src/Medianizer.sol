@@ -36,7 +36,10 @@ contract Medianizer {
     uint256 count = 0;
 
     for(uint256 i = 0; i < sources.length; i++) {
-      (bytes32 val, uint256 _ttl) = feedbase.read(sources[i], tag);
+      (bytes32 val, uint256 _ttl) = feedbase.pull(sources[i], tag);
+      if (_ttl < block.timestamp) {
+        continue;
+      }
       if (count == 0 || val >= data[count - 1]) {
         data[count] = val;
       } else {
