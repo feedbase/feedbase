@@ -11,6 +11,7 @@ contract Medianizer {
   Feedbase  public feedbase;
 
   constructor(address fb) {
+    owner = msg.sender;
     feedbase = Feedbase(fb);
   }
 

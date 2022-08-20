@@ -9,7 +9,7 @@ const { MaxUint256 } = constants
 const { formatBytes32String, parseEther, parseBytes32String } = utils
 
 describe('medianizer', () => {
-  let fb, medianizer, selector
+  let fb, medianizer
   let ali, s1, s2, s3, s4, s5
   const fee = 5
   const amt = 1000
@@ -55,7 +55,7 @@ describe('medianizer', () => {
       const sources = [s1, s2]
       const selectors = sources.map(s => s.address)
 
-      await medianzier.setSources(selectors);
+      await medianizer.setSources(selectors);
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -70,6 +70,7 @@ describe('medianizer', () => {
       const vals = [1000, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3]
+      const selectors = sources.map(s => s.address)
 
       await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
@@ -88,7 +89,7 @@ describe('medianizer', () => {
       const sources = [s1, s2, s3, s4]
       const selectors = sources.map(s => s.address)
 
-      await selector.setSources(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -140,7 +141,7 @@ describe('medianizer', () => {
       const sources = [s1, s2]
       const selectors = sources.map(s => s.address)
 
-      await selector.setSources(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
