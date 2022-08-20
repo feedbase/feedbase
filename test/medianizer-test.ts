@@ -9,7 +9,7 @@ const { MaxUint256 } = constants
 const { formatBytes32String, parseEther, parseBytes32String } = utils
 
 describe('medianizer', () => {
-  let fb, medianizer, selector
+  let fb, medianizer
   let ali, s1, s2, s3, s4, s5
   const fee = 5
   const amt = 1000
@@ -21,27 +21,14 @@ describe('medianizer', () => {
     const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
     fb = await FeedbaseFactory.deploy()
 
-    const FixedSelectorProviderFactory = await ethers.getContractFactory('FixedSelectorProvider')
-    selector = await FixedSelectorProviderFactory.deploy()
-
-    const MedianizerFactory = await ethers.getContractFactory('MedianizerCombinator')
-    medianizer = await MedianizerFactory.deploy(selector.address, fb.address)
+    const MedianizerFactory = await ethers.getContractFactory('Medianizer')
+    medianizer = await MedianizerFactory.deploy(fb.address)
 
     await snapshot(hh)
   })
 
   beforeEach(async () => {
     await revert(hh)
-  })
-
-  it('selector', async function () {
-    const owner = await selector.owner()
-    want(owner).to.eql(ali.address)
-    const sources = [s1, s2, s3]
-    const selectors = sources.map(s => s.address)
-    await selector.setSelectors(selectors)
-    const { set } = await selector.getSelectors()
-    want(set).to.eql(selectors)
   })
 
   describe('push', () => {
@@ -51,7 +38,7 @@ describe('medianizer', () => {
       const sources = [s1]
       const selectors = sources.map(s => s.address)
 
-      await selector.setSelectors(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -68,7 +55,7 @@ describe('medianizer', () => {
       const sources = [s1, s2]
       const selectors = sources.map(s => s.address)
 
-      await selector.setSelectors(selectors)
+      await medianizer.setSources(selectors);
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -85,7 +72,7 @@ describe('medianizer', () => {
       const sources = [s1, s2, s3]
       const selectors = sources.map(s => s.address)
 
-      await selector.setSelectors(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -102,7 +89,7 @@ describe('medianizer', () => {
       const sources = [s1, s2, s3, s4]
       const selectors = sources.map(s => s.address)
 
-      await selector.setSelectors(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -118,7 +105,7 @@ describe('medianizer', () => {
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4, s5]
       const selectors = sources.map(s => s.address)
-      await selector.setSelectors(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -135,7 +122,7 @@ describe('medianizer', () => {
       const now = Math.ceil(Date.now() / 1000)
       const sources = [s1]
       const selectors = sources.map(s => s.address)
-      await selector.setSelectors(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -154,7 +141,7 @@ describe('medianizer', () => {
       const sources = [s1, s2]
       const selectors = sources.map(s => s.address)
 
-      await selector.setSelectors(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -171,7 +158,7 @@ describe('medianizer', () => {
       const sources = [s1, s2, s3]
       const selectors = sources.map(s => s.address)
 
-      await selector.setSelectors(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -188,7 +175,7 @@ describe('medianizer', () => {
       const sources = [s1, s2, s3, s4]
       const selectors = sources.map(s => s.address)
 
-      await selector.setSelectors(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -204,7 +191,7 @@ describe('medianizer', () => {
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4, s5]
       const selectors = sources.map(s => s.address)
-      await selector.setSelectors(selectors)
+      await medianizer.setSources(selectors)
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)

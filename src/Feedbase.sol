@@ -3,8 +3,6 @@
 
 pragma solidity ^0.8.15;
 
-import "./erc20/IERC20.sol";
-
 contract Feedbase {
   struct Feed {
     bytes32 val;

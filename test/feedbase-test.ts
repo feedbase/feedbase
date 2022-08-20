@@ -30,10 +30,7 @@ describe('feedbase', () => {
     const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
     fb = await FeedbaseFactory.deploy()
 
-    const TokenDeployer = await ethers.getContractFactory('MockToken')
-
     use(0)
-
 
     await snapshot(hh)
   })

@@ -2,36 +2,41 @@
 
 pragma solidity ^0.8.15;
 
-import '../Feedbase.sol';
-import './SelectorProvider.sol';
+import './Feedbase.sol';
 
-contract MedianizerCombinator {
-  SelectorProvider public gov;
-  Feedbase public fb;
+contract Medianizer {
+  address   public owner;
+  uint256   public quorum;
+  address[] public sources;
+  Feedbase  public feedbase;
 
-  constructor(address gov_, address fb_) {
-    gov = SelectorProvider(gov_);
-    fb = Feedbase(fb_);
+  constructor(address fb) {
+    owner = msg.sender;
+    feedbase = Feedbase(fb);
   }
 
-/*
-  function poke(bytes32 tag, address cash) public {
-    (uint256 quorum, address[] memory sources) = gov.getSelectors();
-    uint balance = fb.requested(address(this), tag, cash);
-    for(uint i = 0; i < sources.length; i++) {
-      fb.request(sources[i], tag, cash, balance / sources.length);
-    }
+  function setOwner(address newOwner) public {
+    require(msg.sender == owner, 'ERR_OWNER');
+    owner = newOwner;
   }
-*/
+
+  function setSources(address[] calldata newSources) public {
+    require(msg.sender == owner, 'ERR_OWNER');
+    sources = newSources;
+  }
+
+  function setQuorum(uint newQuorum) public {
+    require(msg.sender == owner, 'ERR_OWNER');
+    quorum = newQuorum;
+  }
 
   function push(bytes32 tag) public {
-    (uint256 quorum, address[] memory sources) = gov.getSelectors();
     bytes32[] memory data = new bytes32[](sources.length);
     uint256 minttl = type(uint256).max;
     uint256 count = 0;
-  
+
     for(uint256 i = 0; i < sources.length; i++) {
-      (bytes32 val, uint256 _ttl) = fb.read(sources[i], tag);
+      (bytes32 val, uint256 _ttl) = feedbase.read(sources[i], tag);
       if (count == 0 || val >= data[count - 1]) {
         data[count] = val;
       } else {
@@ -56,6 +61,6 @@ contract MedianizerCombinator {
       median = data[(count - 1) / 2];
     }
 
-    fb.push(tag, median, minttl);
+    feedbase.push(tag, median, minttl);
   }
 }
