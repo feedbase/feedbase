@@ -3,7 +3,6 @@
 pragma solidity ^0.8.15;
 
 import './Feedbase.sol';
-import 'hardhat/console.sol';
 
 contract Medianizer {
   address   public owner;
