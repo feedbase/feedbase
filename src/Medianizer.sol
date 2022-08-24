@@ -63,6 +63,8 @@ contract Medianizer {
       count++;
     }
 
+    require(count >= quorum, 'ERR_QUORUM');
+
     bytes32 median = 0;
     if (count > 0) {
       if (count % 2 == 0) {

@@ -101,6 +101,13 @@ describe('medianizer', () => {
         want(Number(res.val)).to.eql(2000)
         want(Number(res.ttl)).to.eql(timestamp + 2001)
       })
+
+      it('quorum', async () => {
+        await send(medianizer.setQuorum, 2)
+        await send(medianizer.poke, tag)
+        await send(medianizer.setQuorum, 3)
+        await fail('ERR_QUORUM', medianizer.poke, tag)
+      })
     })
 
     it('One value', async () => {
