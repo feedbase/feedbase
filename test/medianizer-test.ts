@@ -103,10 +103,20 @@ describe('medianizer', () => {
       })
 
       it('quorum', async () => {
-        await send(medianizer.setQuorum, 2)
-        await send(medianizer.poke, tag)
         await send(medianizer.setQuorum, 3)
         await fail('ERR_QUORUM', medianizer.poke, tag)
+
+        await send(medianizer.setQuorum, 2)
+        await hh.network.provider.request({
+          method: "evm_setNextBlockTimestamp",
+          params: [timestamp + 1000]
+        });
+
+        await send(medianizer.poke, tag)
+        await fail('ERR_QUORUM', medianizer.poke, tag)
+        await send(medianizer.setQuorum, 1)
+        await send(medianizer.poke, tag)
+        await send(medianizer.poke, tag)
       })
     })
 
