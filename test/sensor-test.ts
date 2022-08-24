@@ -9,13 +9,13 @@ import { want, send, fail, snapshot, revert, U256_MAX } from 'minihat'
 const debug = require('debug')('feedbase:sensor')
 
 describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
-  let signers : ethers.Wallet;
+  let signers : [any, any];
   let ali, bob;
   let ALI, BOB;
   let fb, fb_type;
   let rec, rec_type;
   let recfab, recfab_type;
-  let opts = { receiver:undefined, chainId:undefined, signer:undefined};
+  let opts = { receiver:undefined, chainId:undefined, signer:undefined, tag:undefined, interval:undefined };
 
   let tag, seq, sec, ttl, val;
   let chainId;
@@ -69,4 +69,3 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
 
   })
 });
-

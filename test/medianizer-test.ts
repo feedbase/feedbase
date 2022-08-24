@@ -1,6 +1,5 @@
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
-import { Contract } from 'hardhat/types'
 import { fail, revert, snapshot, want } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
