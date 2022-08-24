@@ -3,12 +3,14 @@
 pragma solidity ^0.8.15;
 
 import './Feedbase.sol';
+import 'hardhat/console.sol';
 
 contract Medianizer {
   address   public owner;
   uint256   public quorum;
   address[] public sources;
   Feedbase  public feedbase;
+  uint256   public buffer;
 
   constructor(address fb) {
     owner = msg.sender;
@@ -18,6 +20,10 @@ contract Medianizer {
   function setOwner(address newOwner) public {
     require(msg.sender == owner, 'ERR_OWNER');
     owner = newOwner;
+  }
+
+  function setBuffer(uint256 _buffer) public {
+    buffer = _buffer;
   }
 
   function setSources(address[] calldata newSources) public {
@@ -52,6 +58,9 @@ contract Medianizer {
         }
         data[j] = val;
       }
+      if (_ttl < minttl) {
+        minttl = _ttl;
+      }
       count++;
     }
 
@@ -66,6 +75,11 @@ contract Medianizer {
       }
     }
 
-    feedbase.push(tag, median, minttl);
+    uint256 ttl = block.timestamp + buffer;
+    if (ttl < minttl) {
+      ttl = minttl;
+    }
+
+    feedbase.push(tag, median, ttl);
   }
 }
