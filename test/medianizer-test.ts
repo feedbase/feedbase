@@ -32,34 +32,63 @@ describe('medianizer', () => {
   })
 
   describe('poke', () => {
-    it('stale src feed', async () => {
-      const sources = [s1, s2]
-      const selectors = [s1.address, s2.address]
-      const setsrcs = await medianizer.setSources(selectors)
-      const timestamp = (await ethers.provider.getBlock(setsrcs.blockNumber)).timestamp
-      await send(fb.connect(s1).push, tag, hexZeroPad(hexValue(1000), 32), timestamp + 1000)
-      await send(fb.connect(s2).push, tag, hexZeroPad(hexValue(2000), 32), timestamp + 2000)
+    describe('expired src feeds', async () => {
+      let timestamp
+      beforeEach(async () => {
+        const sources = [s1, s2]
+        const selectors = [s1.address, s2.address]
+        const setsrcs = await medianizer.setSources(selectors)
+        timestamp = (await ethers.provider.getBlock(setsrcs.blockNumber)).timestamp
+        await send(fb.connect(s1).push, tag, hexZeroPad(hexValue(1000), 32), timestamp + 1000)
+        await send(fb.connect(s2).push, tag, hexZeroPad(hexValue(2000), 32), timestamp + 2000)
+      })
 
-      debug('both vals live')
-      await hh.network.provider.request({
-        method: "evm_setNextBlockTimestamp",
-        params: [timestamp + 1000]
-      });
-      await send(medianizer.poke, tag)
-      let res = await fb.pull(medianizer.address, tag)
-      want(Number(res.val)).to.eql(1500)
+      it('stale src feed', async () => {
+        debug('both vals live')
+        await hh.network.provider.request({
+          method: "evm_setNextBlockTimestamp",
+          params: [timestamp + 1000]
+        });
+        await send(medianizer.poke, tag)
+        let res = await fb.pull(medianizer.address, tag)
+        want(Number(res.val)).to.eql(1500)
 
-      debug('second val live')
-      await hh.network.provider.request({
-        method: "evm_setNextBlockTimestamp",
-        params: [timestamp + 2000]
-      });
-      await send(medianizer.poke, tag)
-      res = await fb.pull(medianizer.address, tag)
-      want(Number(res.val)).to.eql(2000)
+        debug('second val live')
+        await hh.network.provider.request({
+          method: "evm_setNextBlockTimestamp",
+          params: [timestamp + 2000]
+        });
+        await send(medianizer.poke, tag)
+        res = await fb.pull(medianizer.address, tag)
+        want(Number(res.val)).to.eql(2000)
 
-      debug('no vals live')
-      await fail('ERR_COUNT', medianizer.poke, tag)
+        debug('no vals live')
+        await fail('ERR_COUNT', medianizer.poke, tag)
+      })
+
+      it('quorum', async () => {
+        await send(medianizer.setQuorum, 3)
+        await fail('ERR_QUORUM', medianizer.poke, tag)
+
+        await send(medianizer.setQuorum, 2)
+        await hh.network.provider.request({
+          method: "evm_setNextBlockTimestamp",
+          params: [timestamp + 1000]
+        });
+
+        await send(medianizer.poke, tag)
+        await fail('ERR_QUORUM', medianizer.poke, tag)
+        await send(medianizer.setQuorum, 1)
+        await send(medianizer.poke, tag)
+        await send(medianizer.poke, tag)
+
+        await hh.network.provider.request({
+          method: "evm_setNextBlockTimestamp",
+          params: [timestamp + 2000]
+        });
+        await send(medianizer.poke, tag)
+        await fail('ERR_COUNT', medianizer.poke, tag) // err order
+      })
     })
 
     it('One value', async () => {
