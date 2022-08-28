@@ -1,12 +1,12 @@
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 import { Contract } from 'hardhat/types'
-import { fail, revert, snapshot, want } from 'minihat'
+import { send, fail, revert, snapshot, want, b32 } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
 const { constants, BigNumber, utils } = ethers
 const { MaxUint256 } = constants
-const { formatBytes32String, parseEther, parseBytes32String } = utils
+const { formatBytes32String, parseEther, parseBytes32String, hexlify, hexZeroPad, hexValue } = utils
 
 describe('medianizer', () => {
   let fb, medianizer
@@ -32,6 +32,36 @@ describe('medianizer', () => {
   })
 
   describe('poke', () => {
+    it('stale src feed', async () => {
+      const sources = [s1, s2]
+      const selectors = [s1.address, s2.address]
+      const setsrcs = await medianizer.setSources(selectors)
+      const timestamp = (await ethers.provider.getBlock(setsrcs.blockNumber)).timestamp
+      await send(fb.connect(s1).push, tag, hexZeroPad(hexValue(1000), 32), timestamp + 1000)
+      await send(fb.connect(s2).push, tag, hexZeroPad(hexValue(2000), 32), timestamp + 2000)
+
+      debug('both vals live')
+      await hh.network.provider.request({
+        method: "evm_setNextBlockTimestamp",
+        params: [timestamp + 1000]
+      });
+      await send(medianizer.poke, tag)
+      let res = await fb.pull(medianizer.address, tag)
+      want(Number(res.val)).to.eql(1500)
+
+      debug('second val live')
+      await hh.network.provider.request({
+        method: "evm_setNextBlockTimestamp",
+        params: [timestamp + 2000]
+      });
+      await send(medianizer.poke, tag)
+      res = await fb.pull(medianizer.address, tag)
+      want(Number(res.val)).to.eql(2000)
+
+      debug('no vals live')
+      await fail('ERR_COUNT', medianizer.poke, tag)
+    })
+
     it('One value', async () => {
       const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12

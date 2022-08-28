@@ -37,6 +37,9 @@ contract Medianizer {
 
     for(uint256 i = 0; i < sources.length; i++) {
       (bytes32 val, uint256 _ttl) = feedbase.pull(sources[i], tag);
+      if (block.timestamp > _ttl) {
+        continue;
+      }
       if (count == 0 || val >= data[count - 1]) {
         data[count] = val;
       } else {
@@ -51,6 +54,7 @@ contract Medianizer {
       }
       count++;
     }
+    require(count > 0, 'ERR_COUNT');
 
     bytes32 median;
     if (count % 2 == 0) {
