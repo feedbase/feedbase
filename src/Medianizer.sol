@@ -54,16 +54,15 @@ contract Medianizer {
       }
       count++;
     }
+    require(count > 0, 'ERR_COUNT');
 
-    bytes32 median = 0;
-    if (count > 0) {
-      if (count % 2 == 0) {
-        uint256 val1 = uint256(data[(count / 2) - 1]);
-        uint256 val2 = uint256(data[count / 2]);
-        median = bytes32((val1 + val2) / 2);
-      } else {
-        median = data[(count - 1) / 2];
-      }
+    bytes32 median;
+    if (count % 2 == 0) {
+      uint256 val1 = uint256(data[(count / 2) - 1]);
+      uint256 val2 = uint256(data[count / 2]);
+      median = bytes32((val1 + val2) / 2);
+    } else {
+      median = data[(count - 1) / 2];
     }
 
     feedbase.push(tag, median, minttl);

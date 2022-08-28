@@ -59,9 +59,7 @@ describe('medianizer', () => {
       want(Number(res.val)).to.eql(2000)
 
       debug('no vals live')
-      await send(medianizer.poke, tag)
-      res = await fb.pull(medianizer.address, tag)
-      want(Number(res.val)).to.eql(0)
+      await fail('ERR_COUNT', medianizer.poke, tag)
     })
 
     it('One value', async () => {
