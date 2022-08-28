@@ -52,9 +52,13 @@ contract Medianizer {
         }
         data[j] = val;
       }
+      if (_ttl < minttl) {
+        minttl = _ttl;
+      }
       count++;
     }
     require(count > 0, 'ERR_COUNT');
+    require(count >= quorum, 'ERR_QUORUM');
 
     bytes32 median;
     if (count % 2 == 0) {
