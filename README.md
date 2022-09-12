@@ -21,9 +21,9 @@ Use Feedbase to:
 
 Feedbase factors the oracle workflow into several modular components:
 
-- A `sensor` is anything that provides signed data, providing an attestation about some real-world value.
-- A `relay` is anything that takes a signed message from a sensor, and submits it to a Receiver. Note that an end user's browser is a perfectly valid relay.
-- A `receiver` is a contract that takes a signed message, verifies the signature, then records the value in the feedbase contract. One example is the BasicReceiver contract in this repo. Another example could be a contract that interprets Coinbase's signed price data, verifies the signature, and pushes it to feedbase. We encourage using a Receiver contract to keep a persistent oracle identity while still allowing key rotations.
+- An `oracle` is anything that publishes signed data, providing an attestation about some real-world value. A `primary oracle` is when the data *source* signs the message. A `secondary oracle` is a node that takes data from an existing source which publishes unsigned data, and signs it.
+- A `relay` is anything that takes a signed message from an oracle, and submits it to that oracle's on-chain `receiver`. Note that an end user's browser is a perfectly valid relay. The user's frontend relays the value on demand, and the user pays for gas only when the value is needed on-chain.
+- A `receiver` is a contract that takes a signed message, verifies the signature, then records the value in the feedbase contract. One example is the `BasicReceiver` contract in this repo. Another example could be a contract that interprets Coinbase's signed price data, verifies the signature, and pushes it to feedbase. We encourage using a Receiver contract to keep a persistent oracle identity while still allowing key rotations.
 - An `adapter` is a contract that takes some existing on-chain data source, and pushes the data into feedbase, where it can utilize the network effect of various combinators. Two examples of adapters could be a Chainlink adapter, which pays LINK and ETH gas costs to copy data from the Chainlink oracle network, or a Uniswap TWAP adapter, which pays gas fees to copy Uniswap TWAP values.
 - A `combinator` is a contract that pulls some values from the core feedbase contract, and pushes some aggregated result. The most familiar example is a `Medianizer`. Another example is a TWAP of other feedbase values.
 
@@ -31,7 +31,7 @@ At time of writing, different oracles services perform one or all of these funct
 
 We imagine the ideal oracle flow to look like this:
 
-1) Exchanges act as spot price sensors, exposing a traditional web API that publishes *signed* data.
+1) Exchanges act as primary spot price oracles, exposing a traditional web API that publishes *signed* data.
 2) Any dapp or user, when they need this data, *relay* it into the appropriate *receiver*.
 3) In cases where more than one data feed need to be aggregated, like with a medianizer, the same dapp or user can poke the appropriate *combinator*.
 
@@ -43,7 +43,7 @@ The initial release comes with:
 
 * The core Feedbase object
 * A medianizer, configurable by any owner contract
-* A "receiver" contract that interprets EIP712 signed messages, to decouple sensors and relays and manage key rotations for persistent oracle identities
+* A `BasicReceiver` contract that interprets EIP712 signed messages, to decouple oracles from relays and manage key rotations for persistent oracle identities
 * Basic sensor utilities to easily convert existing web 2.0 APIs into feedbase signed message streams
 
 Here are some more ideas of what you can build:
