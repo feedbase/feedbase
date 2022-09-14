@@ -77,6 +77,11 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
       ttl = Math.floor(Date.now() / 1000);
     });
 
+    it('bad-signer unset', async function () {
+      msg = 'bad-signer';
+      await rec.setSigner(ali.address, false);
+    });
+
     afterEach(async () => {
       const cost = 10;
       const relayFee = 11;
