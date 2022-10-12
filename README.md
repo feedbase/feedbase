@@ -29,11 +29,12 @@ Feedbase factors the oracle workflow into several modular components:
 
 At time of writing, different oracles services perform one or all of these functions, in a vertically integrated manner.
 
-We imagine the ideal oracle flow to look like this:
+We imagine the ideal price feed oracle flow to look like this:
 
-1) Exchanges act as primary spot price oracles, exposing a traditional web API that publishes *signed* data.
-2) Any dapp or user, when they need this data, *relay* it into the appropriate *receiver*.
-3) In cases where more than one data feed need to be aggregated, like with a medianizer, the same dapp or user can poke the appropriate *combinator*.
+1) Exchanges (or whatever the data *source* is) sets up a *receiver* contract, which acts as a persistent on-chain address for that exchange's signed messages. This allows the exchange to manage key rotations while dapps can refer to a single `src` address for that exchange.
+2) The exchange publishes a traditional web2 API that exposes a *signed* message. Later, we will show how to monetize this feed at this step, with a direct payment from the app that needs the data directly to the data source. But for now, since the ecosystem is still mostly working with free data sources and are not monetizing their APIs as oracles, we suggest starting with a "free tier", perhaps a price feed that is delayed by 10 minutes.
+3) Any dapp or user, when they need this data, *relay* it into the appropriate *receiver*. This can be done automatically by the frontend as part of whichever transaction needs to use that data.
+4) In cases where more than one data feed need to be aggregated, like with a medianizer, the same dapp or user can poke the appropriate *combinator*, again in the same transaction where the data is used.
 
 A combinator can itself combine values from other combinators. Receivers and combinators can also manager their own payment flow, using whatever token makes the most sense for them.
 
