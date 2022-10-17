@@ -18,7 +18,7 @@ export function makeUpdateDigest(obj: any): Buffer {
       ],
       Submit: [
         { name: 'tag', type: 'bytes32' },
-        { name: 'seq', type: 'uint256' },
+        { name: 'sec', type: 'uint256' },
         { name: 'ttl', type: 'uint256' },
         { name: 'val', type: 'bytes32' }
       ]
@@ -32,7 +32,7 @@ export function makeUpdateDigest(obj: any): Buffer {
     },
     message: {
       tag: obj.tag,
-      seq: obj.seq,
+      sec: obj.sec,
       ttl: obj.ttl,
       val: obj.val
     }

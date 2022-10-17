@@ -44,7 +44,7 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
   beforeEach(async () => {
     await revert(hh)
     tag = Buffer.from('USDCASH'.padStart(32, '\0'))
-    seq = 1
+    sec = ethers.BigNumber.from(Date.now())
     ttl = 10000000000000
     val = Buffer.from('11'.repeat(32), 'hex')
     chainId = hh.network.config.chainId;
@@ -85,11 +85,10 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
     afterEach(async () => {
       const cost = 10;
       const relayFee = 11;
-
       const digest = makeUpdateDigest({
         tag,
         val: val,
-        seq: seq,
+        sec: sec,
         ttl: ttl,
         chainId: chainId,
         receiver: rec.address
@@ -101,7 +100,7 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
       const sig = ethers.utils.splitSignature(signature)
       // debug(sig);
 
-      await fail(msg, rec.submit, tag, seq, ttl, val, sig.v, sig.r, sig.s);
+      await fail(msg, rec.submit, tag, sec, ttl, val, sig.v, sig.r, sig.s);
     });
 
   });
@@ -113,29 +112,43 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
       want(chainId).equal(recChainId.toNumber())
 
       const digest = makeUpdateDigest({
-        tag, val, seq, ttl,
+        tag, val, sec, ttl,
         chainId: chainId,
         receiver: rec.address
       })
 
       const signature = await ali.signMessage(digest)
       const sig = ethers.utils.splitSignature(signature)
-      await send(rec.submit, tag, seq, ttl, val, sig.v, sig.r, sig.s)
+      await ethers.provider.send("evm_setNextBlockTimestamp", [Date.now()])
+      await send(rec.submit, tag, sec, ttl, val, sig.v, sig.r, sig.s)
     });
 
-    //sequence number must increase
-    it('seq must increase / setCost deposit request submit', async function () {
-      const digest = makeUpdateDigest({
-        tag, val, seq, ttl,
+    //Sec must be increasing
+    it('sec must increase from last tag time / setCost deposit request submit', async function () {
+      //sec = ethers.BigNumber.from(Date.now()).add(10000); // > block.timestamp
+      let digest = makeUpdateDigest({
+        tag, val, sec, ttl,
         chainId: chainId,
         receiver: rec.address
       })
-      const signature = await ali.signMessage(digest)
-      const sig = ethers.utils.splitSignature(signature)
+      let signature = await ali.signMessage(digest)
+      let sig = ethers.utils.splitSignature(signature)
 
-      //submit twice with same seq
-      await rec.submit(tag, seq, ttl, val, sig.v, sig.r, sig.s);
-      await fail('submit-seq', rec.submit, tag, seq, ttl, val, sig.v, sig.r, sig.s);
+      //submit with valid sec. Block.timestamp is >= sec and is the latest seen
+      await ethers.provider.send("evm_setNextBlockTimestamp", [Date.now()])
+      await rec.submit(tag, sec, ttl, val, sig.v, sig.r, sig.s);
+      // Sec is not monotonically increasing
+      await fail('receiver-submit-seq', rec.submit, tag, sec, ttl, val, sig.v, sig.r, sig.s);
+      // Sec is future leaking
+      sec = ethers.BigNumber.from(Date.now()).add(10000);
+      digest = makeUpdateDigest({
+        tag, val, sec, ttl,
+        chainId: chainId,
+        receiver: rec.address
+      })
+      signature = await ali.signMessage(digest)
+      sig = ethers.utils.splitSignature(signature)
+      await fail('receiver-submit-sec', rec.submit, tag, sec, ttl, val, sig.v, sig.r, sig.s);
     });
 
   })

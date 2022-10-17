@@ -27,7 +27,7 @@ contract BasicReceiver {
     Feedbase                 public feedbase;
     address                  public owner;
     mapping(address=>bool)   public isSigner;
-    mapping(address=>uint)   public signerSeq;
+    mapping(bytes32=>uint)   public prevTime;
 
     event OwnerUpdate(address indexed oldOwner, address indexed newOwner);
     event SignerUpdate(address indexed signer, bool isSigner);
@@ -36,13 +36,13 @@ contract BasicReceiver {
         address indexed relayer
       , address indexed signer
       , bytes32 indexed tag
-      , uint256 indexed seq
+      , uint256 indexed sec
       , uint256         ttl
       , bytes32         val
     ) anonymous;
 
     bytes32 public constant SUBMIT_TYPEHASH
-      = keccak256("Submit(bytes32 tag,uint256 seq,uint256 ttl,bytes32 val)");
+      = keccak256("Submit(bytes32 tag,uint256 sec,uint256 ttl,bytes32 val)");
     bytes32 public immutable DOMAIN_SEPARATOR;
 
     modifier auth {
@@ -69,12 +69,12 @@ contract BasicReceiver {
     }
 
     // EIP712 digest
-    function digest(bytes32 tag, uint seq, uint ttl, bytes32 val) public view returns (bytes32) {
+    function digest(bytes32 tag, uint sec, uint ttl, bytes32 val) public view returns (bytes32) {
         string memory header = "\x19Ethereum Signed Message:\n32";
         bytes32 sighash = keccak256(abi.encodePacked(header,
           keccak256(abi.encodePacked(
             "\x19\x01", DOMAIN_SEPARATOR,
-            keccak256(abi.encode( SUBMIT_TYPEHASH, tag, seq, ttl, val ))
+            keccak256(abi.encode( SUBMIT_TYPEHASH, tag, sec, ttl, val ))
           ))
         ));
         return sighash;
@@ -82,22 +82,22 @@ contract BasicReceiver {
 
     function submit(
         bytes32 tag,
-        uint256 seq,
+        uint256 sec,
         uint256 ttl,
         bytes32 val,
         uint8 v, bytes32 r, bytes32 s
     ) public
     {
-        bytes32 sighash = digest(tag, seq, ttl, val);
+        bytes32 sighash = digest(tag, sec, ttl, val);
         address signer = ecrecover(sighash, v, r, s);
 
         require(isSigner[signer], 'receiver-submit-bad-signer');
         require(block.timestamp <  ttl, 'receiver-submit-ttl');
-        require(seq > signerSeq[signer], 'receiver-submit-seq');
+        require(block.timestamp >= sec, 'receiver-submit-sec');
+        require(sec > prevTime[tag], 'receiver-submit-seq');
+        prevTime[tag] = sec;
 
-        signerSeq[signer] = seq;
-
-        emit Submit(msg.sender, signer, tag, seq, ttl, val);
+        emit Submit(msg.sender, signer, tag, sec, ttl, val);
 
         feedbase.push(tag, val, ttl);
     }
