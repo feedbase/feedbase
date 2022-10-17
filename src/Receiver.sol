@@ -94,7 +94,7 @@ contract BasicReceiver {
         require(isSigner[signer], 'receiver-submit-bad-signer');
         require(block.timestamp <  ttl, 'receiver-submit-ttl');
         require(block.timestamp >= sec, 'receiver-submit-sec');
-        require(seq > prevTime[tag], 'receiver-submit-seq');
+        require(sec > prevTime[tag], 'receiver-submit-seq');
         prevTime[tag] = sec;
 
         emit Submit(msg.sender, signer, tag, sec, ttl, val);
