@@ -24,6 +24,12 @@ contract BasicReceiverFactory {
 }
 
 contract BasicReceiver {
+    error ErrOwner();
+    error ErrSigner();
+    error ErrTtl();
+    error ErrSec();
+    error ErrSeq();
+
     Feedbase                 public feedbase;
     address                  public owner;
     mapping(address=>bool)   public isSigner;
@@ -46,7 +52,7 @@ contract BasicReceiver {
     bytes32 public immutable DOMAIN_SEPARATOR;
 
     modifier auth {
-        require(msg.sender == owner, 'receiver-bad-owner');
+        if (msg.sender != owner) revert ErrOwner();
         _;
     }
 
@@ -91,10 +97,10 @@ contract BasicReceiver {
         bytes32 sighash = digest(tag, sec, ttl, val);
         address signer = ecrecover(sighash, v, r, s);
 
-        require(isSigner[signer], 'receiver-submit-bad-signer');
-        require(block.timestamp <  ttl, 'receiver-submit-ttl');
-        require(block.timestamp >= sec, 'receiver-submit-sec');
-        require(sec > prevTime[tag], 'receiver-submit-seq');
+        if (!isSigner[signer]) revert ErrSigner();
+        if (block.timestamp >= ttl) revert ErrTtl();
+        if (block.timestamp < sec) revert ErrSec();
+        if (sec <= prevTime[tag]) revert ErrSeq();
         prevTime[tag] = sec;
 
         emit Submit(msg.sender, signer, tag, sec, ttl, val);
