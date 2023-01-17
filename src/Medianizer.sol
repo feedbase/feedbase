@@ -9,9 +9,9 @@ contract Medianizer {
     error ErrQuorum();
 
     address   public owner;
-    uint256   public quorum = 1;
     address[] public sources;
     Feedbase  public feedbase;
+    uint256   public quorum = 1;
 
     constructor(address fb) {
         owner = msg.sender;
