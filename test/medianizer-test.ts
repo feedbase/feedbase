@@ -1,18 +1,14 @@
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
-import { Contract } from 'hardhat/types'
-import { send, fail, revert, snapshot, want, b32 } from 'minihat'
+import { send, fail, revert, snapshot, want } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
-const { constants, BigNumber, utils } = ethers
-const { MaxUint256 } = constants
-const { formatBytes32String, parseEther, parseBytes32String, hexlify, hexZeroPad, hexValue } = utils
+const { BigNumber, utils } = ethers
+const { formatBytes32String, hexZeroPad, hexValue } = utils
 
 describe('medianizer', () => {
   let fb, medianizer
   let ali, s1, s2, s3, s4, s5
-  const fee = 5
-  const amt = 1000
   const tag = formatBytes32String('MEDCASH')
 
   before(async () => {
@@ -35,7 +31,6 @@ describe('medianizer', () => {
     describe('expired src feeds', async () => {
         let timestamp
         beforeEach(async () => {
-            const sources = [s1, s2]
             const selectors = [s1.address, s2.address]
             const setsrcs = await medianizer.setSources(selectors)
             timestamp = (await ethers.provider.getBlock(setsrcs.blockNumber)).timestamp
@@ -64,12 +59,12 @@ describe('medianizer', () => {
             want(Number(res.val)).to.eql(2000)
 
             debug('no vals live')
-            await fail('ERR_COUNT', medianizer.poke, tag)
+            await fail('ErrQuorum', medianizer.poke, tag)
         })
 
         it('quorum', async () => {
             await send(medianizer.setQuorum, 3)
-            await fail('ERR_QUORUM', medianizer.poke, tag)
+            await fail('ErrQuorum', medianizer.poke, tag)
 
             await send(medianizer.setQuorum, 2)
             await hh.network.provider.request({
@@ -78,7 +73,7 @@ describe('medianizer', () => {
             });
 
             await send(medianizer.poke, tag)
-            await fail('ERR_QUORUM', medianizer.poke, tag)
+            await fail('ErrQuorum', medianizer.poke, tag)
             await send(medianizer.setQuorum, 1)
             await send(medianizer.poke, tag)
             await send(medianizer.poke, tag)
@@ -88,7 +83,7 @@ describe('medianizer', () => {
                 params: [timestamp + 2000]
             });
             await send(medianizer.poke, tag)
-            await fail('ERR_COUNT', medianizer.poke, tag) // err order
+            await fail('ErrQuorum', medianizer.poke, tag) // err order
         })
     })
 

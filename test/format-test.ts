@@ -1,4 +1,4 @@
-import { utils, BigNumber } from 'ethers'
+import { BigNumber } from 'ethers'
 
 const debug = require('debug')('feedbase:format')
 const fmt = require('..').format

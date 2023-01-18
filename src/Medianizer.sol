@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.17;
 
 import './Feedbase.sol';
 
 contract Medianizer {
+    error ErrOwner();
+    error ErrQuorum();
+
     address   public owner;
-    uint256   public quorum;
     address[] public sources;
     Feedbase  public feedbase;
+    uint256   public quorum = 1;
 
     constructor(address fb) {
         owner = msg.sender;
@@ -16,17 +19,18 @@ contract Medianizer {
     }
 
     function setOwner(address newOwner) public {
-        require(msg.sender == owner, 'ERR_OWNER');
+        if (msg.sender != owner) revert ErrOwner();
         owner = newOwner;
     }
 
     function setSources(address[] calldata newSources) public {
-        require(msg.sender == owner, 'ERR_OWNER');
+        if (msg.sender != owner) revert ErrOwner();
         sources = newSources;
     }
 
     function setQuorum(uint newQuorum) public {
-        require(msg.sender == owner, 'ERR_OWNER');
+        if (msg.sender != owner) revert ErrOwner();
+        if (newQuorum == 0) revert ErrQuorum();
         quorum = newQuorum;
     }
 
@@ -57,8 +61,7 @@ contract Medianizer {
             }
             count++;
         }
-        require(count > 0, 'ERR_COUNT');
-        require(count >= quorum, 'ERR_QUORUM');
+        if (count < quorum) revert ErrQuorum();
 
         bytes32 median;
         if (count % 2 == 0) {

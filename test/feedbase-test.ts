@@ -1,6 +1,6 @@
 import * as hh from 'hardhat'
 import { ethers, network } from 'hardhat'
-import { send, fail, chai, want, snapshot, revert } from 'minihat'
+import { send, want, snapshot, revert } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
 const { hexlify } = ethers.utils
@@ -18,7 +18,6 @@ const use = (n) => {
 }
 
 describe('feedbase', () => {
-  const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
   let tag, seq, sec, ttl, val
   let ali, bob
   let ALI, BOB
@@ -85,7 +84,6 @@ describe('feedbase', () => {
   });
 
   it('Push event', async function () {
-    const bal = 1000
     const tx = await fb.push(tag, val, ttl)
     const { events } = await tx.wait()
     const [{ args }] = events

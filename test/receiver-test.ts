@@ -2,7 +2,7 @@ import { makeUpdateDigest } from '../scripts'
 
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
-import { want, send, fail, snapshot, revert, U256_MAX } from 'minihat'
+import { want, send, fail, snapshot, revert } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
 
@@ -12,9 +12,8 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
   let ALI, BOB;
   let fb, fb_type;
   let rec, rec_type;
-  let recfab, recfab_type;
 
-  let tag, seq, sec, ttl, val;
+  let tag, sec, ttl, val;
   let chainId;
 
   const use = (n) => {
@@ -73,18 +72,16 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
   describe('submit preconditions', () => {
     let msg;
     it('ttl', async function () {
-      msg = 'ttl';
+      msg = 'ErrTtl';
       ttl = Math.floor(Date.now() / 1000);
     });
 
     it('bad-signer unset', async function () {
-      msg = 'bad-signer';
+      msg = 'ErrSigner';
       await rec.setSigner(ali.address, false);
     });
 
     afterEach(async () => {
-      const cost = 10;
-      const relayFee = 11;
       const digest = makeUpdateDigest({
         tag,
         val: val,
@@ -138,7 +135,7 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
       await ethers.provider.send("evm_setNextBlockTimestamp", [Date.now()])
       await rec.submit(tag, sec, ttl, val, sig.v, sig.r, sig.s);
       // Sec is not monotonically increasing
-      await fail('receiver-submit-seq', rec.submit, tag, sec, ttl, val, sig.v, sig.r, sig.s);
+      await fail('ErrSeq', rec.submit, tag, sec, ttl, val, sig.v, sig.r, sig.s);
       // Sec is future leaking
       sec = ethers.BigNumber.from(Date.now()).add(10000);
       digest = makeUpdateDigest({
@@ -148,7 +145,7 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
       })
       signature = await ali.signMessage(digest)
       sig = ethers.utils.splitSignature(signature)
-      await fail('receiver-submit-sec', rec.submit, tag, sec, ttl, val, sig.v, sig.r, sig.s);
+      await fail('ErrSec', rec.submit, tag, sec, ttl, val, sig.v, sig.r, sig.s);
     });
 
   })
