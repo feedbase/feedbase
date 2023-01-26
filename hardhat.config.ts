@@ -16,5 +16,13 @@ export default {
   },
   paths: {
     sources: "src"
+  },
+  networks: {
+      hardhat: {
+          forking: {
+              url: "https://mainnet.infura.io/v3/484ea25767d643f392897c6dfef786c1",
+              blockNumber: 16445606
+          }
+      }
   }
 }
