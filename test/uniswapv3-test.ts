@@ -19,7 +19,8 @@ const use = (n) => {
 
 describe('uniswapv3', () => {
   const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
-  const POOL_ADDR = "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640"
+  const ETH_USD_POOL_ADDR = "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640"
+  const BTC_USD_POOL_ADDR = "0x99ac8cA7087fA4A2A1FB6357269965A2014ABc35"
   let tag, seq, sec, ttl, val
   let ali, bob, cat
   let ALI, BOB, CAT
@@ -74,8 +75,8 @@ describe('uniswapv3', () => {
       )
   })
 
-  it('look', async function () {
-      await adapt.setConfig(tag, [POOL_ADDR, 500, 100, true])
+  it('look reverse', async function () {
+      await adapt.setConfig(tag, [ETH_USD_POOL_ADDR, 500, 100, true])
 
       let [price, ttl] = await fb.pull(adapt.address, tag)
       want(price).eql(constants.HashZero)
@@ -91,6 +92,35 @@ describe('uniswapv3', () => {
       let ethusd = BigNumber.from(price).div(BigNumber.from(10).pow(15));
       want(ethusd.gt(1000)).true
       want(ethusd.lt(2000)).true
+  })
+
+  it('look normal', async function () {
+      await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 500, 100, false])
+
+      let [price, ttl] = await fb.pull(adapt.address, tag)
+      want(price).eql(constants.HashZero)
+      want(ttl).eql(constants.Zero)
+
+      let look = await send(adapt.look, tag)
+      ;[price, ttl] = await fb.pull(adapt.address, tag)
+
+      want(BigNumber.from(price).gt(constants.Zero)).true
+      let timestamp = (await ethers.provider.getBlock(look.blockNumber)).timestamp;
+      want(ttl).eql(BigNumber.from(timestamp + 100))
+      // USDC has 6 decimals, WBTC has 8...scale down by RAY/(10^diff)
+      let btcusd = BigNumber.from(price).div(BigNumber.from(10).pow(25));
+      want(btcusd.gt(20000)).true
+      want(btcusd.lt(30000)).true
+  })
+
+  it('look zero range', async function () {
+      await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 0, 100, false])
+
+      let [price, ttl] = await fb.pull(adapt.address, tag)
+      want(price).eql(constants.HashZero)
+      want(ttl).eql(constants.Zero)
+
+      await fail("twap range can't be zero", adapt.look, tag)
   })
 
 })

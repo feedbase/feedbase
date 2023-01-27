@@ -51,6 +51,7 @@ contract UniswapV3Adapter {
 
         uint32[] memory times = new uint32[](2);
         uint32 range  = uint32(config.range);
+        require(range > 0, "twap range can't be zero");
         times[0] = 0;
         times[1] = range;
         (int56[] memory cumulatives,) = IUniswapV3Pool(apool).observe(times);
