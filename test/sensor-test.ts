@@ -1,9 +1,8 @@
 
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
-import { getter } from '../scripts/sensors/USDETH_coingecko'
 import * as sensor from '../scripts/sensor'
-import { want, send, fail, snapshot, revert, U256_MAX } from 'minihat'
+import { send, snapshot, revert } from 'minihat'
 
 const debug = require('debug')('feedbase:sensor')
 
@@ -13,7 +12,6 @@ describe('receiver BasicReceiver BasicReceiverFactory', ()=>{
   let ALI, BOB;
   let fb, fb_type;
   let rec, rec_type;
-  let recfab, recfab_type;
   let opts = { receiver:undefined, chainId:undefined, signer:undefined};
 
   let tag, seq, sec, ttl, val;
