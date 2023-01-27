@@ -3,7 +3,6 @@
 pragma solidity 0.8.15;
 
 import "../Feedbase.sol";
-import "hardhat/console.sol";
 
 interface IUniswapV3Pool {
     function observe(uint32[] calldata secondsAgos) external view
@@ -25,6 +24,7 @@ contract UniswapV3Adapter {
     mapping(address=>bool) public wards;
     mapping(bytes32=>Config) public configs;
     uint constant RAY = 10 ** 27;
+    uint constant X96 = 2 ** 96;
 
     constructor(Feedbase _fb) {
         wards[msg.sender] = true;
@@ -40,20 +40,8 @@ contract UniswapV3Adapter {
         wards[_owner] = ok;
     }
 
-    function setPool(bytes32 tag, address pool) public _ward_ {
-        configs[tag].pool = pool;
-    }
-
-    function setTTL(bytes32 tag, uint ttl) public _ward_ {
-        configs[tag].ttl = ttl;
-    }
-
-    function setRange(bytes32 tag, uint range) public _ward_ {
-        configs[tag].range = range;
-    }
-
-    function setReverse(bytes32 tag, bool reverse) public _ward_ {
-        configs[tag].reverse = reverse;
+    function setConfig(bytes32 tag, Config memory config) public _ward_ {
+        configs[tag] = config;
     }
 
     function look(bytes32 tag) public {
@@ -70,12 +58,17 @@ contract UniswapV3Adapter {
         int   delt         = int(cumulatives[0]) - int(cumulatives[1]);
         int24 meantick     = int24(delt / int(uint(range)));
         uint  sqrtPriceX96 = getSqrtRatioAtTick(meantick);
-        uint  priceray     = sqrtPriceX96 ** 2 / (2 ** 96) * RAY / (2 ** 96);
+        uint  priceray     = sqrtPriceX96 ** 2 / (X96) * RAY / (X96);
         if (config.reverse) {
             priceray = RAY * RAY / priceray;
         }
         fb.push(tag, bytes32(priceray), block.timestamp + config.ttl);
     }
+
+    /////////////////////////////////////////////////////////////////////////////////
+    // this section copied from UniswapV3 and modified to compile:
+    // https://github.com/Uniswap/v3-core/blob/main/contracts/libraries/TickMath.sol
+    // SPDX-License-Identifier: GPL-2.0-or-later
 
     /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128
     int24 internal constant MIN_TICK = -887272;
@@ -125,6 +118,7 @@ contract UniswapV3Adapter {
         sqrtPriceX96 = uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1));
     }
 
+    ////////////////////////////////////////////////
 
 }
 

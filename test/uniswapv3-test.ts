@@ -54,9 +54,19 @@ describe('uniswapv3', () => {
       return ttl
   }
 
+  async function setttl(tag, newttl) {
+      let [a, b, , c] = await adapt.configs(tag)
+      await send(adapt.setConfig, tag, [a, b, newttl, c])
+  }
+
   async function getpool(tag) {
       let [pool,,] = await adapt.configs(tag)
       return pool
+  }
+
+  async function setpool(usr, tag, newpool) {
+      let [, a, b, c] = await adapt.configs(tag)
+      await send(adapt.connect(usr).setConfig, tag, [newpool, a, b, c])
   }
 
   async function getrange(tag) {
@@ -64,6 +74,15 @@ describe('uniswapv3', () => {
       return range
   }
 
+  async function setrange(tag, newrange) {
+      let [a,,b, c] = await adapt.configs(tag)
+      await send(adapt.setConfig, tag, [a, newrange, b, c])
+  }
+
+  async function setreverse(tag, newreverse) {
+      let [a,b,c,] = await adapt.configs(tag)
+      await send(adapt.setConfig, tag, [a, b, c, newreverse])
+  }
 
   it('ward', async function () {
       want(await adapt.wards(ALI)).equal(true);
@@ -73,32 +92,25 @@ describe('uniswapv3', () => {
       await fail('unwarded sender', adapt.connect(cat).ward, CAT, true);
 
       await send(adapt.ward, BOB, true);
-      await send(adapt.connect(bob).setPool, b32('hello'), CAT)
-      await send(adapt.connect(bob).setTTL, b32('hello'), ttl);
+      await send(adapt.connect(bob).setConfig, b32('hello'), [CAT, 2, 3, true])
+
       await send(adapt.ward, BOB, false)
-      await fail('unwarded sender', adapt.connect(bob).setPool, b32('hello'), CAT)
-      await fail('unwarded sender', adapt.connect(bob).setTTL, b32('hello'), ttl);
+      await fail('unwarded sender', adapt.connect(bob).setConfig, b32('hello'), [CAT, 2, 3, true])
       await fail('unwarded sender', adapt.connect(bob).ward, CAT, false)
- 
   })
 
-  it('setPool', async function () {
-      want(await getpool(tag)).equal(constants.AddressZero)
-      await send(adapt.setPool, tag, CAT)
-      want(await getpool(tag)).equal(CAT)
-  })
-
-  it('setTTL', async function () {
-      want(await getttl(tag)).eql(constants.Zero)
-      await send(adapt.setTTL, tag, 1)
-      want(await getttl(tag)).eql(constants.One)
+  it('setConfig', async function () {
+      want(await adapt.configs(tag)).eql(
+          [constants.AddressZero, BigNumber.from(0), BigNumber.from(0), false]
+      )
+      await send(adapt.setConfig, tag, [CAT, 2, 3, true])
+      want(await adapt.configs(tag)).eql(
+          [CAT, BigNumber.from(2), BigNumber.from(3), true]
+      )
   })
 
   it('look', async function () {
-      await send(adapt.setPool, tag, POOL_ADDR)
-      await send(adapt.setTTL, tag, 100)
-      await send(adapt.setRange, tag, 500)
-      await send(adapt.setReverse, tag, true)
+      await adapt.setConfig(tag, [POOL_ADDR, 500, 100, true])
 
       let [price, ttl] = await fb.pull(adapt.address, tag)
       want(price).eql(constants.HashZero)
