@@ -98,6 +98,7 @@ describe('uniswapv3', () => {
       await send(adapt.setPool, tag, POOL_ADDR)
       await send(adapt.setTTL, tag, 100)
       await send(adapt.setRange, tag, 500)
+      await send(adapt.setReverse, tag, true)
 
       let [price, ttl] = await fb.pull(adapt.address, tag)
       want(price).eql(constants.HashZero)
@@ -109,6 +110,10 @@ describe('uniswapv3', () => {
       want(BigNumber.from(price).gt(constants.Zero)).true
       let timestamp = (await ethers.provider.getBlock(look.blockNumber)).timestamp;
       want(ttl).eql(BigNumber.from(timestamp + 100))
+      // USDC only has 6 decimals
+      let ethusd = BigNumber.from(price).div(BigNumber.from(10).pow(15));
+      want(ethusd.gt(1000)).true
+      want(ethusd.lt(2000)).true
   })
 
 })
