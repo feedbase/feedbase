@@ -49,41 +49,6 @@ describe('uniswapv3', () => {
     val = Buffer.from('11'.repeat(32), 'hex')
   })
 
-  async function getttl(tag) {
-      let [,,ttl] = await adapt.configs(tag)
-      return ttl
-  }
-
-  async function setttl(tag, newttl) {
-      let [a, b, , c] = await adapt.configs(tag)
-      await send(adapt.setConfig, tag, [a, b, newttl, c])
-  }
-
-  async function getpool(tag) {
-      let [pool,,] = await adapt.configs(tag)
-      return pool
-  }
-
-  async function setpool(usr, tag, newpool) {
-      let [, a, b, c] = await adapt.configs(tag)
-      await send(adapt.connect(usr).setConfig, tag, [newpool, a, b, c])
-  }
-
-  async function getrange(tag) {
-      let [,range,] = await adapt.configs(tag)
-      return range
-  }
-
-  async function setrange(tag, newrange) {
-      let [a,,b, c] = await adapt.configs(tag)
-      await send(adapt.setConfig, tag, [a, newrange, b, c])
-  }
-
-  async function setreverse(tag, newreverse) {
-      let [a,b,c,] = await adapt.configs(tag)
-      await send(adapt.setConfig, tag, [a, b, c, newreverse])
-  }
-
   it('ward', async function () {
       want(await adapt.wards(ALI)).equal(true);
       want(await adapt.wards(BOB)).equal(false);
