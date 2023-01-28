@@ -59,7 +59,7 @@ contract UniswapV3Adapter {
         int   delt         = int(cumulatives[0]) - int(cumulatives[1]);
         int24 meantick     = int24(delt / int(uint(range)));
         uint  sqrtPriceX96 = getSqrtRatioAtTick(meantick);
-        uint  priceray     = sqrtPriceX96 ** 2 / (X96) * RAY / (X96);
+        uint  priceray     = sqrtPriceX96 ** 2 / X96 * RAY / X96;
         if (config.reverse) {
             priceray = RAY * RAY / priceray;
         }

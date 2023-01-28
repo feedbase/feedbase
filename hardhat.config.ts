@@ -20,7 +20,7 @@ export default {
   networks: {
       hardhat: {
           forking: {
-              url: "https://mainnet.infura.io/v3/484ea25767d643f392897c6dfef786c1",
+              url: process.env["RPC_URL"],
               blockNumber: 16445606
           }
       }
