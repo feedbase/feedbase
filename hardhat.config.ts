@@ -16,5 +16,13 @@ export default {
   },
   paths: {
     sources: "src"
+  },
+  networks: {
+      hardhat: {
+          forking: {
+              url: process.env["RPC_URL"],
+              blockNumber: 16445606
+          }
+      }
   }
 }

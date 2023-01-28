@@ -73,7 +73,7 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
     let msg;
     it('ttl', async function () {
       msg = 'ErrTtl';
-      ttl = Math.floor(Date.now() / 1000);
+      ttl = Math.floor((await ethers.provider.getBlock("latest")).timestamp / 1000);
     });
 
     it('bad-signer unset', async function () {
