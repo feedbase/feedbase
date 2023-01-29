@@ -121,9 +121,7 @@ describe('divider', () => {
             const res = await fb.pull(divider.address, tag)
             want(res).eql([ethers.utils.hexZeroPad(ray(2.5), 32), BigNumber.from(timestamp + 97)])
         })
-
     })
-
 })
 
 

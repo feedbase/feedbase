@@ -35,7 +35,6 @@ contract Divider is Ward {
         require(config.tags.length == n, 'sources.length != tags.length');
         require(n > 1, 'not enough operands to divide');
 
-        
         (bytes32 _res, uint minttl) = feedbase.pull(
             config.sources[0], config.tags[0]
         );
