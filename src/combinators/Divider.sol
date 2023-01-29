@@ -32,8 +32,8 @@ contract Divider is Ward {
     function poke(bytes32 tag) public {
         Config storage config = configs[tag];
         uint n = config.sources.length;
-        require(n > 1, 'not enough operands to divide');
         require(config.tags.length == n, 'sources.length != tags.length');
+        require(n > 1, 'not enough operands to divide');
 
         
         (bytes32 _res, uint minttl) = feedbase.pull(
