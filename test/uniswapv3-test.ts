@@ -54,15 +54,15 @@ describe('uniswapv3', () => {
       want(await adapt.wards(ALI)).equal(true);
       want(await adapt.wards(BOB)).equal(false);
       want(await adapt.wards(CAT)).equal(false);
-      await fail('unwarded sender', adapt.connect(bob).ward, CAT, true);
-      await fail('unwarded sender', adapt.connect(cat).ward, CAT, true);
+      await fail('ErrWard', adapt.connect(bob).ward, CAT, true);
+      await fail('ErrWard', adapt.connect(cat).ward, CAT, true);
 
       await send(adapt.ward, BOB, true);
       await send(adapt.connect(bob).setConfig, b32('hello'), [CAT, 2, 3, true])
 
       await send(adapt.ward, BOB, false)
-      await fail('unwarded sender', adapt.connect(bob).setConfig, b32('hello'), [CAT, 2, 3, true])
-      await fail('unwarded sender', adapt.connect(bob).ward, CAT, false)
+      await fail('ErrWard', adapt.connect(bob).setConfig, b32('hello'), [CAT, 2, 3, true])
+      await fail('ErrWard', adapt.connect(bob).ward, CAT, false)
   })
 
   it('setConfig', async function () {
