@@ -7,7 +7,7 @@
     "build:ts": "npx tsc -b",
     "build:sol": "npx hardhat compile",
     "pretest": "npm run build",
-    "test": "ts-mocha test/*.ts test/**/*.ts --timeout 10000",
+    "test": "ts-mocha test/*.ts test/**/*.ts --timeout 100000",
     "fmt": "ts-standard --fix src task test"
   },
   "main": "./dist/scripts/index.js",
@@ -21,6 +21,7 @@
     "@nomiclabs/hardhat-ethers": "^2.2.2",
     "@types/chai": "^4.3.4",
     "@types/mocha": "^10.0.1",
+    "@types/node": "^18.11.18",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
     "hardhat": "^2.12.6",

@@ -3,6 +3,7 @@
 pragma solidity 0.8.17;
 
 import "../Feedbase.sol";
+import { Ward } from '../mixin/ward.sol';
 
 interface IUniswapV3Pool {
     function observe(uint32[] calldata secondsAgos) external view
@@ -13,7 +14,7 @@ interface IUniswapV3Pool {
 }
 
 
-contract UniswapV3Adapter {
+contract UniswapV3Adapter is Ward {
     struct Config {
         address pool;
         uint    range;
@@ -21,23 +22,12 @@ contract UniswapV3Adapter {
         bool    reverse;
     }
     Feedbase immutable fb;
-    mapping(address=>bool) public wards;
     mapping(bytes32=>Config) public configs;
     uint constant RAY = 10 ** 27;
     uint constant X96 = 2 ** 96;
 
-    constructor(Feedbase _fb) {
-        wards[msg.sender] = true;
+    constructor(Feedbase _fb) Ward() {
         fb = _fb;
-    }
-
-    modifier _ward_ {
-        require(wards[msg.sender], "unwarded sender");
-        _;
-    }
-
-    function ward(address _owner, bool ok) public _ward_ {
-        wards[_owner] = ok;
     }
 
     function setConfig(bytes32 tag, Config memory config) public _ward_ {
