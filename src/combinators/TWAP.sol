@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import '../Feedbase.sol';
 import { Ward } from '../mixin/ward.sol';
+import 'hardhat/console.sol';
 
 contract TWAP is Ward {
     struct Config {
@@ -18,12 +19,8 @@ contract TWAP is Ward {
     }
 
     mapping(bytes32=>Config) configs;
-
-    // observation, but not in a struct because
-    // solidity won't allow it
-    mapping(bytes32=>Observation[2]) _obs;
-
-    Feedbase  public fb;
+    mapping(bytes32=>Observation[2]) obs;
+    Feedbase public immutable fb;
 
     constructor(address _fb) Ward() {
         fb = Feedbase(_fb);
@@ -31,8 +28,8 @@ contract TWAP is Ward {
     
     function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
         configs[tag] = _config;
-        Observation storage first = _obs[tag][0];
-        Observation storage last  = _obs[tag][1];
+        Observation storage first = obs[tag][0];
+        Observation storage last  = obs[tag][1];
         first.time = block.timestamp - _config.range;
         last.time = block.timestamp;
     }
@@ -53,23 +50,24 @@ contract TWAP is Ward {
         uint spot = uint(_spot);
         require(spot > 0, "TWAP/invalid-feed-result");
 
-        Observation storage first = _obs[tag][0];
-        Observation storage last  = _obs[tag][1];
-        uint256 elapsed = block.timestamp - last.time;
+        Observation storage first = obs[tag][0];
+        Observation storage last  = obs[tag][1];
+        uint256 elapsed    = block.timestamp - last.time;
+        uint    capped     = elapsed > config.range ? config.range : elapsed;
         require(elapsed > 0, "TWAP/no-time-elapsed");
         // assume spot stayed constant since last observation in window
-        uint nexttally = last.tally + last.spot * (block.timestamp - last.time - 1) + spot;
+        uint nexttally = last.tally + last.spot * (capped - 1) + spot;
 
         // assume uniform in old window to calculate pseudo-tally
         // advance twap window by elapsed time
         uint pseudospot = (last.tally - first.tally) / config.range;
-        uint pseudotally = first.tally + pseudospot * elapsed;
-        _obs[tag][0]= Observation(
+        uint pseudotally = first.tally + pseudospot * capped;
+        obs[tag][0]= Observation(
             pseudotally,
             pseudospot,
             first.time + elapsed
         );
-        _obs[tag][1] = Observation(nexttally, spot, block.timestamp);
+        obs[tag][1] = Observation(nexttally, spot, block.timestamp);
 
         // push twap
         fb.push(tag, bytes32((nexttally - pseudotally) / config.range), config.ttl);
