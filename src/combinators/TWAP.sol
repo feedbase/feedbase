@@ -11,11 +11,6 @@ contract TWAP is Ward {
         uint    ttl;
     }
 
-    struct Cache {
-        uint first;
-        uint last;
-    }
-
     struct Observation {
         uint tally;
         uint spot;
@@ -29,19 +24,17 @@ contract TWAP is Ward {
     mapping(bytes32=>Observation[2]) _obs;
 
     Feedbase  public fb;
-    uint immutable precision;
 
-    constructor(address _fb, uint _precision) Ward() {
+    constructor(address _fb) Ward() {
         fb = Feedbase(_fb);
-        precision = _precision;
     }
     
     function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
         configs[tag] = _config;
-        Observation storage firstob = _obs[tag][0];
-        Observation storage lastob  = _obs[tag][1];
-        firstob.time = block.timestamp - _config.range;
-        lastob.time = block.timestamp;
+        Observation storage first = _obs[tag][0];
+        Observation storage last  = _obs[tag][1];
+        first.time = block.timestamp - _config.range;
+        last.time = block.timestamp;
     }
 
     // can't have a public variable
@@ -60,24 +53,26 @@ contract TWAP is Ward {
         uint spot = uint(_spot);
         require(spot > 0, "TWAP/invalid-feed-result");
 
-        Observation storage firstob = _obs[tag][0];
-        Observation storage lastob  = _obs[tag][1];
-        uint256 elapsed = block.timestamp - lastob.time;
+        Observation storage first = _obs[tag][0];
+        Observation storage last  = _obs[tag][1];
+        uint256 elapsed = block.timestamp - last.time;
+        require(elapsed > 0, "TWAP/no-time-elapsed");
         // assume spot stayed constant since last observation in window
-        uint nexttally = lastob.tally + lastob.spot * (block.timestamp - lastob.time - 1) + spot;
+        uint nexttally = last.tally + last.spot * (block.timestamp - last.time - 1) + spot;
 
         // assume uniform in old window to calculate pseudo-tally
         // advance twap window by elapsed time
-        uint pseudo = (lastob.tally - firstob.tally) / config.range;
+        uint pseudospot = (last.tally - first.tally) / config.range;
+        uint pseudotally = first.tally + pseudospot * elapsed;
         _obs[tag][0]= Observation(
-            firstob.tally + pseudo * elapsed,
-            pseudo,
-            firstob.time + elapsed
+            pseudotally,
+            pseudospot,
+            first.time + elapsed
         );
         _obs[tag][1] = Observation(nexttally, spot, block.timestamp);
 
         // push twap
-        fb.push(tag, bytes32(nexttally / config.range), config.ttl);
+        fb.push(tag, bytes32((nexttally - pseudotally) / config.range), config.ttl);
     }
 
 }
