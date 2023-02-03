@@ -8,7 +8,6 @@ contract TWAP is Ward {
     struct Config {
         address source;
         uint    range;
-        uint    granularity;
         uint    ttl;
     }
 
@@ -27,9 +26,7 @@ contract TWAP is Ward {
 
     // observation, but not in a struct because
     // solidity won't allow it
-    mapping(bytes32=>Observation[]) _obs;
-
-    mapping(bytes32=>Cache) caches;
+    mapping(bytes32=>Observation[2]) _obs;
 
     Feedbase  public fb;
     uint immutable precision;
@@ -41,20 +38,10 @@ contract TWAP is Ward {
     
     function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
         configs[tag] = _config;
-        uint granularity = _config.granularity;
-        Observation[] storage obs = _obs[tag];
-        uint len = obs.length;
-        if (len < granularity) {
-            Observation memory nil = Observation(0, 0, 0);
-            for (len = obs.length; len < granularity; len++) {
-                obs.push(nil);
-            }
-        } else {
-            for (len = obs.length; len > granularity; len--) {
-                obs.pop();
-            }
-        }
-        delete caches[tag];
+        Observation storage firstob = _obs[tag][0];
+        Observation storage lastob  = _obs[tag][1];
+        firstob.time = block.timestamp - _config.range;
+        lastob.time = block.timestamp;
     }
 
     // can't have a public variable
@@ -68,40 +55,29 @@ contract TWAP is Ward {
     function poke(bytes32 tag) external {
         Config storage config = configs[tag];
 
-        uint period = config.range / config.granularity;
         // ttl doesn't matter too much, just get a delayed result
-        (bytes32 _spot,) = fb.pull(configs[tag].source, tag);
+        (bytes32 _spot,) = fb.pull(config.source, tag);
         uint spot = uint(_spot);
-
         require(spot > 0, "TWAP/invalid-feed-result");
 
-        uint first = caches[tag].first;
-        uint last = caches[tag].last;
-        Observation storage firstob = _obs[tag][first];
-        Observation storage lastob  = _obs[tag][last];
-        uint256 elapsed = (0 == first && 0 == last) ?
-            period : block.timestamp - lastob.time;
-        require(elapsed > period, "TWAP/wait-more");
+        Observation storage firstob = _obs[tag][0];
+        Observation storage lastob  = _obs[tag][1];
+        uint256 elapsed = block.timestamp - lastob.time;
         // assume spot stayed constant since last observation in window
-        uint nexttally = lastob.tally + lastob.spot * (block.timestamp - lastob.time) + spot;
+        uint nexttally = lastob.tally + lastob.spot * (block.timestamp - lastob.time - 1) + spot;
+
+        // assume uniform in old window to calculate pseudo-tally
+        // advance twap window by elapsed time
+        uint pseudo = (lastob.tally - firstob.tally) / config.range;
+        _obs[tag][0]= Observation(
+            firstob.tally + pseudo * elapsed,
+            pseudo,
+            firstob.time + elapsed
+        );
+        _obs[tag][1] = Observation(nexttally, spot, block.timestamp);
 
         // push twap
-        fb.push(tag, bytes32(nexttally / (block.timestamp - firstob.time)), config.ttl);
-
-        // advance twap window by number of periods passed
-        uint advance = elapsed / period;
-        Cache storage cache = caches[tag];
-        cache.first = (first + advance) % config.granularity;
-        cache.last = (last + advance) % config.granularity;
-        _obs[tag][cache.last] = Observation(nexttally, spot, block.timestamp);
-
-        // very cool trick because the new first might have invalid data
-        // assume uniform in old window to calculate observation
-        _obs[tag][cache.first] = Observation(
-            firstob.tally + (lastob.tally - firstob.tally) * advance / (advance + config.range),
-            (lastob.tally - firstob.tally) / config.range,
-            (lastob.time - firstob.time) * advance / (advance + config.range)
-        );
+        fb.push(tag, bytes32(nexttally / config.range), config.ttl);
     }
 
 }
