@@ -20,14 +20,13 @@ interface AggregatorInterface {
 
 contract ChainlinkAdapter is Ward {
     struct Config {
-        uint    range;
         uint    ttl;
         uint    precision;
     }
     Feedbase public fb;
     AggregatorInterface public agg;
 
-    mapping(bytes32=>Config) configs;
+    mapping(bytes32=>Config) public configs;
 
     constructor(address _fb, address _agg) Ward() {
         agg = AggregatorInterface(_agg);
@@ -45,7 +44,7 @@ contract ChainlinkAdapter is Ward {
 
         // expand/truncate
         Config storage config = configs[tag];
-        uint fromprecision = agg.decimals();
+        uint fromprecision = 10 ** agg.decimals();
         uint toprecision = config.precision;
         if (toprecision > fromprecision) {
             res *= toprecision / fromprecision;

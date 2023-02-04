@@ -131,7 +131,6 @@ describe('twap', () => {
             await send(twap.poke, tag)
 
             await mine(hh, range / 2)
- 
 
             await send(twap.poke, tag)
             let [val,] = await fb.pull(twap.address, tag)
@@ -141,7 +140,6 @@ describe('twap', () => {
             await send(twap.poke, tag)
             ;[val,] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val).toNumber()).to.be.closeTo(price.toNumber(), 5)
-
 
             await send(fb.push, tag, b32(price.div(2)), constants.MaxUint256)
             await send(twap.poke, tag)
