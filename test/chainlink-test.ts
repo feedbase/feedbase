@@ -36,7 +36,7 @@ describe('chainlink', () => {
     fb = await FeedbaseFactory.deploy()
 
     const ChainlinkAdapterFactory = await ethers.getContractFactory('ChainlinkAdapter')
-    adapt = await ChainlinkAdapterFactory.deploy(fb.address, XAU_USD_AGG_ADDR)
+    adapt = await ChainlinkAdapterFactory.deploy(fb.address)
 
     use(0)
 
@@ -49,7 +49,7 @@ describe('chainlink', () => {
     sec = Math.floor(Date.now() / 1000)
     ttl = 10000000000000
     val = Buffer.from('11'.repeat(32), 'hex')
-    config = [BigNumber.from(1), BigNumber.from(2)]
+    config = [XAU_USD_AGG_ADDR, BigNumber.from(1), BigNumber.from(2)]
     precision = ray(1)
   })
 
@@ -69,19 +69,28 @@ describe('chainlink', () => {
   })
 
   it('setConfig', async function () {
-      want(await adapt.configs(tag)).eql([constants.Zero, constants.Zero])
+      want(await adapt.configs(tag)).eql([constants.AddressZero, constants.Zero, constants.Zero])
       await send(adapt.setConfig, tag, config)
       want(await adapt.configs(tag)).eql(config)
   })
 
-  it('look', async function () {
-      await send(adapt.setConfig, tag, [BigNumber.from(ttl), precision])
+  it('look expand', async function () {
+      await send(adapt.setConfig, tag, [XAU_USD_AGG_ADDR, BigNumber.from(ttl), precision])
       await send(adapt.look, tag)
       let [price, TTL] = await fb.pull(adapt.address, tag)
       // XAU-USD price around 1900 lately
       want(BigNumber.from(price).div(RAY).toNumber()).to.be.closeTo(2000, 500)
   })
 
+  it('look truncate', async function () {
+      await send(adapt.setConfig, tag, [XAU_USD_AGG_ADDR, BigNumber.from(ttl), 1])
+      await send(adapt.look, tag)
+      let [price, TTL] = await fb.pull(adapt.address, tag)
+      // XAU-USD price around 1900 lately
+      want(BigNumber.from(price).toNumber()).to.be.closeTo(2000, 500)
+  })
+
+  // TODO test negative price, like oil or something
 })
 
 

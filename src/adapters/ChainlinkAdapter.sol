@@ -20,16 +20,15 @@ interface AggregatorInterface {
 
 contract ChainlinkAdapter is Ward {
     struct Config {
+        address agg;
         uint    ttl;
         uint    precision;
     }
     Feedbase public fb;
-    AggregatorInterface public agg;
 
     mapping(bytes32=>Config) public configs;
 
-    constructor(address _fb, address _agg) Ward() {
-        agg = AggregatorInterface(_agg);
+    constructor(address _fb) Ward() {
         fb  = Feedbase(_fb);
     }
 
@@ -38,18 +37,19 @@ contract ChainlinkAdapter is Ward {
     }
 
     function look(bytes32 tag) public {
+        Config storage config = configs[tag];
+        AggregatorInterface agg = AggregatorInterface(config.agg);
         (, int256 _res, , uint256 timestamp, ) = agg.latestRoundData();
         require(_res >= 0, "negative price");
         uint res = uint(_res);
 
         // expand/truncate
-        Config storage config = configs[tag];
         uint fromprecision = 10 ** agg.decimals();
         uint toprecision = config.precision;
         if (toprecision > fromprecision) {
             res *= toprecision / fromprecision;
         } else {
-            res *= fromprecision / toprecision;
+            res /= fromprecision / toprecision;
         }
 
         // from chainlink's timestamp
