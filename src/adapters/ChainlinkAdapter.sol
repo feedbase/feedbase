@@ -24,8 +24,8 @@ contract ChainlinkAdapter is Ward {
         uint    ttl;
         uint    precision;
     }
-    Feedbase public fb;
 
+    Feedbase public fb;
     mapping(bytes32=>Config) public configs;
 
     constructor(address _fb) Ward() {
