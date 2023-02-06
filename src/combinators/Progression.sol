@@ -68,7 +68,9 @@ contract Progression is Ward {
                 price = price * last / prog;
                 cache.fact = last * RAY / prog;
             } else {
-                price = price * cache.fact / RAY;
+                if (0 != cache.fact) {
+                    price = price * cache.fact / RAY;
+                }
             }
         } else {
             cache.valid = true;
