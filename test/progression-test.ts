@@ -138,37 +138,42 @@ describe('progression', () => {
             // x10ing bob price has minimal effect because it's so early
             await send(fb.connect(bob).push, b32('bob'), b32(ray(10)), BigNumber.from(timestamp + BANKYEAR))
             // last == 1
-            // prog == 1 * 1 + 0 * 10 == 1
+            // prog == 1 * 1 + 0 * 1 == 1
+            // price == (1 * 1 + 0 * 10) * last/prog == 1
             await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
 
             await mine(hh, BANKYEAR / 2)
             // last == 1
             // prog == 0.5 * 1 + 0.5 * 10 == 6
-            // price == 0.5 * 1 + 0.5 * 10 == 6
+            // price == (0.5 * 1 + 0.5 * 10) * last/prog = 1
             await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
 
             await send(fb.connect(bob).push, b32('bob'), b32(ray(50)), BigNumber.from(timestamp + BANKYEAR))
             // last: 1
             // prog: 0.5 * 1 + 0.5 * 10 = 5.5
-            // price: 0.5 * 1 + 0.5 * 50 = 25.5
+            // price: (0.5 * 1 + 0.5 * 50) * last/prog ~= 4.6
             await trypoke(tag, 4, BigNumber.from(timestamp + BANKYEAR))
 
             await mine(hh, BANKYEAR / 2)
-            // last == 4
-            // prog == 50
-            // price == 50
+            // last == 4.6
+            // prog == 0 * 1 + 1 * 50 == 50
+            // price == 50 * last / prog == 4.6
             await trypoke(tag, 4, BigNumber.from(timestamp + BANKYEAR))
             await send(fb.connect(ali).push, b32('ali'), b32(ray(4000)), BigNumber.from(timestamp + BANKYEAR))
+            // ali doesn't matter anymore
             await trypoke(tag, 4, BigNumber.from(timestamp + BANKYEAR))
             await send(fb.connect(bob).push, b32('bob'), b32(ray(25)), BigNumber.from(timestamp + BANKYEAR))
             
-            // last == 4
+            // last == 4.6
             // prog == 50
-            // price == 80
+            // price == 25 * last/prog == 2.3
             await trypoke(tag, 2, BigNumber.from(timestamp + BANKYEAR))
             await mine(hh, BANKYEAR)
             await trypoke(tag, 2, BigNumber.from(timestamp + BANKYEAR))
             await send(fb.connect(bob).push, b32('bob'), b32(ray(12.5)), BigNumber.from(timestamp + BANKYEAR))
+            // last == 2.3
+            // prog == 25
+            // price == 12.5 * 2.3/25 == 1.15
             await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
         })
     })
