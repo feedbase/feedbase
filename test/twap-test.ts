@@ -56,6 +56,12 @@ describe('twap', () => {
         want(await twap.getConfig(tag)).eql(config)
     })
 
+    it('setConfig range', async function () {
+        let timestamp = (await ethers.provider.getBlock('latest')).timestamp
+        await fail("range too big", twap.setConfig, tag, [CAT, timestamp + 2, 100])
+        await send(twap.setConfig, tag, [CAT, timestamp + 1, 100])
+    })
+
     describe('poke', () => {
         const tag  = b32('hello')
         let config
@@ -78,21 +84,46 @@ describe('twap', () => {
 
             let [val, twapttl] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val).toNumber()).to.be.closeTo(BigNumber.from(500).toNumber(), 20)
-            want(twapttl.toNumber()).to.be.closeTo(timestamp + ttl.toNumber(), 20 * 22)
+            want(BigNumber.from(twapttl)).eql(constants.MaxUint256)
         })
 
-        it('invalid feed', async () => {
-            await fail('invalid-feed-result', twap.poke, tag)
-            await send(twap.setConfig, tag, [ALI, BigNumber.from(1), ttl]);
-            await fail('invalid-feed-result', twap.poke, tag)
-            await send(fb.push, tag, constants.HashZero, constants.MaxUint256)
-            await fail('invalid-feed-result', twap.poke, tag)
-            await send(fb.push, tag, b32(constants.One), constants.MaxUint256)
+        it('advance ttl from source ttl', async () => {
+            await send(twap.setConfig, tag, config)
+            await send(fb.push, tag, b32(ray(1)), BigNumber.from(45))
             await send(twap.poke, tag)
+            let [,twapttl] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(twapttl)).eql(ttl.add(45))
+        })
 
-            let [val, twapttl] = await fb.pull(twap.address, tag)
-            want(BigNumber.from(val)).to.eql(constants.One)
-            want(BigNumber.from(twapttl)).to.eql(ttl)
+        it('no time elapsed', async () => {
+            await send(twap.setConfig, tag, config)
+            await send(fb.push, tag, b32(ray(1)), BigNumber.from(45))
+            await hh.network.provider.send("evm_setAutomine", [false])
+            let poke0 = await twap.poke(tag, {gasLimit: 300000})
+            let poke1 = await twap.poke(tag, {gasLimit: 300000})
+            await mine(hh, 1);
+            await poke0.wait()
+            await want(poke1.wait()).rejectedWith('')
+            await hh.network.provider.send("evm_setAutomine", [true])
+        })
+
+        it("don't advance from max ttl", async () => {
+            await send(twap.setConfig, tag, config)
+            await send(fb.push, tag, b32(ray(1)), constants.MaxUint256)
+            await send(twap.poke, tag)
+            let [,twapttl] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(twapttl)).eql(constants.MaxUint256)
+        })
+
+        it("advance, but not past max ttl", async () => {
+            await send(twap.setConfig, tag, [ALI, range, BigNumber.from(46)])
+            await send(fb.push, tag, b32(ray(1)), constants.MaxUint256.sub(45))
+            await send(twap.poke, tag)
+            let [,twapttl] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(twapttl)).eql(constants.MaxUint256)
+            await send(fb.push, tag, b32(ray(1)), constants.MaxUint256.sub(46))
+            ;[,twapttl] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(twapttl)).eql(constants.MaxUint256)
         })
 
         it('tiny window', async () => {

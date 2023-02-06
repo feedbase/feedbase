@@ -15,14 +15,15 @@ contract Progression is Ward {
         bool paused;
     }
 
+    struct Cache {
+        uint a;
+        uint b;
+        bool valid;
+    }
 
-    mapping(bytes32=>uint) cachea;
-    mapping(bytes32=>uint) cacheb;
-    mapping(bytes32=>bool) valid;
-
+    mapping(bytes32=>Cache) public caches;
     mapping(bytes32=>Config) public configs;
     Feedbase public immutable fb;
-    uint RAY = 10 ** 27;
 
     constructor(Feedbase _fb) Ward() {
         fb = _fb;
@@ -43,23 +44,25 @@ contract Progression is Ward {
         (bytes32 pricea, uint ttla) = fb.pull(config.srca, config.taga);
         (bytes32 priceb, uint ttlb) = fb.pull(config.srcb, config.tagb);
         uint price = (uint(pricea) * (stretch - point) + uint(priceb) * point) / stretch;
+        uint ttl = ttla < ttlb ? ttla : ttlb;
 
-        // later need to multiply the result by last / prog
-        if (valid[tag]) {
-            uint prog = (cachea[tag] * (stretch - point) + cacheb[tag] * point) / stretch;
-            require(cachea[tag] > 0 && cacheb[tag] > 0, 'not initialized');
-
+        Cache storage cache = caches[tag];
+        if (cache.valid) {
             (bytes32 _last,) = fb.pull(address(this), tag);
             uint last = uint(_last);
             if (last > 0) {
+                // last and prog are both calculated from last poke data
+                // price should only change if the prices of underlying 
+                // assets change
+                uint prog = (cache.a * (stretch - point) + cache.b * point) / stretch;
                 price = price * last / prog;
             }
         } else {
-            valid[tag] = true;
+            cache.valid = true;
         }
-        cachea[tag] = uint(pricea);
-        cacheb[tag] = uint(priceb);
-        fb.push(tag, bytes32(price), ttla < ttlb ? ttla : ttlb);
+        cache.a = uint(pricea);
+        cache.b = uint(priceb);
+        fb.push(tag, bytes32(price), ttl);
     }
 }
 

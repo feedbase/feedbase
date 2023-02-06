@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import '../Feedbase.sol';
 import { Ward } from '../mixin/ward.sol';
-import 'hardhat/console.sol';
 
 contract TWAP is Ward {
     struct Config {
@@ -30,6 +29,7 @@ contract TWAP is Ward {
         configs[tag] = _config;
         Observation storage first = obs[tag][0];
         Observation storage last  = obs[tag][1];
+        require(_config.range <= block.timestamp, "range too big");
         first.time = block.timestamp - _config.range;
         last.time = block.timestamp;
     }
@@ -45,10 +45,7 @@ contract TWAP is Ward {
     function poke(bytes32 tag) external {
         Config storage config = configs[tag];
 
-        // ttl doesn't matter too much, just get a delayed result
-        (bytes32 _spot,) = fb.pull(config.source, tag);
-        uint spot = uint(_spot);
-        require(spot > 0, "TWAP/invalid-feed-result");
+        (bytes32 spot, uint ttl) = fb.pull(config.source, tag);
 
         Observation storage first = obs[tag][0];
         Observation storage last  = obs[tag][1];
@@ -56,7 +53,7 @@ contract TWAP is Ward {
         uint    capped     = elapsed > config.range ? config.range : elapsed;
         require(elapsed > 0, "TWAP/no-time-elapsed");
         // assume spot stayed constant since last observation in window
-        uint nexttally = last.tally + last.spot * (capped - 1) + spot;
+        uint nexttally = last.tally + last.spot * (capped - 1) + uint(spot);
 
         // assume uniform in old window to calculate pseudo-tally
         // advance twap window by elapsed time
@@ -67,10 +64,15 @@ contract TWAP is Ward {
             pseudospot,
             first.time + elapsed
         );
-        obs[tag][1] = Observation(nexttally, spot, block.timestamp);
+        obs[tag][1] = Observation(nexttally, uint(spot), block.timestamp);
 
-        // push twap
-        fb.push(tag, bytes32((nexttally - pseudotally) / config.range), block.timestamp + config.ttl);
+        // push twap, advance ttl from *source feed's* ttl
+        if (type(uint).max - ttl < config.ttl) {
+            ttl = type(uint).max;
+        } else {
+            ttl += config.ttl;
+        }
+        fb.push(tag, bytes32((nexttally - pseudotally) / config.range), ttl);
     }
 
 }
