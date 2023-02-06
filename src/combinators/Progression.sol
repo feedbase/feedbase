@@ -18,12 +18,14 @@ contract Progression is Ward {
     struct Cache {
         uint a;
         uint b;
+        uint fact;
         bool valid;
     }
 
     mapping(bytes32=>Cache) public caches;
     mapping(bytes32=>Config) public configs;
     Feedbase public immutable fb;
+    uint constant RAY = 10 ** 27;
 
     constructor(Feedbase _fb) Ward() {
         fb = _fb;
@@ -31,11 +33,17 @@ contract Progression is Ward {
 
     function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
         configs[tag] = _config;
+        caches[tag].fact = 0;
     }
 
     // smooth progression
     function poke(bytes32 tag) public {
         Config storage config = configs[tag];
+        if (0 != caches[tag].fact) {
+            (bytes32 priceend, uint ttlend) = fb.pull(config.srcb, config.tagb);
+            fb.push(tag, bytes32(uint(priceend) * caches[tag].fact / RAY), ttlend);
+            return;
+        }
         uint stretch = config.end - config.start;
         uint point = block.timestamp - config.start;
         if (point > stretch) {
@@ -56,6 +64,9 @@ contract Progression is Ward {
                 // assets change
                 uint prog = (cache.a * (stretch - point) + cache.b * point) / stretch;
                 price = price * last / prog;
+                if (point == stretch) {
+                    cache.fact = last * RAY / prog;
+                }
             }
         } else {
             cache.valid = true;
