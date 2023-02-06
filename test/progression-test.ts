@@ -176,6 +176,42 @@ describe('progression', () => {
             // price == 12.5 * 2.3/25 == 1.15
             await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
         })
+
+        it('bounce back from 0', async () => {
+            await send(fb.connect(ali).push, b32('ali'), b32(ray(1)), BigNumber.from(timestamp + BANKYEAR * 2))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(2)), BigNumber.from(timestamp + BANKYEAR))
+            await send(progression.setConfig, tag, [
+                ALI, b32('ali'), BOB, b32('bob'),
+                timestamp, timestamp + BANKYEAR, false
+            ])
+
+            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+
+            // x10ing bob price has minimal effect because it's so early
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(10)), BigNumber.from(timestamp + BANKYEAR))
+            // last == 1
+            // prog == 1 * 1 + 0 * 1 == 1
+            // price == (1 * 1 + 0 * 10) * last/prog == 1
+            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+
+            await mine(hh, BANKYEAR / 2)
+            // last == 1
+            // prog == 0.5 * 1 + 0.5 * 10 == 6
+            // price == (0.5 * 1 + 0.5 * 10) * last/prog = 1
+            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+
+
+            // set both source prices to 0
+            await send(fb.connect(ali).push, b32('ali'), b32(ray(0)), BigNumber.from(timestamp + BANKYEAR))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(0)), BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, 0, BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, 0, BigNumber.from(timestamp + BANKYEAR))
+            // set them back to nonzero, should push same price as before
+            await send(fb.connect(ali).push, b32('ali'), b32(ray(1)), BigNumber.from(timestamp + BANKYEAR))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(10)), BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+        })
     })
 })
 

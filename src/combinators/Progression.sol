@@ -19,6 +19,7 @@ contract Progression is Ward {
         uint a;
         uint b;
         uint fact;
+        bool end;
         bool valid;
     }
 
@@ -39,14 +40,15 @@ contract Progression is Ward {
     // smooth progression
     function poke(bytes32 tag) public {
         Config storage config = configs[tag];
-        if (0 != caches[tag].fact) {
+        if (caches[tag].end) {
             (bytes32 priceend, uint ttlend) = fb.pull(config.srcb, config.tagb);
             fb.push(tag, bytes32(uint(priceend) * caches[tag].fact / RAY), ttlend);
             return;
         }
         uint stretch = config.end - config.start;
         uint point = block.timestamp - config.start;
-        if (point > stretch) {
+        if (point >= stretch) {
+            caches[tag].end = true;
             point = stretch;
         }
         (bytes32 pricea, uint ttla) = fb.pull(config.srca, config.taga);
@@ -58,15 +60,15 @@ contract Progression is Ward {
         if (cache.valid) {
             (bytes32 _last,) = fb.pull(address(this), tag);
             uint last = uint(_last);
-            if (last > 0) {
-                // last and prog are both calculated from last poke data
-                // price should only change if the prices of underlying 
-                // assets change
-                uint prog = (cache.a * (stretch - point) + cache.b * point) / stretch;
+            // last and prog are both calculated from last poke data
+            // price should only change if the prices of underlying 
+            // assets change
+            uint prog = (cache.a * (stretch - point) + cache.b * point) / stretch;
+            if (prog > 0 && last > 0) {
                 price = price * last / prog;
-                if (point == stretch) {
-                    cache.fact = last * RAY / prog;
-                }
+                cache.fact = last * RAY / prog;
+            } else {
+                price = price * cache.fact / RAY;
             }
         } else {
             cache.valid = true;
