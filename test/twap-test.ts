@@ -78,6 +78,7 @@ describe('twap', () => {
 
             let [val, twapttl] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val).toNumber()).to.be.closeTo(BigNumber.from(500).toNumber(), 20)
+            want(twapttl.toNumber()).to.be.closeTo(timestamp + ttl.toNumber(), 20 * 22)
         })
 
         it('invalid feed', async () => {
@@ -133,7 +134,7 @@ describe('twap', () => {
             await mine(hh, range / 2)
 
             await send(twap.poke, tag)
-            let [val,] = await fb.pull(twap.address, tag)
+            let [val] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val).toNumber()).to.be.closeTo(price.div(2).toNumber(), 5)
 
             await mine(hh, range)

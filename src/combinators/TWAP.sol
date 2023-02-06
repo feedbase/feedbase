@@ -70,7 +70,7 @@ contract TWAP is Ward {
         obs[tag][1] = Observation(nexttally, spot, block.timestamp);
 
         // push twap
-        fb.push(tag, bytes32((nexttally - pseudotally) / config.range), config.ttl);
+        fb.push(tag, bytes32((nexttally - pseudotally) / config.range), block.timestamp + config.ttl);
     }
 
 }
