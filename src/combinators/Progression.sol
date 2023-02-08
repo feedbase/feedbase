@@ -12,13 +12,12 @@ contract Progression is Ward {
         bytes32 tagb;
         uint start;
         uint end;
-        bool paused;
     }
 
     struct Cache {
         uint a;
         uint b;
-        uint fact;
+        uint endbase;
         bool end;
         bool valid;
     }
@@ -34,50 +33,73 @@ contract Progression is Ward {
 
     function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
         configs[tag] = _config;
-        caches[tag].fact = 0;
     }
 
-    // smooth progression
+    // smooth progression with rebalancing
     function poke(bytes32 tag) public {
         Config storage config = configs[tag];
-        if (caches[tag].end) {
+        Cache storage cache = caches[tag];
+        uint stretch = config.end - config.start;
+        if (cache.end) {
+            uint baseb = cache.endbase;
             (bytes32 priceend, uint ttlend) = fb.pull(config.srcb, config.tagb);
-            fb.push(tag, bytes32(uint(priceend) * caches[tag].fact / RAY), ttlend);
+            fb.push(tag, bytes32(uint(priceend) * baseb / RAY), ttlend);
             return;
         }
-        uint stretch = config.end - config.start;
-        uint point = block.timestamp - config.start;
-        if (point >= stretch) {
-            caches[tag].end = true;
-            point = stretch;
-        }
+
         (bytes32 pricea, uint ttla) = fb.pull(config.srca, config.taga);
         (bytes32 priceb, uint ttlb) = fb.pull(config.srcb, config.tagb);
-        uint price = (uint(pricea) * (stretch - point) + uint(priceb) * point) / stretch;
-        uint ttl = ttla < ttlb ? ttla : ttlb;
-
-        Cache storage cache = caches[tag];
-        if (cache.valid) {
-            (bytes32 _last,) = fb.pull(address(this), tag);
-            uint last = uint(_last);
-            // last and prog are both calculated from last poke data
-            // price should only change if the prices of underlying 
-            // assets change
-            uint prog = (cache.a * (stretch - point) + cache.b * point) / stretch;
-            if (prog > 0 && last > 0) {
-                price = price * last / prog;
-                cache.fact = last * RAY / prog;
-            } else {
-                if (0 != cache.fact) {
-                    price = price * cache.fact / RAY;
-                }
-            }
-        } else {
-            cache.valid = true;
+        uint ttl = ttlb < ttla ? ttlb : ttla;
+        uint point = block.timestamp - config.start;
+        if (point >= stretch) {
+            cache.end = true;
+            point = stretch;
+            ttl = ttlb;
         }
-        cache.a = uint(pricea);
-        cache.b = uint(priceb);
+
+        uint last;
+        if (!cache.valid) {
+            require(
+                pricea > 0 && priceb > 0,
+                "can't initialize when either source is 0"
+            );
+            cache.a = uint(pricea);
+            cache.b = uint(priceb);
+            cache.valid = true;
+            uint lasta = uint(pricea) * (stretch - point);
+            uint lastb = uint(priceb) * point;
+            last = (lasta + lastb) / stretch;
+        } else {
+            (bytes32 _last,) = fb.pull(address(this), tag);
+            last = uint(_last);
+        }
+
+        // rebalancing
+        // calculate the amount of each base in this basket
+        // say the quotea is last * (stretch - point) / stretch
+        // that's the amount of rico basea would yield if price of a stayed 
+        // the same
+        // divide quotea by the last price to get the base amount
+        // basea = quotea / last_price(a) = quotea / cache.a
+        // quotea / (quote / base) == basea
+        uint basea = last * (stretch - point) / stretch * RAY / cache.a;
+        uint baseb = last * point / stretch * RAY / cache.b;
+        // total quote == price, because it's per 1 ref
+        uint price = (uint(pricea) * basea + uint(priceb) * baseb) / RAY; 
         fb.push(tag, bytes32(price), ttl);
+
+        if (point == stretch) {
+            cache.endbase = baseb;
+        }
+
+        // keep previous cache value if new one is 0 so there's still 
+        // some way to rebalance
+        if (uint(pricea) > 0) {
+            cache.a = uint(pricea);
+        }
+        if (uint(priceb) > 0) {
+            cache.b = uint(priceb);
+        }
     }
 }
 

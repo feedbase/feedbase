@@ -1,6 +1,6 @@
 import * as hh from 'hardhat'
 import { ethers, network } from 'hardhat'
-import { expect, send, fail, chai, want, snapshot, revert, b32, ray, mine, BANKYEAR, RAY } from 'minihat'
+import { expect, send, fail, chai, want, snapshot, revert, b32, ray, mine, BANKYEAR, RAY, warp } from 'minihat'
 const { constants, BigNumber, utils } = ethers
 
 const debug = require('debug')('feedbase:test')
@@ -20,8 +20,7 @@ describe('progression', () => {
         constants.AddressZero,
         constants.HashZero,
         constants.Zero,
-        constants.Zero,
-        false
+        constants.Zero
     ]
     let pool
     const RAY = BigNumber.from(10).pow(27)
@@ -59,7 +58,7 @@ describe('progression', () => {
         const config = [
             ALI, '0x'+b32('ali').toString('hex'),
             BOB, '0x'+b32('bob').toString('hex'),
-            constants.One, constants.One, true
+            constants.One, constants.One
         ]
         want(await progression.configs(tag)).eql(zeroconfig)
         await send(progression.setConfig, tag, config)
@@ -73,43 +72,49 @@ describe('progression', () => {
         let range = BigNumber.from(100)
         let ttl = BigNumber.from(1000)
         beforeEach(async () => {
-            config = [ALI, range, ttl]
             timestamp = (await ethers.provider.getBlock('latest')).timestamp
         })
 
         const trypoke = async (tag, expectval, expectttl, tol=0) => {
             await send(progression.poke, tag)
             let [val, ttl] = await fb.pull(progression.address, tag)
-            want(BigNumber.from(val).div(RAY).toNumber()).closeTo(expectval, tol);
+            if (BigNumber.from(val).gt(expectval.add(tol))) {
+                chai.assert(false, `expected ${expectval} gt actual ${BigNumber.from(val)}`)
+            }
+            if (BigNumber.from(val).lt(expectval.sub(tol))) {
+                chai.assert(false, `expected ${expectval} lt actual ${BigNumber.from(val)}`)
+            }
+ 
+            want(BigNumber.from(val).lt(expectval.sub(tol))).false;
             want(BigNumber.from(ttl)).eql(expectttl);
         }
 
-        it('poke valid but zero price, then onward', async () => {
+        it('poke zero source price, then onward', async () => {
             await send(fb.push, b32('hi'), b32(ray(0)), BigNumber.from(constants.MaxUint256))
             await send(fb.push, b32('bye'), b32(ray(0)), BigNumber.from(constants.MaxUint256))
             await send(progression.setConfig, tag, [
                 ALI, b32('hi'), ALI, b32('bye'),
-                timestamp, timestamp + BANKYEAR, false
+                timestamp, timestamp + BANKYEAR
             ])
 
-            await trypoke(tag, 0, constants.MaxUint256)
+            await fail("can't initialize when either source is 0", progression.poke, tag)
             await mine(hh, BANKYEAR / 2)
-            await trypoke(tag, 0, constants.MaxUint256)
-            await trypoke(tag, 0, constants.MaxUint256)
+            await fail("can't initialize when either source is 0", progression.poke, tag)
+            await fail("can't initialize when either source is 0", progression.poke, tag)
             await send(fb.push, b32('bye'), b32(ray(1000)), BigNumber.from(constants.MaxUint256))
-            await trypoke(tag, 500, constants.MaxUint256, 10)
+            await fail("can't initialize when either source is 0", progression.poke, tag)
             await send(fb.push, b32('hi'), b32(ray(1000)), BigNumber.from(constants.MaxUint256))
-            await trypoke(tag, 1000, constants.MaxUint256, 20)
-            await trypoke(tag, 1000, constants.MaxUint256, 20)
-            await trypoke(tag, 1000, constants.MaxUint256, 20)
-            await trypoke(tag, 1000, constants.MaxUint256, 20)
+            await trypoke(tag, ray(1000), constants.MaxUint256, ray(0.0001))
+            await trypoke(tag, ray(1000), constants.MaxUint256, ray(0.0001))
+            await trypoke(tag, ray(1000), constants.MaxUint256, ray(0.0001))
+            await trypoke(tag, ray(1000), constants.MaxUint256, ray(0.0001))
             await mine(hh, BANKYEAR / 2)
-            await trypoke(tag, 1000, constants.MaxUint256, 20)
-            // hi has no effect, bye does
+            await trypoke(tag, ray(1000), constants.MaxUint256, ray(0.0001))
+            // hi has no effect at this point, bye does
             await send(fb.push, b32('hi'), b32(ray(2000)), BigNumber.from(constants.MaxUint256))
-            await trypoke(tag, 1000, constants.MaxUint256, 20)
+            await trypoke(tag, ray(1000), constants.MaxUint256, ray(0.0001))
             await send(fb.push, b32('bye'), b32(ray(2000)), BigNumber.from(constants.MaxUint256))
-            await trypoke(tag, 2000, constants.MaxUint256, 20)
+            await trypoke(tag, ray(2000), constants.MaxUint256, ray(0.0001))
         })
 
         it('timestamp min', async () => {
@@ -117,12 +122,12 @@ describe('progression', () => {
             await send(fb.push, b32('bye'), b32(ray(1)), BigNumber.from(timestamp + 1000))
             await send(progression.setConfig, tag, [
                 ALI, b32('hi'), ALI, b32('bye'),
-                timestamp, timestamp + BANKYEAR, false
+                timestamp, timestamp + BANKYEAR
             ])
-            await trypoke(tag, 1, BigNumber.from(500))
+            await trypoke(tag, RAY, BigNumber.from(500), 100)
             await send(fb.push, b32('hi'), b32(ray(1)), BigNumber.from(timestamp + 1000))
             await send(fb.push, b32('bye'), b32(ray(1)), BigNumber.from(500))
-            await trypoke(tag, 1, BigNumber.from(500))
+            await trypoke(tag, RAY, BigNumber.from(500), 100)
         })
 
         it('realistic pokes', async () => {
@@ -130,89 +135,103 @@ describe('progression', () => {
             await send(fb.connect(bob).push, b32('bob'), b32(ray(2)), BigNumber.from(timestamp + BANKYEAR))
             await send(progression.setConfig, tag, [
                 ALI, b32('ali'), BOB, b32('bob'),
-                timestamp, timestamp + BANKYEAR, false
+                timestamp, timestamp + BANKYEAR
             ])
 
-            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, ray(1), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
 
             // x10ing bob price has minimal effect because it's so early
             await send(fb.connect(bob).push, b32('bob'), b32(ray(10)), BigNumber.from(timestamp + BANKYEAR))
-            // last == 1
-            // prog == 1 * 1 + 0 * 1 == 1
-            // price == (1 * 1 + 0 * 10) * last/prog == 1
-            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, ray(1), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
 
             await mine(hh, BANKYEAR / 2)
-            // last == 1
-            // prog == 0.5 * 1 + 0.5 * 10 == 6
-            // price == (0.5 * 1 + 0.5 * 10) * last/prog = 1
-            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, ray(1), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
 
             await send(fb.connect(bob).push, b32('bob'), b32(ray(50)), BigNumber.from(timestamp + BANKYEAR))
-            // last: 1
-            // prog: 0.5 * 1 + 0.5 * 10 = 5.5
-            // price: (0.5 * 1 + 0.5 * 50) * last/prog ~= 4.6
-            await trypoke(tag, 4, BigNumber.from(timestamp + BANKYEAR))
+            // 1/2 + 5/2, because b increased 10->50 (5x)
+            await trypoke(tag, ray(3), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
 
             await mine(hh, BANKYEAR / 2)
-            // last == 4.6
-            // prog == 0 * 1 + 1 * 50 == 50
-            // price == 50 * last / prog == 4.6
-            await trypoke(tag, 4, BigNumber.from(timestamp + BANKYEAR))
+
+            await trypoke(tag, ray(3), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
             await send(fb.connect(ali).push, b32('ali'), b32(ray(4000)), BigNumber.from(timestamp + BANKYEAR))
             // ali doesn't matter anymore
-            await trypoke(tag, 4, BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, ray(3), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
+
             await send(fb.connect(bob).push, b32('bob'), b32(ray(25)), BigNumber.from(timestamp + BANKYEAR))
-            
-            // last == 4.6
-            // prog == 50
-            // price == 25 * last/prog == 2.3
-            await trypoke(tag, 2, BigNumber.from(timestamp + BANKYEAR))
-            await mine(hh, BANKYEAR)
-            await trypoke(tag, 2, BigNumber.from(timestamp + BANKYEAR))
-            await send(fb.connect(bob).push, b32('bob'), b32(ray(12.5)), BigNumber.from(timestamp + BANKYEAR))
-            // last == 2.3
-            // prog == 25
-            // price == 12.5 * 2.3/25 == 1.15
-            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+            // but bob does
+            await trypoke(tag, ray(1.5), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
+            await mine(hh, BANKYEAR * 10)
+            // still 1.5 after all these years
+            await trypoke(tag, ray(1.5), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
+            await mine(hh, BANKYEAR * 10)
+
+            // pump bob 4x
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(100)), BigNumber.from(timestamp + BANKYEAR))
+            await send(fb.connect(ali).push, b32('ali'), b32(ray(0)), BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, ray(6), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
+
+            // set bob to 0, check that it doesn't break
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(0)), BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, ray(0), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(100)), BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, ray(6), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
         })
 
         it('bounce back from 0', async () => {
-            await send(fb.connect(ali).push, b32('ali'), b32(ray(1)), BigNumber.from(timestamp + BANKYEAR * 2))
-            await send(fb.connect(bob).push, b32('bob'), b32(ray(2)), BigNumber.from(timestamp + BANKYEAR))
+            let alittl = timestamp + BANKYEAR * 4
+            let bobttl = timestamp + BANKYEAR * 2
+            await send(fb.connect(ali).push, b32('ali'), b32(ray(1)), BigNumber.from(alittl))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(2)), BigNumber.from(bobttl))
             await send(progression.setConfig, tag, [
                 ALI, b32('ali'), BOB, b32('bob'),
-                timestamp, timestamp + BANKYEAR, false
+                timestamp, timestamp + BANKYEAR
             ])
 
-            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+            await warp(hh, timestamp + BANKYEAR / 2)
+            await trypoke(tag, ray(1.5), BigNumber.from(bobttl), ray(0.0001))
 
-            // x10ing bob price has minimal effect because it's so early
-            await send(fb.connect(bob).push, b32('bob'), b32(ray(10)), BigNumber.from(timestamp + BANKYEAR))
-            // last == 1
-            // prog == 1 * 1 + 0 * 1 == 1
-            // price == (1 * 1 + 0 * 10) * last/prog == 1
-            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+            await send(fb.connect(ali).push, b32('ali'), b32(ray(0)), BigNumber.from(alittl))
+            await trypoke(tag, ray(0.75), BigNumber.from(bobttl), ray(0.0001))
+            await send(fb.connect(ali).push, b32('ali'), b32(ray(1)), BigNumber.from(alittl))
+            // should stay at previous value since before-0 pricea was cached
+            await trypoke(tag, ray(0.75), BigNumber.from(bobttl), ray(0.0001))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(0)), BigNumber.from(bobttl))
+            await trypoke(tag, ray(0.375), BigNumber.from(bobttl), ray(0.0001))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(2)), BigNumber.from(bobttl))
+            await trypoke(tag, ray(0.375), BigNumber.from(bobttl), ray(0.0001))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(0)), BigNumber.from(bobttl))
+            await trypoke(tag, ray(0.1875), BigNumber.from(bobttl), ray(0.0001))
+            // bounce back, but this time to half what bob was before
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(1)), BigNumber.from(bobttl))
+            await trypoke(tag, ray(0.1406), BigNumber.from(bobttl), ray(0.0001))
 
-            await mine(hh, BANKYEAR / 2)
-            // last == 1
-            // prog == 0.5 * 1 + 0.5 * 10 == 6
-            // price == (0.5 * 1 + 0.5 * 10) * last/prog = 1
-            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+            await warp(hh, timestamp + BANKYEAR * 2)
+            await trypoke(tag, ray(0.1406), BigNumber.from(bobttl), ray(0.0001))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(0)), BigNumber.from(bobttl))
+            await trypoke(tag, ray(0), BigNumber.from(bobttl), ray(0.0001))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(1)), BigNumber.from(bobttl))
+            // should bounce back to full amount since no more rebalancing
+            await trypoke(tag, ray(0.1406), BigNumber.from(bobttl), ray(0.0001))
+        })
 
+        it('rebalance at a weird point', async () => {
+            let alittl = timestamp + BANKYEAR * 4
+            let bobttl = timestamp + BANKYEAR * 2
+            await send(fb.connect(ali).push, b32('ali'), b32(ray(1)), BigNumber.from(alittl))
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(2)), BigNumber.from(bobttl))
+            await send(progression.setConfig, tag, [
+                ALI, b32('ali'), BOB, b32('bob'),
+                timestamp, timestamp + BANKYEAR
+            ])
 
-            // set both source prices to 0
-            await send(fb.connect(ali).push, b32('ali'), b32(ray(0)), BigNumber.from(timestamp + BANKYEAR))
-            await send(fb.connect(bob).push, b32('bob'), b32(ray(0)), BigNumber.from(timestamp + BANKYEAR))
-            await trypoke(tag, 0, BigNumber.from(timestamp + BANKYEAR))
-            await trypoke(tag, 0, BigNumber.from(timestamp + BANKYEAR))
-            // set them back to nonzero, should push same price as before
-            await send(fb.connect(ali).push, b32('ali'), b32(ray(1)), BigNumber.from(timestamp + BANKYEAR))
-            await send(fb.connect(bob).push, b32('bob'), b32(ray(10)), BigNumber.from(timestamp + BANKYEAR))
-            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
-            await trypoke(tag, 1, BigNumber.from(timestamp + BANKYEAR))
+            await trypoke(tag, ray(1), BigNumber.from(bobttl), ray(0.0001))
+            await warp(hh, timestamp + BANKYEAR / 4)
+            await send(fb.connect(bob).push, b32('bob'), b32(ray(8)), BigNumber.from(bobttl))
+            await trypoke(tag, ray(1.75), BigNumber.from(bobttl), ray(0.0001))
+            await warp(hh, timestamp + BANKYEAR * 3 / 4)
+            await send(fb.connect(ali).push, b32('ali'), b32(ray(10)), BigNumber.from(alittl))
+            await trypoke(tag, ray(1.75 * (0.75 + 0.25 * 10)), BigNumber.from(bobttl), ray(0.0001))
         })
     })
 })
-
-
