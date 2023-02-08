@@ -77,8 +77,7 @@ contract Progression is Ward {
         // rebalancing
         // calculate the amount of each base in this basket
         // say the quotea is last * (stretch - point) / stretch
-        // that's the amount of rico basea would yield if price of a stayed 
-        // the same
+        // that's the amount of rico basea would yield if price of a stayed same
         // divide quotea by the last price to get the base amount
         // basea = quotea / last_price(a) = quotea / cache.a
         // quotea / (quote / base) == basea
