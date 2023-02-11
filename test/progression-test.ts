@@ -324,6 +324,16 @@ describe('progression', () => {
                 // period elapsed, should be all bob
                 await trypoke(tag, ray(7.5), BigNumber.from(bobttl), ray(0.0001))
             })
+
+            it('invalid poke timestamp', async () => {
+                await send(progression.setConfig, tag, [
+                    ALI, b32('ali'), BOB, b32('bob'),
+                    timestamp + BANKYEAR, timestamp + BANKYEAR * 2, 1
+                ])
+                await warp(hh, timestamp + BANKYEAR - 1)
+                await fail('invalid timestamp for poke', progression.poke, tag)
+                await send(progression.poke, tag)
+            })
         })
     })
 })
