@@ -59,7 +59,7 @@ contract Progression is Ward {
             block.timestamp >= config.start,
             'invalid timestamp for poke'
         );
-        uint rebals = block.timestamp - config.start - cache.point / config.period;
+        uint rebals = (block.timestamp - config.start - cache.point) / config.period;
         if (rebals > 0) {
             point      += config.period * rebals;
             cache.point = point;
