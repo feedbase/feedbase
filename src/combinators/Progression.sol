@@ -91,8 +91,6 @@ contract Progression is Ward {
         }
 
         // do the rebalance first, then update prices
-        // it might work to use pricea instead of cache.a
-        // following the rules to be safe for now
         if (rebals > 0) {
             // rebalancing
             // calculate the amount of each base in this basket
