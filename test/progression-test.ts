@@ -20,7 +20,8 @@ describe('progression', () => {
         constants.AddressZero,
         constants.HashZero,
         constants.Zero,
-        constants.Zero
+        constants.Zero,
+        constants.Zero,
     ]
     let pool
     const RAY = BigNumber.from(10).pow(27)
@@ -58,7 +59,7 @@ describe('progression', () => {
         const config = [
             ALI, '0x'+b32('ali').toString('hex'),
             BOB, '0x'+b32('bob').toString('hex'),
-            constants.One, constants.One
+            constants.One, constants.One, constants.One
         ]
         want(await progression.configs(tag)).eql(zeroconfig)
         await send(progression.setConfig, tag, config)
@@ -79,10 +80,10 @@ describe('progression', () => {
             await send(progression.poke, tag)
             let [val, ttl] = await fb.pull(progression.address, tag)
             if (BigNumber.from(val).gt(expectval.add(tol))) {
-                chai.assert(false, `expected ${expectval} gt actual ${BigNumber.from(val)}`)
+                chai.assert(false, `expected ${expectval.add(tol)} gt actual ${BigNumber.from(val)}`)
             }
             if (BigNumber.from(val).lt(expectval.sub(tol))) {
-                chai.assert(false, `expected ${expectval} lt actual ${BigNumber.from(val)}`)
+                chai.assert(false, `expected ${expectval.sub(tol)} lt actual ${BigNumber.from(val)}`)
             }
  
             want(BigNumber.from(val).lt(expectval.sub(tol))).false;
@@ -94,7 +95,7 @@ describe('progression', () => {
             await send(fb.push, b32('bye'), b32(ray(0)), BigNumber.from(constants.MaxUint256))
             await send(progression.setConfig, tag, [
                 ALI, b32('hi'), ALI, b32('bye'),
-                timestamp, timestamp + BANKYEAR
+                timestamp, timestamp + BANKYEAR, 1
             ])
 
             await fail("can't initialize when either source is 0", progression.poke, tag)
@@ -122,7 +123,7 @@ describe('progression', () => {
             await send(fb.push, b32('bye'), b32(ray(1)), BigNumber.from(timestamp + 1000))
             await send(progression.setConfig, tag, [
                 ALI, b32('hi'), ALI, b32('bye'),
-                timestamp, timestamp + BANKYEAR
+                timestamp, timestamp + BANKYEAR, 1
             ])
             await trypoke(tag, RAY, BigNumber.from(500), 100)
             await send(fb.push, b32('hi'), b32(ray(1)), BigNumber.from(timestamp + 1000))
@@ -135,7 +136,7 @@ describe('progression', () => {
             await send(fb.connect(bob).push, b32('bob'), b32(ray(2)), BigNumber.from(timestamp + BANKYEAR))
             await send(progression.setConfig, tag, [
                 ALI, b32('ali'), BOB, b32('bob'),
-                timestamp, timestamp + BANKYEAR
+                timestamp, timestamp + BANKYEAR, 1
             ])
 
             await trypoke(tag, ray(1), BigNumber.from(timestamp + BANKYEAR), ray(0.0001))
@@ -185,7 +186,7 @@ describe('progression', () => {
             await send(fb.connect(bob).push, b32('bob'), b32(ray(2)), BigNumber.from(bobttl))
             await send(progression.setConfig, tag, [
                 ALI, b32('ali'), BOB, b32('bob'),
-                timestamp, timestamp + BANKYEAR
+                timestamp, timestamp + BANKYEAR, 1
             ])
 
             await warp(hh, timestamp + BANKYEAR / 2)
@@ -222,7 +223,7 @@ describe('progression', () => {
             await send(fb.connect(bob).push, b32('bob'), b32(ray(2)), BigNumber.from(bobttl))
             await send(progression.setConfig, tag, [
                 ALI, b32('ali'), BOB, b32('bob'),
-                timestamp, timestamp + BANKYEAR
+                timestamp, timestamp + BANKYEAR, 1
             ])
 
             await trypoke(tag, ray(1), BigNumber.from(bobttl), ray(0.0001))
