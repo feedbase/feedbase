@@ -43,7 +43,6 @@ contract Divider is Ward {
             (bytes32 opd, uint ttl) = feedbase.pull(
                 config.sources[i], config.tags[i]
             );
-            require(block.timestamp <= ttl, 'operand is old');
             if (ttl < minttl) {
                 minttl = ttl;
             }
