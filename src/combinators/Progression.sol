@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-v3.0
 
-pragma solidity 0.8.17;
+pragma solidity ^0.8.18;
 import "../Feedbase.sol";
 import { Ward } from '../mixin/ward.sol';
 
@@ -59,7 +59,7 @@ contract Progression is Ward {
             block.timestamp >= config.start,
             'invalid timestamp for poke'
         );
-        uint rebals = (block.timestamp - config.start - cache.point) / config.period;
+        uint rebals = (block.timestamp - config.start - point) / config.period;
         if (rebals > 0) {
             point      += config.period * rebals;
             cache.point = point;
