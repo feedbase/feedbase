@@ -1,10 +1,9 @@
 import * as hh from 'hardhat'
-import { ethers, network } from 'hardhat'
-import { send, fail, chai, want, snapshot, revert, b32 } from 'minihat'
-const { constants, BigNumber, utils } = ethers
+import { ethers } from 'hardhat'
+import { send, fail, want, snapshot, revert, b32 } from 'minihat'
+const { constants, BigNumber } = ethers
 
 const debug = require('debug')('feedbase:test')
-const { hexlify } = ethers.utils
 
 let fb
 let signers
@@ -18,14 +17,12 @@ const use = (n) => {
 }
 
 describe('uniswapv3', () => {
-  const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
   const ETH_USD_POOL_ADDR = "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640"
   const BTC_USD_POOL_ADDR = "0x99ac8cA7087fA4A2A1FB6357269965A2014ABc35"
   let tag, seq, sec, ttl, val
   let ali, bob, cat
   let ALI, BOB, CAT
   let adapt
-  let pool
   before(async () => {
     signers = await ethers.getSigners();
     [ali, bob, cat] = signers;
@@ -120,7 +117,7 @@ describe('uniswapv3', () => {
       want(price).eql(constants.HashZero)
       want(ttl).eql(constants.Zero)
 
-      await fail("twap range can't be zero", adapt.look, tag)
+      await fail("Err0Range", adapt.look, tag)
   })
 
 })

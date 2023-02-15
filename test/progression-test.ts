@@ -1,15 +1,13 @@
 import * as hh from 'hardhat'
-import { ethers, network } from 'hardhat'
-import { expect, send, fail, chai, want, snapshot, revert, b32, ray, mine, BANKYEAR, RAY, warp } from 'minihat'
-const { constants, BigNumber, utils } = ethers
+import { ethers } from 'hardhat'
+import { send, fail, chai, want, snapshot, revert, b32, ray, mine, BANKYEAR, RAY, warp } from 'minihat'
+const { constants, BigNumber } = ethers
 
 const debug = require('debug')('feedbase:test')
-const { hexlify } = ethers.utils
 
 let fb
 let signers
 describe('progression', () => {
-    const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
     let tag, seq, sec, ttl, val
     let ali, bob, cat
     let ALI, BOB, CAT
@@ -23,8 +21,6 @@ describe('progression', () => {
         constants.Zero,
         constants.Zero,
     ]
-    let pool
-    const RAY = BigNumber.from(10).pow(27)
     before(async () => {
       signers = await ethers.getSigners();
       [ali, bob, cat] = signers;
@@ -68,10 +64,7 @@ describe('progression', () => {
 
     describe('poke', () => {
         const tag  = b32('hello')
-        let config
         let timestamp
-        let range = BigNumber.from(100)
-        let ttl = BigNumber.from(1000)
         beforeEach(async () => {
             timestamp = (await ethers.provider.getBlock('latest')).timestamp
         })
@@ -98,12 +91,12 @@ describe('progression', () => {
                 timestamp, timestamp + BANKYEAR, 1
             ])
 
-            await fail("can't initialize when either source is 0", progression.poke, tag)
+            await fail("ErrPrice", progression.poke, tag)
             await mine(hh, BANKYEAR / 2)
-            await fail("can't initialize when either source is 0", progression.poke, tag)
-            await fail("can't initialize when either source is 0", progression.poke, tag)
+            await fail("ErrPrice", progression.poke, tag)
+            await fail("ErrPrice", progression.poke, tag)
             await send(fb.push, b32('bye'), b32(ray(1000)), BigNumber.from(constants.MaxUint256))
-            await fail("can't initialize when either source is 0", progression.poke, tag)
+            await fail("ErrPrice", progression.poke, tag)
             await send(fb.push, b32('hi'), b32(ray(1000)), BigNumber.from(constants.MaxUint256))
             await trypoke(tag, ray(1000), constants.MaxUint256, ray(0.0001))
             await trypoke(tag, ray(1000), constants.MaxUint256, ray(0.0001))
@@ -331,7 +324,7 @@ describe('progression', () => {
                     timestamp + BANKYEAR, timestamp + BANKYEAR * 2, 1
                 ])
                 await warp(hh, timestamp + BANKYEAR - 1)
-                await fail('invalid timestamp for poke', progression.poke, tag)
+                await fail('ErrEarly', progression.poke, tag)
                 await send(progression.poke, tag)
             })
         })

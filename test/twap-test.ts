@@ -1,24 +1,18 @@
 import * as hh from 'hardhat'
-import { ethers, network } from 'hardhat'
-import { expect, send, fail, chai, want, snapshot, revert, b32, ray, mine } from 'minihat'
-const { constants, BigNumber, utils } = ethers
+import { ethers } from 'hardhat'
+import { send, fail, want, snapshot, revert, b32, ray, mine } from 'minihat'
+const { constants, BigNumber } = ethers
 
 const debug = require('debug')('feedbase:test')
-const { hexlify } = ethers.utils
 
 let fb
 let signers
 describe('twap', () => {
-    const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
-    const ETH_USD_POOL_ADDR = "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640"
-    const BTC_USD_POOL_ADDR = "0x99ac8cA7087fA4A2A1FB6357269965A2014ABc35"
     let tag, seq, sec, ttl, val
     let ali, bob, cat
     let ALI, BOB, CAT
     let twap
     const zeroconfig = [constants.AddressZero, constants.Zero, constants.Zero]
-    let pool
-    const RAY = BigNumber.from(10).pow(27)
     before(async () => {
       signers = await ethers.getSigners();
       [ali, bob, cat] = signers;
@@ -58,7 +52,7 @@ describe('twap', () => {
 
     it('setConfig range', async function () {
         let timestamp = (await ethers.provider.getBlock('latest')).timestamp
-        await fail("range too big", twap.setConfig, tag, [CAT, timestamp + 2, 100])
+        await fail("ErrRange", twap.setConfig, tag, [CAT, timestamp + 2, 100])
         await send(twap.setConfig, tag, [CAT, timestamp + 1, 100])
     })
 

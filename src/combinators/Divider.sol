@@ -10,6 +10,8 @@ contract Divider is Ward {
         address[] sources;
         bytes32[] tags;
     }
+    error ErrShort();
+    error ErrMatch();
 
     mapping(bytes32=>Config) configs;
     Feedbase  public feedbase;
@@ -32,8 +34,8 @@ contract Divider is Ward {
     function poke(bytes32 tag) public {
         Config storage config = configs[tag];
         uint n = config.sources.length;
-        require(config.tags.length == n, 'sources.length != tags.length');
-        require(n > 1, 'not enough operands to divide');
+        if (config.tags.length != n) revert ErrMatch();
+        if (n <= 1) revert ErrShort();
 
         (bytes32 _res, uint minttl) = feedbase.pull(
             config.sources[0], config.tags[0]
