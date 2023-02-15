@@ -1,10 +1,9 @@
 import * as hh from 'hardhat'
-import { ethers, network } from 'hardhat'
-import { send, fail, chai, want, snapshot, revert, b32, ray, RAY } from 'minihat'
-const { constants, BigNumber, utils } = ethers
+import { ethers } from 'hardhat'
+import { send, fail, want, snapshot, revert, b32, ray, RAY } from 'minihat'
+const { constants, BigNumber } = ethers
 
 const debug = require('debug')('feedbase:test')
-const { hexlify } = ethers.utils
 
 let fb
 let signers
@@ -18,13 +17,11 @@ const use = (n) => {
 }
 
 describe('chainlink', () => {
-  const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
   const XAU_USD_AGG_ADDR = "0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6"
   let tag, seq, sec, ttl, val
   let ali, bob, cat
   let ALI, BOB, CAT
   let adapt
-  let agg
   let config
   let precision
   before(async () => {

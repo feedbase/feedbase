@@ -1,23 +1,18 @@
 import * as hh from 'hardhat'
-import { ethers, network } from 'hardhat'
-import { send, fail, chai, want, snapshot, revert, b32, ray} from 'minihat'
-const { constants, BigNumber, utils } = ethers
+import { ethers } from 'hardhat'
+import { send, fail, want, snapshot, revert, b32, ray} from 'minihat'
+const { BigNumber } = ethers
 
 const debug = require('debug')('feedbase:test')
-const { hexlify } = ethers.utils
 
 let fb
 let signers
 describe('divider', () => {
-    const UINT_MAX = Buffer.from('ff'.repeat(32), 'hex')
-    const ETH_USD_POOL_ADDR = "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640"
-    const BTC_USD_POOL_ADDR = "0x99ac8cA7087fA4A2A1FB6357269965A2014ABc35"
     let tag, seq, sec, ttl, val
     let ali, bob, cat
     let ALI, BOB, CAT
     let divider
     const zeroconfig = [[], []]
-    let pool
     const RAY = BigNumber.from(10).pow(27)
     before(async () => {
       signers = await ethers.getSigners();
@@ -95,17 +90,17 @@ describe('divider', () => {
         })
 
         it('fail order', async () => {
-            await fail('not enough operands to divide', divider.poke, tag)
+            await fail('ErrShort', divider.poke, tag)
             await send(divider.setConfig, tag, zeroconfig)
-            await fail('not enough operands to divide', divider.poke, tag)
+            await fail('ErrShort', divider.poke, tag)
             await send(divider.setConfig, tag, [[ALI], [taga]])
-            await fail('not enough operands to divide', divider.poke, tag)
+            await fail('ErrShort', divider.poke, tag)
             await send(divider.setConfig, tag, [[ALI], [taga, tagb]])
             //
             // length mismatch check comes first
-            await fail('sources.length != tags.length', divider.poke, tag)
+            await fail('ErrMatch', divider.poke, tag)
             await send(divider.setConfig, tag, [[ALI, BOB], [taga]])
-            await fail('sources.length != tags.length', divider.poke, tag)
+            await fail('ErrMatch', divider.poke, tag)
 
         })
         it('minttl', async () => {

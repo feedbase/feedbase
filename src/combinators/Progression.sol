@@ -47,17 +47,13 @@ contract Progression is Ward {
         Config storage config = configs[tag];
         Cache storage cache = caches[tag];
         uint stretch = config.end - config.start;
+        (uint priceb, uint ttlb) = pullUint(config.srcb, config.tagb);
         if (cache.end) {
             uint baseb = cache.endbase;
-            (bytes32 priceend, uint ttlend) = fb.pull(config.srcb, config.tagb);
-            fb.push(tag, bytes32(uint(priceend) * baseb / RAY), ttlend);
+            fb.push(tag, bytes32(priceb * baseb / RAY), ttlb);
             return;
         }
-
-        (bytes32 _pricea, uint ttla) = fb.pull(config.srca, config.taga);
-        (bytes32 _priceb, uint ttlb) = fb.pull(config.srcb, config.tagb);
-        uint pricea = uint(_pricea);
-        uint priceb = uint(_priceb);
+        (uint pricea, uint ttla) = pullUint(config.srca, config.taga);
         uint ttl = ttlb < ttla ? ttlb : ttla;
         uint point = cache.point;
         if (block.timestamp < config.start) revert ErrEarly();
@@ -75,7 +71,7 @@ contract Progression is Ward {
 
         uint last;
         if (!cache.valid) {
-            if (pricea == 0 || priceb == 0) revert ErrPrice;
+            if (pricea == 0 || priceb == 0) revert ErrPrice();
             cache.basea = (stretch - point) * RAY / stretch;
             cache.baseb = point * RAY / stretch;
             last = (pricea * cache.basea +
@@ -85,8 +81,7 @@ contract Progression is Ward {
             cache.point = point;
             cache.valid = true;
         } else {
-            (bytes32 _last,) = fb.pull(address(this), tag);
-            last = uint(_last);
+            (last,) = pullUint(address(this), tag);
         }
 
         // do the rebalance first, then update prices
@@ -119,5 +114,10 @@ contract Progression is Ward {
             cache.b = priceb;
         }
     }
-}
 
+    function pullUint(address src, bytes32 tag) internal view returns (uint val, uint ttl) {
+        bytes32 bval;
+        (bval, ttl) = fb.pull(src, tag);
+        val = uint(bval);
+    }
+}

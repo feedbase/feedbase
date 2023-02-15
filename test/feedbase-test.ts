@@ -43,7 +43,7 @@ describe('feedbase', () => {
   })
 
   it('ttl on pull', async function () {
-    const push = await send(fb.push, tag, val, ttl)
+    await send(fb.push, tag, val, ttl)
     const pull = await fb.pull(ALI, tag)
     debug(`pull result ${pull}`)
 
