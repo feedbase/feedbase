@@ -21,6 +21,8 @@ contract UniswapV3Adapter is Ward {
         uint    ttl;
         bool    reverse;
     }
+    error ErrNoPool();
+    error Err0Range();
     Feedbase immutable fb;
     mapping(bytes32=>Config) public configs;
     uint constant RAY = 10 ** 27;
@@ -37,11 +39,11 @@ contract UniswapV3Adapter is Ward {
     function look(bytes32 tag) public {
         Config storage config = configs[tag];
         address apool = config.pool;
-        require(address(0) != apool, "no pool for tag");
+        if (address(0) == apool) revert ErrNoPool();
 
         uint32[] memory times = new uint32[](2);
         uint32 range  = uint32(config.range);
-        require(range > 0, "twap range can't be zero");
+        if (range == 0) revert Err0Range();
         times[0] = 0;
         times[1] = range;
         (int56[] memory cumulatives,) = IUniswapV3Pool(apool).observe(times);

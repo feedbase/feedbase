@@ -24,6 +24,7 @@ contract ChainlinkAdapter is Ward {
         uint    ttl;
         uint    precision;
     }
+    error ErrNegPrice();
 
     Feedbase public fb;
     mapping(bytes32=>Config) public configs;
@@ -40,7 +41,7 @@ contract ChainlinkAdapter is Ward {
         Config storage config = configs[tag];
         AggregatorInterface agg = AggregatorInterface(config.agg);
         (, int256 _res, , uint256 timestamp, ) = agg.latestRoundData();
-        require(_res >= 0, "negative price");
+        if (_res < 0) revert ErrNegPrice();
         uint res = uint(_res);
 
         // expand/truncate

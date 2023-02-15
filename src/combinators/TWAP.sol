@@ -17,6 +17,9 @@ contract TWAP is Ward {
         uint time;
     }
 
+    error ErrRange();
+    error ErrDone();
+
     mapping(bytes32=>Config) configs;
     mapping(bytes32=>Observation[2]) obs;
     Feedbase public immutable fb;
@@ -29,7 +32,7 @@ contract TWAP is Ward {
         configs[tag] = _config;
         Observation storage first = obs[tag][0];
         Observation storage last  = obs[tag][1];
-        require(_config.range <= block.timestamp, "range too big");
+        if (_config.range > block.timestamp) revert ErrRange();
         first.time = block.timestamp - _config.range;
         last.time = block.timestamp;
     }
@@ -51,7 +54,7 @@ contract TWAP is Ward {
         Observation storage last  = obs[tag][1];
         uint256 elapsed    = block.timestamp - last.time;
         uint    capped     = elapsed > config.range ? config.range : elapsed;
-        require(elapsed > 0, "TWAP/no-time-elapsed");
+        if (elapsed == 0) revert ErrDone();
         // assume spot stayed constant since last observation in window
         uint nexttally = last.tally + last.spot * (capped - 1) + uint(spot);
 

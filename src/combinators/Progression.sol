@@ -26,6 +26,9 @@ contract Progression is Ward {
         uint baseb;
     }
 
+    error ErrEarly();
+    error ErrPrice();
+
     mapping(bytes32=>Cache) public caches;
     mapping(bytes32=>Config) public configs;
     Feedbase public immutable fb;
@@ -51,14 +54,13 @@ contract Progression is Ward {
             return;
         }
 
-        (bytes32 pricea, uint ttla) = fb.pull(config.srca, config.taga);
-        (bytes32 priceb, uint ttlb) = fb.pull(config.srcb, config.tagb);
+        (bytes32 _pricea, uint ttla) = fb.pull(config.srca, config.taga);
+        (bytes32 _priceb, uint ttlb) = fb.pull(config.srcb, config.tagb);
+        uint pricea = uint(_pricea);
+        uint priceb = uint(_priceb);
         uint ttl = ttlb < ttla ? ttlb : ttla;
         uint point = cache.point;
-        require(
-            block.timestamp >= config.start,
-            'invalid timestamp for poke'
-        );
+        if (block.timestamp < config.start) revert ErrEarly();
         uint rebals = (block.timestamp - config.start - point) / config.period;
         if (rebals > 0) {
             point      += config.period * rebals;
@@ -73,16 +75,13 @@ contract Progression is Ward {
 
         uint last;
         if (!cache.valid) {
-            require(
-                pricea > 0 && priceb > 0,
-                "can't initialize when either source is 0"
-            );
+            if (pricea == 0 || priceb == 0) revert ErrPrice;
             cache.basea = (stretch - point) * RAY / stretch;
             cache.baseb = point * RAY / stretch;
-            last = (uint(pricea) * cache.basea +
-                    uint(priceb) * cache.baseb) / RAY;
-            cache.a = uint(pricea);
-            cache.b = uint(priceb);
+            last = (pricea * cache.basea +
+                    priceb * cache.baseb) / RAY;
+            cache.a = pricea;
+            cache.b = priceb;
             cache.point = point;
             cache.valid = true;
         } else {
@@ -104,7 +103,7 @@ contract Progression is Ward {
         }
  
         // total quote == price, because it's per 1 ref
-        uint price = (uint(pricea) * cache.basea + uint(priceb) * cache.baseb) / RAY;
+        uint price = (pricea * cache.basea + priceb * cache.baseb) / RAY;
         fb.push(tag, bytes32(price), ttl);
 
         if (point == stretch) {
@@ -113,11 +112,11 @@ contract Progression is Ward {
 
         // keep previous cache value if new one is 0 so there's still 
         // some way to rebalance
-        if (uint(pricea) > 0) {
-            cache.a = uint(pricea);
+        if (pricea > 0) {
+            cache.a = pricea;
         }
-        if (uint(priceb) > 0) {
-            cache.b = uint(priceb);
+        if (priceb > 0) {
+            cache.b = priceb;
         }
     }
 }
