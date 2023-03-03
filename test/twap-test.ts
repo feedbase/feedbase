@@ -120,18 +120,35 @@ describe('twap', () => {
             want(BigNumber.from(twapttl)).eql(constants.MaxUint256)
         })
 
-        it('big jump', async () => {
+        it('big jump, more than range', async () => {
             await send(twap.setConfig, tag, config)
             await send(fb.push, tag, b32(ray(1)), constants.MaxUint256.sub(45))
             await send(twap.poke, tag)
             await mine(hh, range.toNumber())
             await send(twap.poke, tag)
-            await send(fb.push, tag, b32(ray(2)), constants.MaxUint256.sub(45))
+            await send(fb.push, tag, b32(ray(3)), constants.MaxUint256.sub(45))
             await send(twap.poke, tag)
+
+            // pseudo clamps to last
             await mine(hh, range.toNumber() * 1000000000)
             await send(twap.poke, tag)
             let [val,] = await fb.pull(twap.address, tag)
-            want(BigNumber.from(val)).to.eql(ray(2))
+            want(BigNumber.from(val)).to.eql(ray(3))
+
+            // clamp edge
+            await send(fb.push, tag, b32(ray(7)), constants.MaxUint256.sub(45))
+            await send(twap.poke, tag)
+            await mine(hh, range.toNumber())
+            await send(twap.poke, tag)
+            ;[val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val)).to.eql(ray(7))
+
+            // no clamp if waited less than range
+            await send(fb.push, tag, b32(ray(10)), constants.MaxUint256.sub(45))
+            await send(twap.poke, tag)
+            await mine(hh, range.toNumber())
+            ;[val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val).lt(ray(10))).true
         })
 
         it('tiny window', async () => {

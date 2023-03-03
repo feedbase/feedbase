@@ -53,22 +53,15 @@ contract TWAP is Ward {
         Observation storage first = obs[tag][0];
         Observation storage last  = obs[tag][1];
         uint256 elapsed    = block.timestamp - last.time;
-        //uint    capped     = elapsed > config.range ? config.range : elapsed;
+        uint    capped     = elapsed > config.range ? config.range : elapsed;
         if (elapsed == 0) revert ErrDone();
         // assume spot stayed constant since last observation in window
-        uint nexttally = last.tally + last.spot * (elapsed - 1) + uint(spot);
+        uint nexttally = last.tally + last.spot * (capped - 1) + uint(spot);
 
         // assume uniform in old window to calculate pseudo-tally
         // advance twap window by elapsed time
-        uint pseudospot;
-        uint pseudotally;
-        if (elapsed >= config.range) {
-            pseudospot = last.spot;
-            pseudotally = last.tally + pseudospot * (elapsed - config.range);
-        } else {
-            pseudospot = (last.tally - first.tally) / config.range;
-            pseudotally = first.tally + pseudospot * elapsed;
-        }
+        uint pseudospot = (last.tally - first.tally) / config.range;
+        uint pseudotally = first.tally + pseudospot * capped;
         obs[tag][0]= Observation(
             pseudotally,
             pseudospot,
