@@ -120,6 +120,20 @@ describe('twap', () => {
             want(BigNumber.from(twapttl)).eql(constants.MaxUint256)
         })
 
+        it('big jump', async () => {
+            await send(twap.setConfig, tag, config)
+            await send(fb.push, tag, b32(ray(1)), constants.MaxUint256.sub(45))
+            await send(twap.poke, tag)
+            await mine(hh, range.toNumber())
+            await send(twap.poke, tag)
+            await send(fb.push, tag, b32(ray(2)), constants.MaxUint256.sub(45))
+            await send(twap.poke, tag)
+            await mine(hh, range.toNumber() * 1000000000)
+            await send(twap.poke, tag)
+            let [val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val)).to.eql(ray(2))
+        })
+
         it('tiny window', async () => {
             let price = BigNumber.from(45)
             await send(twap.setConfig, tag, [ALI, constants.One, ttl]);
