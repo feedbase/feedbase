@@ -149,6 +149,35 @@ describe('twap', () => {
             want(BigNumber.from(val)).to.eql(price.mul(2))
         })
 
+        it('reconfig', async () => {
+            await send(twap.setConfig, tag, config)
+            await send(fb.push, tag, b32(ray(1)), constants.MaxUint256.sub(45))
+            await send(twap.poke, tag)
+            await mine(hh, range.toNumber())
+            await send(twap.poke, tag)
+            await send(fb.push, tag, b32(ray(3)), constants.MaxUint256.sub(45))
+            await send(twap.poke, tag)
+            await mine(hh, range.toNumber())
+            await send(twap.poke, tag);
+
+            await send(twap.setConfig, tag, [ALI, range / 10, 20000])
+            await send(twap.poke, tag);
+            ;[val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val)).to.eql(ray(3))
+            await mine(hh, range.toNumber() / 10)
+            await send(twap.poke, tag);
+            ;[val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val)).to.eql(ray(3))
+
+            await send(fb.push, tag, b32(ray(72)), constants.MaxUint256.sub(45))
+            await send(twap.poke, tag)
+            await mine(hh, range / 10);
+            await send(twap.poke, tag)
+            ;[val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val)).to.eql(ray(72))
+        })
+
+
         it('big window gradual increase to new price', async () => {
             let price = BigNumber.from(100)
             let range = 100000

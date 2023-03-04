@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 pragma solidity ^0.8.18;
+import 'hardhat/console.sol';
 
 import '../Feedbase.sol';
 import { Ward } from '../mixin/ward.sol';
@@ -29,12 +30,19 @@ contract TWAP is Ward {
     }
     
     function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
-        configs[tag] = _config;
         Observation storage first = obs[tag][0];
         Observation storage last  = obs[tag][1];
         if (_config.range > block.timestamp) revert ErrRange();
         first.time = block.timestamp - _config.range;
         last.time = block.timestamp;
+        if (configs[tag].range > 0) {
+            // new number of slots in window
+            // do this so next poke result doesn't change
+            uint diff = last.tally - first.tally;
+            last.tally = diff * _config.range / configs[tag].range;
+            first.tally = 0;
+        }
+        configs[tag] = _config;
     }
 
     // can't have a public variable
