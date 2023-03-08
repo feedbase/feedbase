@@ -52,6 +52,14 @@ describe('twap', () => {
         want(await twap.getConfig(tag)).eql(expectedConfig)
     })
 
+    it('setConfig other tag', async function () {
+        const ttag = Buffer.from("MYCASH".padStart(32, '\0'))
+        const config = [CAT, constants.One, constants.One, ttag]
+        await send(twap.setConfig, tag, config)
+        const expectedConfig = [CAT, constants.One, constants.One, '0x' + ttag.toString('hex')]
+        want(await twap.getConfig(tag)).eql(expectedConfig)
+    })
+
     it('setConfig range', async function () {
         let timestamp = (await ethers.provider.getBlock('latest')).timestamp
         await fail("ErrRange", twap.setConfig, tag, [CAT, timestamp + 2, 100, constants.HashZero])
@@ -201,13 +209,16 @@ describe('twap', () => {
             await send(twap.poke, tag);
             ;[val,] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val)).to.eql(ray(3))
-
+            
+            const newTag = Buffer.from('OTHERTEG'.padStart(32, '\0'))
+            await send(twap.setConfig, tag, [ALI, range / 10, 20000, newTag])
             await send(fb.push, tag, b32(ray(72)), constants.MaxUint256.sub(45))
             await send(twap.poke, tag)
             await mine(hh, range / 10);
             await send(twap.poke, tag)
-            ;[val,] = await fb.pull(twap.address, tag)
+            ;[val,] = await fb.pull(twap.address, newTag)
             want(BigNumber.from(val)).to.eql(ray(72))
+
         })
 
 
