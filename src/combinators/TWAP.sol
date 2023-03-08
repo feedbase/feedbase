@@ -43,6 +43,10 @@ contract TWAP is Ward {
             first.tally = 0;
         }
         configs[tag] = _config;
+
+        //  if targettag is empty, just use same tag
+        if (_config.ttag == bytes32(0)) configs[tag].ttag = tag;
+
     }
 
     // can't have a public variable
@@ -84,12 +88,7 @@ contract TWAP is Ward {
             ttl += config.ttl;
         }
 
-        // if targettag isn't empty, push there
-        if (config.ttag != bytes32(0)) {
-            tag = config.ttag;
-        }
-
-        fb.push(tag, bytes32((nexttally - pseudotally) / config.range), ttl);
+        fb.push(config.ttag, bytes32((nexttally - pseudotally) / config.range), ttl);
     }
 
 }

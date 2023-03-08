@@ -8,11 +8,11 @@ const debug = require('debug')('feedbase:test')
 let fb
 let signers
 describe('twap', () => {
-    let tag, seq, sec, ttl, val
+    let tag, tag_hex, seq, sec, ttl, val
     let ali, bob, cat
     let ALI, BOB, CAT
     let twap
-    const zeroconfig = [constants.AddressZero, constants.Zero, constants.Zero, ethers.constants.HashZero]
+    const zeroconfig = [constants.AddressZero, constants.Zero, constants.Zero, constants.HashZero]
     before(async () => {
       signers = await ethers.getSigners();
       [ali, bob, cat] = signers;
@@ -28,6 +28,7 @@ describe('twap', () => {
     beforeEach(async () => {
       await revert(hh)
       tag = Buffer.from('USDCASH'.padStart(32, '\0'))
+      tag_hex = '0x' + tag.toString('hex')
       seq = 1
       sec = Math.floor(Date.now() / 1000)
       ttl = 10000000000000
@@ -46,7 +47,9 @@ describe('twap', () => {
         const config = [CAT, constants.One, constants.One, constants.HashZero]
         want(await twap.getConfig(tag)).eql(zeroconfig)
         await send(twap.setConfig, tag, config)
-        want(await twap.getConfig(tag)).eql(config)
+        // expect to default to supplied tag
+        const expectedConfig = [CAT, constants.One, constants.One, tag_hex]
+        want(await twap.getConfig(tag)).eql(expectedConfig)
     })
 
     it('setConfig range', async function () {
