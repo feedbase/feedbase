@@ -27,6 +27,14 @@ describe('medianizer', () => {
     await revert(hh)
   })
 
+  describe('setTags', async () => {
+    it('set a tags ttag', async () => {
+      want(await medianizer.tags(tag)).to.eql(ethers.constants.HashZero)
+      await send(medianizer.setTargetTag, tag, Buffer.from('OTHERTAG'.padStart(32, '\0')))
+      want(await medianizer.tags(tag)).to.eql('0x' + Buffer.from('OTHERTAG'.padStart(32, '\0')).toString('hex'))
+    })
+  })
+
   describe('poke', () => {
     describe('expired src feeds', async () => {
         let timestamp
@@ -257,6 +265,25 @@ describe('medianizer', () => {
       await medianizer.poke(tag)
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1200)
+    })
+
+    it('Alternate target tag', async () => {
+      const newTag = Buffer.from('OTHERTAG'.padStart(32, '\0'))
+      const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
+      const ttl = 10 * 10 ** 12
+      const sources = [s1]
+      const selectors = sources.map(s => s.address)
+
+      await medianizer.setSources(selectors)
+      await medianizer.setTargetTag(tag, newTag);
+      await Promise.all(sources.map(async (src, idx) => {
+        const con = fb.connect(src)
+        await con.push(tag, vals[idx], ttl)
+      }))
+
+      await medianizer.poke(tag)
+      const [median] = await fb.pull(medianizer.address, newTag)
+      want(BigNumber.from(median).toNumber()).to.eql(1000)
     })
   })
 })

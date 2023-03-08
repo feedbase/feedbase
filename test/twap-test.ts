@@ -210,7 +210,7 @@ describe('twap', () => {
             ;[val,] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val)).to.eql(ray(3))
             
-            const newTag = Buffer.from('OTHERTEG'.padStart(32, '\0'))
+            const newTag = Buffer.from('OTHERTAG'.padStart(32, '\0'))
             await send(twap.setConfig, tag, [ALI, range / 10, 20000, newTag])
             await send(fb.push, tag, b32(ray(72)), constants.MaxUint256.sub(45))
             await send(twap.poke, tag)

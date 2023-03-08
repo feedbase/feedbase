@@ -12,6 +12,7 @@ contract Medianizer {
     address[] public sources;
     Feedbase  public feedbase;
     uint256   public quorum = 1;
+    mapping(bytes32 tag => bytes32 ttag) public tags;
 
     constructor(address fb) {
         owner = msg.sender;
@@ -26,6 +27,11 @@ contract Medianizer {
     function setSources(address[] calldata newSources) public {
         if (msg.sender != owner) revert ErrOwner();
         sources = newSources;
+    }
+
+    function setTargetTag(bytes32 tag, bytes32 ttag) public {
+        if (msg.sender != owner) revert ErrOwner();
+        tags[tag] = ttag;
     }
 
     function setQuorum(uint newQuorum) public {
@@ -72,6 +78,7 @@ contract Medianizer {
             median = data[(count - 1) / 2];
         }
 
+        if (tags[tag] != bytes32(0)) tag = tags[tag];
         feedbase.push(tag, median, minttl);
     }
 }
