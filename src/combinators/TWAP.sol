@@ -9,6 +9,7 @@ contract TWAP is Ward {
         address source;
         uint    range;
         uint    ttl;
+        bytes32 ttag;
     }
 
     struct Observation {
@@ -82,6 +83,12 @@ contract TWAP is Ward {
         } else {
             ttl += config.ttl;
         }
+
+        // if targettag isn't empty, push there
+        if (config.ttag != bytes32(0)) {
+            tag = config.ttag;
+        }
+
         fb.push(tag, bytes32((nexttally - pseudotally) / config.range), ttl);
     }
 
