@@ -44,7 +44,7 @@ describe('twap', () => {
     })
 
     it('setConfig', async function () {
-        const config = [CAT, constants.One, constants.One, constants.HashZero]
+        const config = [CAT, constants.One, constants.One, tag]
         want(await twap.getConfig(tag)).eql(zeroconfig)
         await send(twap.setConfig, tag, config)
         // expect to default to supplied tag
@@ -53,10 +53,10 @@ describe('twap', () => {
     })
 
     it('setConfig other tag', async function () {
-        const ttag = Buffer.from("MYCASH".padStart(32, '\0'))
-        const config = [CAT, constants.One, constants.One, ttag]
+        const ptag = Buffer.from("MYCASH".padStart(32, '\0'))
+        const config = [CAT, constants.One, constants.One, ptag]
         await send(twap.setConfig, tag, config)
-        const expectedConfig = [CAT, constants.One, constants.One, '0x' + ttag.toString('hex')]
+        const expectedConfig = [CAT, constants.One, constants.One, '0x' + ptag.toString('hex')]
         want(await twap.getConfig(tag)).eql(expectedConfig)
     })
 
@@ -73,7 +73,7 @@ describe('twap', () => {
         let range = BigNumber.from(100)
         let ttl = BigNumber.from(1000)
         beforeEach(async () => {
-            config = [ALI, range, ttl, constants.HashZero]
+            config = [ALI, range, ttl, tag]
             timestamp = (await ethers.provider.getBlock('latest')).timestamp
         })
 
@@ -120,7 +120,7 @@ describe('twap', () => {
         })
 
         it("advance, but not past max ttl", async () => {
-            await send(twap.setConfig, tag, [ALI, range, BigNumber.from(46), constants.HashZero])
+            await send(twap.setConfig, tag, [ALI, range, BigNumber.from(46), tag])
             await send(fb.push, tag, b32(ray(1)), constants.MaxUint256.sub(45))
             await send(twap.poke, tag)
             let [,twapttl] = await fb.pull(twap.address, tag)
@@ -163,7 +163,7 @@ describe('twap', () => {
 
         it('tiny window', async () => {
             let price = BigNumber.from(45)
-            await send(twap.setConfig, tag, [ALI, constants.One, ttl, constants.HashZero]);
+            await send(twap.setConfig, tag, [ALI, constants.One, ttl, tag]);
             await send(fb.push, tag, b32(price), constants.MaxUint256)
             await send(twap.poke, tag)
             let [val,] = await fb.pull(twap.address, tag)
@@ -201,7 +201,7 @@ describe('twap', () => {
             await mine(hh, range.toNumber())
             await send(twap.poke, tag);
 
-            await send(twap.setConfig, tag, [ALI, range / 10, 20000, constants.HashZero])
+            await send(twap.setConfig, tag, [ALI, range / 10, 20000, tag])
             await send(twap.poke, tag);
             ;[val,] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val)).to.eql(ray(3))
@@ -225,7 +225,7 @@ describe('twap', () => {
         it('big window gradual increase to new price', async () => {
             let price = BigNumber.from(100)
             let range = 100000
-            await send(twap.setConfig, tag, [ALI, BigNumber.from(range), ttl, constants.HashZero]);
+            await send(twap.setConfig, tag, [ALI, BigNumber.from(range), ttl, tag]);
             await send(fb.push, tag, b32(price), constants.MaxUint256)
             await send(twap.poke, tag)
 

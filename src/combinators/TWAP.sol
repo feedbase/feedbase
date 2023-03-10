@@ -9,7 +9,7 @@ contract TWAP is Ward {
         address source;
         uint    range;
         uint    ttl;
-        bytes32 ttag;
+        bytes32 ptag;
     }
 
     struct Observation {
@@ -43,10 +43,6 @@ contract TWAP is Ward {
             first.tally = 0;
         }
         configs[tag] = _config;
-
-        //  if targettag is empty, just use same tag
-        if (_config.ttag == bytes32(0)) configs[tag].ttag = tag;
-
     }
 
     // can't have a public variable
@@ -88,7 +84,7 @@ contract TWAP is Ward {
             ttl += config.ttl;
         }
 
-        fb.push(config.ttag, bytes32((nexttally - pseudotally) / config.range), ttl);
+        fb.push(config.ptag, bytes32((nexttally - pseudotally) / config.range), ttl);
     }
 
 }
