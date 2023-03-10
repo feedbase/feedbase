@@ -7,12 +7,13 @@ import './Feedbase.sol';
 contract Medianizer {
     error ErrOwner();
     error ErrQuorum();
+    error ErrSourceTag();
 
     address   public owner;
     address[] public sources;
     Feedbase  public feedbase;
     uint256   public quorum = 1;
-    mapping(bytes32 tag => bytes32 ttag) public tags;
+    mapping(bytes32 dtag => mapping (address source => bytes32 tag)) public tags;
 
     constructor(address fb) {
         owner = msg.sender;
@@ -29,9 +30,9 @@ contract Medianizer {
         sources = newSources;
     }
 
-    function setTargetTag(bytes32 tag, bytes32 ttag) public {
+    function setSourceTag(bytes32 dtag, address source, bytes32 stag) public {
         if (msg.sender != owner) revert ErrOwner();
-        tags[tag] = ttag;
+        tags[dtag][source] = stag;
     }
 
     function setQuorum(uint newQuorum) public {
@@ -40,13 +41,15 @@ contract Medianizer {
         quorum = newQuorum;
     }
 
-    function poke(bytes32 tag) public {
+    function poke(bytes32 dtag) public {
         bytes32[] memory data = new bytes32[](sources.length);
         uint256 minttl = type(uint256).max;
         uint256 count = 0;
 
         for(uint256 i = 0; i < sources.length; i++) {
-            (bytes32 val, uint256 _ttl) = feedbase.pull(sources[i], tag);
+            bytes32 stag = tags[dtag][sources[i]];
+            if (stag == bytes32(0)) revert ErrSourceTag();
+            (bytes32 val, uint256 _ttl) = feedbase.pull(sources[i], stag);
             if (block.timestamp > _ttl) {
                 continue;
             }
@@ -77,8 +80,6 @@ contract Medianizer {
         } else {
             median = data[(count - 1) / 2];
         }
-
-        if (tags[tag] != bytes32(0)) tag = tags[tag];
-        feedbase.push(tag, median, minttl);
+        feedbase.push(dtag, median, minttl);
     }
 }
