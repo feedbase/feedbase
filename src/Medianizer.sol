@@ -30,18 +30,11 @@ contract Medianizer {
         owner = newOwner;
     }
 
-    function setSource(bytes32 dtag, address oldSrc, bytes32 oldTag, address newSrc, bytes32 newTag) public {
+    function setSources(bytes32 dtag, Source[] calldata newSources) public {
         if (msg.sender != owner) revert ErrOwner();
-        if (oldSrc == address(0)) {
-            sources[dtag].push(Source(newSrc, newTag));
-            return;
-        }
-        for (uint i = 0; i < sources[dtag].length; i++) {
-            if (sources[dtag][i].src == oldSrc && sources[dtag][i].tag == oldTag) {
-                sources[dtag][i].src = newSrc;
-                sources[dtag][i].tag = newTag;
-                return;
-            }
+        delete sources[dtag];
+        for (uint i = 0; i < newSources.length; ++i) {
+            sources[dtag].push(Source(newSources[i].src, newSources[i].tag));
         }
     }
 

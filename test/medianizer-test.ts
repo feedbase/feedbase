@@ -28,22 +28,14 @@ describe('medianizer', () => {
     await revert(hh)
   })
 
-  describe('setTags', async () => {
-    it('set a tags ttag', async () => {
-      want(await medianizer.tags(tag)).to.eql(ethers.constants.HashZero)
-      await send(medianizer.setTargetTag, tag, Buffer.from('OTHERTAG'.padStart(32, '\0')))
-      want(await medianizer.tags(tag)).to.eql('0x' + Buffer.from('OTHERTAG'.padStart(32, '\0')).toString('hex'))
-    })
-  })
-
   describe('poke', () => {
     describe('expired src feeds', async () => {
         let timestamp
         beforeEach(async () => {
-            const selectors = [s1.address, s2.address]
-            const setsrcs = await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, selectors[0], tag)
-            await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, selectors[1], tag)
+            const selectors = [[s1.address, tag], [s2.address, tag]]
+            const setsrcs = await medianizer.setSources(tag, selectors)
             timestamp = (await ethers.provider.getBlock(setsrcs.blockNumber)).timestamp
+            await medianizer.setQuorum(tag, 1)
             await send(fb.connect(s1).push, tag, hexZeroPad(hexValue(1000), 32), timestamp + 1000)
             await send(fb.connect(s2).push, tag, hexZeroPad(hexValue(2000), 32), timestamp + 2000)
         })
@@ -101,9 +93,10 @@ describe('medianizer', () => {
       const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1]
-      const selectors = sources.map(s => s.address)
+      const selectors = sources.map(s => [s.address, tag])
 
-      await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, selectors[0], tag)
+      await medianizer.setSources(tag, selectors)
+
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -118,10 +111,9 @@ describe('medianizer', () => {
       const vals = [1000, 1200].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2]
-      const selectors = sources.map(s => s.address)
-      selectors.forEach(async (sel) => {
-        await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, sel, tag)
-      })
+      const selectors = sources.map(s => [s.address, tag])
+      
+      await medianizer.setSources(tag, selectors)
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -137,12 +129,10 @@ describe('medianizer', () => {
       const vals = [1000, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3]
-      const selectors = sources.map(s => s.address)
-
-      selectors.forEach(async (sel) => {
-        await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, sel, tag)
-      })      
+      const selectors = sources.map(s => [s.address, tag])
       
+      await medianizer.setSources(tag, selectors)
+
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
         await con.push(tag, vals[idx], ttl)
@@ -157,11 +147,9 @@ describe('medianizer', () => {
       const vals = [1000, 1100, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4]
-      const selectors = sources.map(s => s.address)
-
-      selectors.forEach(async (sel) => {
-        await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, sel, tag)
-      })
+      const selectors = sources.map(s => [s.address, tag])
+      
+      await medianizer.setSources(tag, selectors)
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -177,11 +165,9 @@ describe('medianizer', () => {
       const vals = [1000, 1100, 1200, 1300, 1400].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4, s5]
-      const selectors = sources.map(s => s.address)
-
-      selectors.forEach(async (sel) => {
-        await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, sel, tag)
-      })
+      const selectors = sources.map(s => [s.address, tag])
+      
+      await medianizer.setSources(tag, selectors)
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -193,36 +179,34 @@ describe('medianizer', () => {
       want(BigNumber.from(median).toNumber()).to.eql(1200)
     })
 
-      /*
-    it('One expired value', async () => {
-      const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
-      const ttl = 60 * 60 * 24
-      const now = Math.ceil(Date.now() / 1000)
-      const sources = [s1]
-      const selectors = sources.map(s => s.address)
-      await medianizer.setSources(selectors)
-      await Promise.all(sources.map(async (src, idx) => {
-        const con = fb.connect(src)
-        await con.push(tag, vals[idx], ttl)
-      }))
+    //   /*
+    // it('One expired value', async () => {
+    //   const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
+    //   const ttl = 60 * 60 * 24
+    //   const now = Math.ceil(Date.now() / 1000)
+    //   const sources = [s1]
+    //   const selectors = sources.map(s => s.address)
+    //   await medianizer.setSources(selectors)
+    //   await Promise.all(sources.map(async (src, idx) => {
+    //     const con = fb.connect(src)
+    //     await con.push(tag, vals[idx], ttl)
+    //   }))
 
-      await hh.network.provider.send('evm_setNextBlockTimestamp', [
-        now + 2 * ttl
-      ])
+    //   await hh.network.provider.send('evm_setNextBlockTimestamp', [
+    //     now + 2 * ttl
+    //   ])
 
-      await fail("VM Exception while processing transaction: reverted with reason string 'ERR_READ'", medianizer.push, tag)
-    })
-    */
+    //   await fail("VM Exception while processing transaction: reverted with reason string 'ERR_READ'", medianizer.push, tag)
+    // })
+    // */
 
     it('Two unordered values', async () => {
       const vals = [1200, 1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2]
-      const selectors = sources.map(s => s.address)
-
-      selectors.forEach(async (sel) => {
-        await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, sel, tag)
-      })
+      const selectors = sources.map(s => [s.address, tag])
+      
+      await medianizer.setSources(tag, selectors)
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -238,11 +222,9 @@ describe('medianizer', () => {
       const vals = [1300, 1000, 1200].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3]
-      const selectors = sources.map(s => s.address)
-
-      selectors.forEach(async (sel) => {
-        await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, sel, tag)
-      })
+      const selectors = sources.map(s => [s.address, tag])
+      
+      await medianizer.setSources(tag, selectors)
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -258,11 +240,9 @@ describe('medianizer', () => {
       const vals = [1200, 1000, 1300, 1100].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4]
-      const selectors = sources.map(s => s.address)
-
-      selectors.forEach(async (sel) => {
-        await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, sel, tag)
-      })
+      const selectors = sources.map(s => [s.address, tag])
+      
+      await medianizer.setSources(tag, selectors)
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -278,11 +258,9 @@ describe('medianizer', () => {
       const vals = [1300, 1100, 1400, 1200, 1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4, s5]
-      const selectors = sources.map(s => s.address)
-
-      selectors.forEach(async (sel) => {
-        await medianizer.setSource(tag, ethers.constants.AddressZero, ethers.constants.HashZero, sel, tag)
-      })
+      const selectors = sources.map(s => [s.address, tag])
+      
+      await medianizer.setSources(tag, selectors)
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -299,11 +277,10 @@ describe('medianizer', () => {
       const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1]
-      const selectors = sources.map(s => s.address)
+      const selectors = sources.map(s => [s.address, tag])
+      
+      await medianizer.setSources(newTag, selectors)
 
-      selectors.forEach(async (sel) => {
-        await medianizer.setSource(newTag, ethers.constants.AddressZero, ethers.constants.HashZero, sel, tag)
-      })
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
