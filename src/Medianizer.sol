@@ -9,11 +9,16 @@ contract Medianizer {
     error ErrQuorum();
     error ErrSourceTag();
 
+    struct Source {
+        address src;
+        bytes32 tag;
+    }
+
     address   public owner;
-    address[] public sources;
     Feedbase  public feedbase;
-    uint256   public quorum = 1;
-    mapping(bytes32 dtag => mapping (address source => bytes32 tag)) public tags;
+    mapping(bytes32 dtag => Source[]) public sources;
+    mapping(bytes32 dtag => uint) quorums;
+
 
     constructor(address fb) {
         owner = msg.sender;
@@ -25,31 +30,38 @@ contract Medianizer {
         owner = newOwner;
     }
 
-    function setSources(address[] calldata newSources) public {
+    function setSource(bytes32 dtag, address oldSrc, address newSrc, bytes32 newTag) public {
         if (msg.sender != owner) revert ErrOwner();
-        sources = newSources;
+        if (oldSrc == address(0)) {
+            sources[dtag].push(Source(newSrc, newTag));
+            return;
+        }
+        for (uint i = 0; i < sources[dtag].length; i++) {
+            if (sources[dtag][i].src == oldSrc) {
+                sources[dtag][i].src = newSrc;
+                sources[dtag][i].tag = newTag;
+                return;
+            }
+        }
     }
 
-    function setSourceTag(bytes32 dtag, address source, bytes32 stag) public {
-        if (msg.sender != owner) revert ErrOwner();
-        tags[dtag][source] = stag;
-    }
-
-    function setQuorum(uint newQuorum) public {
+    function setQuorum(bytes32 dtag, uint newQuorum) public {
         if (msg.sender != owner) revert ErrOwner();
         if (newQuorum == 0) revert ErrQuorum();
-        quorum = newQuorum;
+        quorums[dtag] = newQuorum;
     }
 
     function poke(bytes32 dtag) public {
-        bytes32[] memory data = new bytes32[](sources.length);
+        Source[] memory srcs = sources[dtag];
+        if (srcs.length == 0) revert ErrQuorum();
+        bytes32[] memory data = new bytes32[](srcs.length);
         uint256 minttl = type(uint256).max;
         uint256 count = 0;
 
-        for(uint256 i = 0; i < sources.length; i++) {
-            bytes32 stag = tags[dtag][sources[i]];
-            if (stag == bytes32(0)) revert ErrSourceTag();
-            (bytes32 val, uint256 _ttl) = feedbase.pull(sources[i], stag);
+        for(uint256 i = 0; i < srcs.length; i++) {
+            address src = srcs[i].src;
+            bytes32 tag = srcs[i].tag; 
+            (bytes32 val, uint256 _ttl) = feedbase.pull(src, tag);
             if (block.timestamp > _ttl) {
                 continue;
             }
@@ -70,7 +82,7 @@ contract Medianizer {
             }
             count++;
         }
-        if (count < quorum) revert ErrQuorum();
+        if (count < quorums[dtag]) revert ErrQuorum();
 
         bytes32 median;
         if (count % 2 == 0) {
