@@ -71,8 +71,6 @@ describe('divider', () => {
             await send(fb.connect(bob).push, tagb, b32(ray(5)), timestamp + 102)
             await send(fb.connect(cat).push, tagc, b32(ray(2)), timestamp + 200)
 
-            await send(divider.poke, tag)
-
             const res = await fb.pull(divider.address, tag)
             want(res).eql([ethers.utils.hexZeroPad(ray(5), 32), BigNumber.from(timestamp + 100)])
         })
@@ -85,29 +83,27 @@ describe('divider', () => {
             await send(fb.connect(bob).push, tagb, b32(ray(0)), timestamp + 102)
             await send(fb.connect(cat).push, tagc, b32(ray(2)), timestamp + 200)
 
-
-            await fail('division by zero', divider.poke, tag)
+            await fail('panic', divider.read, tag)
         })
 
         it('fail order', async () => {
-            await fail('ErrShort', divider.poke, tag)
+            await fail('ErrShort', divider.read, tag)
             await send(divider.setConfig, tag, zeroconfig)
-            await fail('ErrShort', divider.poke, tag)
+            await fail('ErrShort', divider.read, tag)
             await send(divider.setConfig, tag, [[ALI], [taga]])
-            await fail('ErrShort', divider.poke, tag)
+            await fail('ErrShort', divider.read, tag)
             await send(divider.setConfig, tag, [[ALI], [taga, tagb]])
             //
             // length mismatch check comes first
-            await fail('ErrMatch', divider.poke, tag)
+            await fail('ErrMatch', divider.read, tag)
             await send(divider.setConfig, tag, [[ALI, BOB], [taga]])
-            await fail('ErrMatch', divider.poke, tag)
+            await fail('ErrMatch', divider.read, tag)
 
         })
         it('minttl', async () => {
             await send(divider.setConfig, tag, [[ALI, BOB], [taga, tagb]])
             await send(fb.connect(ali).push, taga, b32(ray(50)), timestamp + 97)
             await send(fb.connect(bob).push, tagb, b32(ray(20)), timestamp + 100)
-            await send(divider.poke, tag)
             const res = await fb.pull(divider.address, tag)
             want(res).eql([ethers.utils.hexZeroPad(ray(2.5), 32), BigNumber.from(timestamp + 97)])
         })

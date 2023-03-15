@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.18;
 
+import './mixin/Block.sol';
+
 contract Feedbase {
 
     struct Feed {
@@ -21,7 +23,8 @@ contract Feedbase {
 
     function pull(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
         Feed storage feed = _feeds[src][tag];
-        return (feed.val, feed.ttl);
+        (val, ttl) = (feed.val, feed.ttl);
+        if (ttl == 0) (val, ttl) = Block(src).read(tag);
     }
 
     function push(bytes32 tag, bytes32 val, uint256 ttl) external {
