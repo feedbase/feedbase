@@ -7,7 +7,6 @@ import './Feedbase.sol';
 contract Medianizer {
     error ErrOwner();
     error ErrQuorum();
-    error ErrSourceTag();
 
     struct Source {
         address src;
