@@ -8,10 +8,16 @@ contract Medianizer {
     error ErrOwner();
     error ErrQuorum();
 
+    struct Source {
+        address src;
+        bytes32 tag;
+    }
+
     address   public owner;
-    address[] public sources;
     Feedbase  public feedbase;
-    uint256   public quorum = 1;
+    mapping(bytes32 dtag => Source[]) public sources;
+    mapping(bytes32 dtag => uint) quorums;
+
 
     constructor(address fb) {
         owner = msg.sender;
@@ -23,24 +29,31 @@ contract Medianizer {
         owner = newOwner;
     }
 
-    function setSources(address[] calldata newSources) public {
+    function setSources(bytes32 dtag, Source[] calldata newSources) public {
         if (msg.sender != owner) revert ErrOwner();
-        sources = newSources;
+        delete sources[dtag];
+        for (uint i = 0; i < newSources.length; ++i) {
+            sources[dtag].push(Source(newSources[i].src, newSources[i].tag));
+        }
     }
 
-    function setQuorum(uint newQuorum) public {
+    function setQuorum(bytes32 dtag, uint newQuorum) public {
         if (msg.sender != owner) revert ErrOwner();
         if (newQuorum == 0) revert ErrQuorum();
-        quorum = newQuorum;
+        quorums[dtag] = newQuorum;
     }
 
-    function poke(bytes32 tag) public {
-        bytes32[] memory data = new bytes32[](sources.length);
+    function poke(bytes32 dtag) public {
+        Source[] memory srcs = sources[dtag];
+        if (srcs.length == 0) revert ErrQuorum();
+        bytes32[] memory data = new bytes32[](srcs.length);
         uint256 minttl = type(uint256).max;
         uint256 count = 0;
 
-        for(uint256 i = 0; i < sources.length; i++) {
-            (bytes32 val, uint256 _ttl) = feedbase.pull(sources[i], tag);
+        for(uint256 i = 0; i < srcs.length; i++) {
+            address src = srcs[i].src;
+            bytes32 tag = srcs[i].tag; 
+            (bytes32 val, uint256 _ttl) = feedbase.pull(src, tag);
             if (block.timestamp > _ttl) {
                 continue;
             }
@@ -61,7 +74,7 @@ contract Medianizer {
             }
             count++;
         }
-        if (count < quorum) revert ErrQuorum();
+        if (count < quorums[dtag]) revert ErrQuorum();
 
         bytes32 median;
         if (count % 2 == 0) {
@@ -71,7 +84,6 @@ contract Medianizer {
         } else {
             median = data[(count - 1) / 2];
         }
-
-        feedbase.push(tag, median, minttl);
+        feedbase.push(dtag, median, minttl);
     }
 }
