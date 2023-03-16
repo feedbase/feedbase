@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-v3.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.19;
 
 import '../Feedbase.sol';
 import { Ward } from '../mixin/ward.sol';
@@ -23,10 +23,10 @@ contract TWAP is Ward {
 
     mapping(bytes32=>Config) public configs;
     mapping(bytes32=>Observation[2]) obs;
-    Feedbase public immutable fb;
+    Feedbase public immutable feedbase;
 
     constructor(address _fb) Ward() {
-        fb = Feedbase(_fb);
+        feedbase = Feedbase(_fb);
     }
     
     function setConfig(bytes32 dtag, Config calldata _config) public _ward_ {
@@ -51,7 +51,7 @@ contract TWAP is Ward {
     function poke(bytes32 dtag) external {
         Config storage config = configs[dtag];
 
-        (bytes32 spot, uint ttl) = fb.pull(config.source, config.tag);
+        (bytes32 spot, uint ttl) = feedbase.pull(config.source, config.tag);
 
         Observation storage first = obs[dtag][0];
         Observation storage last  = obs[dtag][1];
@@ -79,7 +79,7 @@ contract TWAP is Ward {
             ttl += config.ttl;
         }
 
-        fb.push(dtag, bytes32((nexttally - pseudotally) / config.range), ttl);
+        feedbase.push(dtag, bytes32((nexttally - pseudotally) / config.range), ttl);
     }
 
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.19;
 
 import '../Feedbase.sol';
 import { Block } from '../mixin/Block.sol';
@@ -15,7 +15,7 @@ contract Divider is Block, Ward {
     error ErrMatch();
 
     mapping(bytes32=>Config) configs;
-    Feedbase  public feedbase;
+    Feedbase public immutable feedbase;
     uint immutable precision;
 
     constructor(address fb, uint _precision) Ward() {

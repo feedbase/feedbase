@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-v3.0
 
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.19;
 
 import "../Feedbase.sol";
 import { Ward } from '../mixin/ward.sol';
@@ -13,7 +13,6 @@ interface IUniswapV3Pool {
         );
 }
 
-
 contract UniswapV3Adapter is Ward {
     struct Config {
         address pool;
@@ -23,13 +22,13 @@ contract UniswapV3Adapter is Ward {
     }
     error ErrNoPool();
     error Err0Range();
-    Feedbase immutable fb;
+    Feedbase public immutable feedbase;
     mapping(bytes32=>Config) public configs;
     uint constant RAY = 10 ** 27;
     uint constant X96 = 2 ** 96;
 
     constructor(Feedbase _fb) Ward() {
-        fb = _fb;
+        feedbase = _fb;
     }
 
     function setConfig(bytes32 tag, Config memory config) public _ward_ {
@@ -55,7 +54,7 @@ contract UniswapV3Adapter is Ward {
         if (config.reverse) {
             priceray = RAY * RAY / priceray;
         }
-        fb.push(tag, bytes32(priceray), block.timestamp + config.ttl);
+        feedbase.push(tag, bytes32(priceray), block.timestamp + config.ttl);
     }
 
     /////////////////////////////////////////////////////////////////////////////////
@@ -109,4 +108,3 @@ contract UniswapV3Adapter is Ward {
     ////////////////////////////////////////////////
 
 }
-
