@@ -15,7 +15,7 @@ contract Divider is Block, Ward {
     error ErrMatch();
 
     mapping(bytes32=>Config) configs;
-    Feedbase  public feedbase;
+    Feedbase public feedbase;
     uint immutable precision;
 
     constructor(address fb, uint _precision) Ward() {
