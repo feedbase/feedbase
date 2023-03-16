@@ -10,27 +10,28 @@ contract Feedbase {
         bytes32 val;
         uint256 ttl;
     }
-
     event Push(
         address indexed src
       , bytes32 indexed tag
       , bytes32         val
       , uint256         ttl
     );
+    error ErrTTL();
+    uint256 internal constant READ = 0;
 
     // src -> tag -> Feed
     mapping(address=>mapping(bytes32=>Feed)) _feeds;
 
     function pull(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
         Feed storage feed = _feeds[src][tag];
-        (val, ttl) = (feed.val, feed.ttl);
-        if (ttl == 0) (val, ttl) = Block(src).read(tag);
+        ttl = feed.ttl;
+        if (ttl == READ) (val, ttl) = Block(src).read(tag);
+        else val = feed.val;
     }
 
     function push(bytes32 tag, bytes32 val, uint256 ttl) external {
+        if (ttl == READ) revert ErrTTL();
         _feeds[msg.sender][tag] = Feed({val: val, ttl: ttl});
         emit Push(msg.sender, tag, val, ttl);
     }
-
 }
-
