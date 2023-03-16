@@ -22,13 +22,13 @@ contract UniswapV3Adapter is Ward {
     }
     error ErrNoPool();
     error Err0Range();
-    Feedbase immutable fb;
+    Feedbase public immutable feedbase;
     mapping(bytes32=>Config) public configs;
     uint constant RAY = 10 ** 27;
     uint constant X96 = 2 ** 96;
 
     constructor(Feedbase _fb) Ward() {
-        fb = _fb;
+        feedbase = _fb;
     }
 
     function setConfig(bytes32 tag, Config memory config) public _ward_ {
@@ -54,7 +54,7 @@ contract UniswapV3Adapter is Ward {
         if (config.reverse) {
             priceray = RAY * RAY / priceray;
         }
-        fb.push(tag, bytes32(priceray), block.timestamp + config.ttl);
+        feedbase.push(tag, bytes32(priceray), block.timestamp + config.ttl);
     }
 
     /////////////////////////////////////////////////////////////////////////////////

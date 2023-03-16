@@ -13,7 +13,7 @@ contract Medianizer is Ward {
         bytes32 tag;
     }
 
-    Feedbase public feedbase;
+    Feedbase public immutable feedbase;
     mapping(bytes32 dtag => Source[]) public sources;
     mapping(bytes32 dtag => uint) quorums;
 

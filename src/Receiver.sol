@@ -6,7 +6,7 @@ import './Feedbase.sol';
 import { Ward } from './mixin/ward.sol';
 
 contract BasicReceiverFactory {
-    Feedbase public feedbase;
+    Feedbase public immutable feedbase;
     mapping(address=>bool) public built;
 
     event Built(address indexed caller, address indexed receiver);
@@ -30,7 +30,7 @@ contract BasicReceiver is Ward {
     error ErrSec();
     error ErrSeq();
 
-    Feedbase                 public feedbase;
+    Feedbase                 public immutable feedbase;
     mapping(address=>bool)   public isSigner;
     mapping(bytes32=>uint)   public prevTime;
 

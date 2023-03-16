@@ -32,11 +32,11 @@ contract Progression is Ward {
 
     mapping(bytes32=>Cache) public caches;
     mapping(bytes32=>Config) public configs;
-    Feedbase public immutable fb;
+    Feedbase public immutable feedbase;
     uint constant RAY = 10 ** 27;
 
     constructor(Feedbase _fb) Ward() {
-        fb = _fb;
+        feedbase = _fb;
     }
 
     function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
@@ -51,7 +51,7 @@ contract Progression is Ward {
         (uint priceb, uint ttlb) = pullUint(config.srcb, config.tagb);
         if (cache.end) {
             uint baseb = cache.endbase;
-            fb.push(tag, bytes32(priceb * baseb / RAY), ttlb);
+            feedbase.push(tag, bytes32(priceb * baseb / RAY), ttlb);
             return;
         }
         (uint pricea, uint ttla) = pullUint(config.srca, config.taga);
@@ -100,7 +100,7 @@ contract Progression is Ward {
  
         // total quote == price, because it's per 1 ref
         uint price = (pricea * cache.basea + priceb * cache.baseb) / RAY;
-        fb.push(tag, bytes32(price), ttl);
+        feedbase.push(tag, bytes32(price), ttl);
 
         if (point == stretch) {
             cache.endbase = cache.baseb;
@@ -118,7 +118,7 @@ contract Progression is Ward {
 
     function pullUint(address src, bytes32 tag) internal view returns (uint val, uint ttl) {
         bytes32 bval;
-        (bval, ttl) = fb.pull(src, tag);
+        (bval, ttl) = feedbase.pull(src, tag);
         val = uint(bval);
     }
 }
