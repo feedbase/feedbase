@@ -257,6 +257,29 @@ describe('twap', () => {
             ;[val,] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val)).eql(price)
         })
+
+        it('assume current spot for elapsed time, not last spot', async () => {
+            let price = BigNumber.from(100)
+            let range = 100000
+            await send(twap.setConfig, tag, [ALI, BigNumber.from(range), ttl]);
+            await send(fb.push, tag, b32(price), constants.MaxUint256)
+            await send(twap.poke, tag)
+            await mine(hh, range)
+            await send(fb.push, tag, b32(price.mul(2)), constants.MaxUint256)
+            await send(twap.poke, tag)
+
+            // ignores the first value
+            let [val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.mul(2).toNumber(), 0)
+
+            await mine(hh, range / 2)
+            await send(fb.push, tag, b32(price), constants.MaxUint256)
+            await send(twap.poke, tag)
+
+            // assumes uniform price * 2 in last window
+            ;[val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.mul(3).div(2).toNumber(), 0)
+        })
     })
 })
 

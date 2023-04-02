@@ -13,7 +13,6 @@ contract TWAP is Ward {
 
     struct Observation {
         uint tally;
-        uint spot;
         uint time;
     }
 
@@ -63,7 +62,7 @@ contract TWAP is Ward {
         uint    capped     = elapsed > config.range ? config.range : elapsed;
         if (elapsed == 0) revert ErrDone();
         // assume spot stayed constant since last observation in window
-        uint nexttally = last.tally + last.spot * (capped - 1) + uint(spot);
+        uint nexttally = last.tally + capped * uint(spot);
 
         // assume uniform in old window to calculate pseudo-tally
         // advance twap window by elapsed time
@@ -71,10 +70,9 @@ contract TWAP is Ward {
         uint pseudotally = first.tally + pseudospot * capped;
         obs[tag][0]= Observation(
             pseudotally,
-            pseudospot,
             first.time + elapsed
         );
-        obs[tag][1] = Observation(nexttally, uint(spot), block.timestamp);
+        obs[tag][1] = Observation(nexttally, block.timestamp);
 
         // push twap, advance ttl from *source feed's* ttl
         if (type(uint).max - ttl < config.ttl) {
