@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.19;
 
 contract Ward {
     event SetWard(address indexed caller, address indexed trusts, bool bit);
     error ErrWard(address caller, address object, bytes4 sig);
 
-    mapping (address => bool) public wards;
+    mapping (address usr => bool) public wards;
 
     constructor() {
         wards[msg.sender] = true;
@@ -18,6 +18,15 @@ contract Ward {
     {
         emit SetWard(msg.sender, usr, bit);
         wards[usr] = bit;
+    }
+
+    function give(address usr)
+      _ward_ external
+    {
+        wards[usr] = true;
+        emit SetWard(msg.sender, usr, true);
+        wards[msg.sender] = false;
+        emit SetWard(msg.sender, msg.sender, false);
     }
 
     modifier _ward_ {

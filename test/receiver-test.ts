@@ -52,18 +52,20 @@ describe('receiver BasicReceiver BasicReceiverFactory', () => {
   it('auth', async function () {
     const auths = async (n) => {
       use(n);
-      await rec.setOwner(signers[n].address);
+      await rec.ward(signers[n].address, true);
       await rec.setSigner(signers[n].address, "test");
       want(await rec.isSigner(signers[n].address)).to.eq(true);
-      want(await rec.owner()).to.eq(signers[n].address);
+      want(await rec.wards(signers[n].address)).to.eq(true);
     }
 
     want(auths(1)).rejectedWith('bad-owner');
     await auths(0);
-    await rec.setOwner(BOB);
+    await rec.ward(BOB, true);
+    await rec.ward(ALI, false);
     want(auths(0)).rejectedWith('bad-owner');
     await auths(1);
-    await rec.setOwner(ALI);
+    await rec.ward(ALI, true);
+    await rec.ward(BOB, false);
     want(auths(1)).rejectedWith('bad-owner');
     await auths(0);
   });

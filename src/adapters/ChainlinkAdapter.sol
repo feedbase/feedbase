@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-v3.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.19;
 
 import { Ward } from "../mixin/ward.sol";
 import { Feedbase } from "../Feedbase.sol";
@@ -57,4 +57,3 @@ contract ChainlinkAdapter is Ward {
         fb.push(tag, bytes32(uint(res)), timestamp + config.ttl);
     }
 }
-

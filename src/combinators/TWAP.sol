@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-v3.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.19;
 
 import '../Feedbase.sol';
 import { Ward } from '../mixin/ward.sol';
@@ -7,6 +7,7 @@ import { Ward } from '../mixin/ward.sol';
 contract TWAP is Ward {
     struct Config {
         address source;
+        bytes32 tag;
         uint    range;
         uint    ttl;
     }
@@ -19,45 +20,40 @@ contract TWAP is Ward {
     error ErrRange();
     error ErrDone();
 
-    mapping(bytes32=>Config) configs;
+    mapping(bytes32=>Config) public configs;
     mapping(bytes32=>Observation[2]) obs;
-    Feedbase public immutable fb;
+    Feedbase public immutable feedbase;
 
     constructor(address _fb) Ward() {
-        fb = Feedbase(_fb);
+        feedbase = Feedbase(_fb);
     }
     
-    function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
-        Observation storage first = obs[tag][0];
-        Observation storage last  = obs[tag][1];
+    function setConfig(bytes32 dtag, Config calldata _config) public _ward_ {
+        Observation storage first = obs[dtag][0];
+        Observation storage last  = obs[dtag][1];
         if (_config.range > block.timestamp) revert ErrRange();
         first.time = block.timestamp - _config.range;
         last.time = block.timestamp;
-        if (configs[tag].range > 0) {
+        if (configs[dtag].range > 0) {
             // new number of slots in window
             // do this so next poke result doesn't change
             uint diff = last.tally - first.tally;
-            last.tally = diff * _config.range / configs[tag].range;
+            last.tally = diff * _config.range / configs[dtag].range;
             first.tally = 0;
         }
-        configs[tag] = _config;
-    }
-
-    // can't have a public variable
-    function getConfig(bytes32 tag) public view returns (Config memory) {
-        return configs[tag];
+        configs[dtag] = _config;
     }
 
     // modified from reflexer ChainlinkTWAP
     // https://github.com/reflexer-labs/geb-chainlink-median/blob/master/src/ChainlinkTWAP.sol
     // GPL3
-    function poke(bytes32 tag) external {
-        Config storage config = configs[tag];
+    function poke(bytes32 dtag) external {
+        Config storage config = configs[dtag];
 
-        (bytes32 spot, uint ttl) = fb.pull(config.source, tag);
+        (bytes32 spot, uint ttl) = feedbase.pull(config.source, config.tag);
 
-        Observation storage first = obs[tag][0];
-        Observation storage last  = obs[tag][1];
+        Observation storage first = obs[dtag][0];
+        Observation storage last  = obs[dtag][1];
         uint256 elapsed    = block.timestamp - last.time;
         uint    capped     = elapsed > config.range ? config.range : elapsed;
         if (elapsed == 0) revert ErrDone();
@@ -68,11 +64,11 @@ contract TWAP is Ward {
         // advance twap window by elapsed time
         uint pseudospot = (last.tally - first.tally) / config.range;
         uint pseudotally = first.tally + pseudospot * capped;
-        obs[tag][0]= Observation(
+        obs[dtag][0]= Observation(
             pseudotally,
             first.time + elapsed
         );
-        obs[tag][1] = Observation(nexttally, block.timestamp);
+        obs[dtag][1] = Observation(nexttally, block.timestamp);
 
         // push twap, advance ttl from *source feed's* ttl
         if (type(uint).max - ttl < config.ttl) {
@@ -80,7 +76,8 @@ contract TWAP is Ward {
         } else {
             ttl += config.ttl;
         }
-        fb.push(tag, bytes32((nexttally - pseudotally) / config.range), ttl);
+
+        feedbase.push(dtag, bytes32((nexttally - pseudotally) / config.range), ttl);
     }
 
 }

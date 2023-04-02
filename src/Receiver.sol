@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-v3.0
 
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.19;
 
 import './Feedbase.sol';
+import { Ward } from './mixin/ward.sol';
 
 contract BasicReceiverFactory {
-    Feedbase public feedbase;
+    Feedbase public immutable feedbase;
     mapping(address=>bool) public built;
 
     event Built(address indexed caller, address indexed receiver);
@@ -18,24 +19,21 @@ contract BasicReceiverFactory {
         BasicReceiver o = new BasicReceiver(feedbase);
         built[address(o)] = true;
         emit Built(msg.sender, address(o));
-        o.setOwner(msg.sender);
+        o.ward(msg.sender, true);
         return o;
     }
 }
 
-contract BasicReceiver {
-    error ErrOwner();
+contract BasicReceiver is Ward {
     error ErrSigner();
     error ErrTtl();
     error ErrSec();
     error ErrSeq();
 
-    Feedbase                 public feedbase;
-    address                  public owner;
+    Feedbase                 public immutable feedbase;
     mapping(address=>bool)   public isSigner;
     mapping(bytes32=>uint)   public prevTime;
 
-    event OwnerUpdate(address indexed oldOwner, address indexed newOwner);
     event SignerUpdate(address indexed signer, bool isSigner);
 
     event Submit(
@@ -51,14 +49,8 @@ contract BasicReceiver {
       = keccak256("Submit(bytes32 tag,uint256 sec,uint256 ttl,bytes32 val)");
     bytes32 public immutable DOMAIN_SEPARATOR;
 
-    modifier auth {
-        if (msg.sender != owner) revert ErrOwner();
-        _;
-    }
-
     constructor(Feedbase fb) {
         feedbase = fb;
-        owner = msg.sender;
 
         // EIP712
         DOMAIN_SEPARATOR = keccak256(abi.encode(
@@ -108,13 +100,7 @@ contract BasicReceiver {
         feedbase.push(tag, val, ttl);
     }
 
-    function setOwner(address newOwner) public auth {
-        emit OwnerUpdate(owner, newOwner);
-        owner = newOwner;
-    }
-
-    function setSigner(address who, bool what) public auth {
+    function setSigner(address who, bool what) public _ward_ {
         isSigner[who] = what;
     }
-
 }

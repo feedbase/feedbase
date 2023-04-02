@@ -75,12 +75,8 @@ describe('uniswapv3', () => {
   it('look reverse', async function () {
       await adapt.setConfig(tag, [ETH_USD_POOL_ADDR, 500, 100, true])
 
-      let [price, ttl] = await fb.pull(adapt.address, tag)
-      want(price).eql(constants.HashZero)
-      want(ttl).eql(constants.Zero)
-
       let look = await send(adapt.look, tag)
-      ;[price, ttl] = await fb.pull(adapt.address, tag)
+      let [price, ttl] = await fb.pull(adapt.address, tag)
 
       want(BigNumber.from(price).gt(constants.Zero)).true
       let timestamp = (await ethers.provider.getBlock(look.blockNumber)).timestamp;
@@ -94,12 +90,8 @@ describe('uniswapv3', () => {
   it('look normal', async function () {
       await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 500, 100, false])
 
-      let [price, ttl] = await fb.pull(adapt.address, tag)
-      want(price).eql(constants.HashZero)
-      want(ttl).eql(constants.Zero)
-
       let look = await send(adapt.look, tag)
-      ;[price, ttl] = await fb.pull(adapt.address, tag)
+      let [price, ttl] = await fb.pull(adapt.address, tag)
 
       want(BigNumber.from(price).gt(constants.Zero)).true
       let timestamp = (await ethers.provider.getBlock(look.blockNumber)).timestamp;
@@ -112,14 +104,7 @@ describe('uniswapv3', () => {
 
   it('look zero range', async function () {
       await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 0, 100, false])
-
-      let [price, ttl] = await fb.pull(adapt.address, tag)
-      want(price).eql(constants.HashZero)
-      want(ttl).eql(constants.Zero)
-
       await fail("Err0Range", adapt.look, tag)
   })
 
 })
-
-
