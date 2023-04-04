@@ -31,15 +31,23 @@ describe('medianizer', () => {
   describe('poke', () => {
     describe('expired src feeds', async () => {
         let timestamp
+        let srcaddrs
+        let tags
         beforeEach(async () => {
-            const selectors = [[s1.address, tag], [s2.address, tag]]
-            const setsrcs = await medianizer.setSources(tag, selectors)
-            timestamp = (await ethers.provider.getBlock(setsrcs.blockNumber)).timestamp
-            await medianizer.setQuorum(tag, 1)
+            srcaddrs = [s1.address, s2.address]
+            tags = [tag, tag]
+            await send(medianizer.setConfig, tag, [srcaddrs, tags, 1])
+            timestamp = (await ethers.provider.getBlock('latest')).timestamp
             await send(fb.connect(s1).push, tag, hexZeroPad(hexValue(1000), 32), timestamp + 1000)
             await send(fb.connect(s2).push, tag, hexZeroPad(hexValue(2000), 32), timestamp + 2000)
         })
 
+        it("srcs length and tags length not equal", async () => {
+            await fail('ErrConfig', medianizer.setConfig, tag, [[s1.address, s2.address], [tag], 1])
+            await fail('ErrConfig', medianizer.setConfig, tag, [[s1.address], [tag, tag], 1])
+            await fail('ErrConfig', medianizer.setConfig, tag, [[s1.address], [], 1])
+            await fail('ErrConfig', medianizer.setConfig, tag, [[], [tag], 1])
+        })
 
         it('stale src feed', async () => {
             debug('both vals live')
@@ -65,10 +73,10 @@ describe('medianizer', () => {
         })
 
         it('quorum', async () => {
-            await send(medianizer.setQuorum, tag, 3)
+            await send(medianizer.setConfig, tag, [srcaddrs, tags, 3])
             await fail('ErrQuorum', medianizer.poke, tag)
 
-            await send(medianizer.setQuorum, tag, 2)
+            await send(medianizer.setConfig, tag, [srcaddrs, tags, 2])
             await hh.network.provider.request({
                 method: "evm_setNextBlockTimestamp",
                 params: [timestamp + 1000]
@@ -76,7 +84,7 @@ describe('medianizer', () => {
 
             await send(medianizer.poke, tag)
             await fail('ErrQuorum', medianizer.poke, tag)
-            await send(medianizer.setQuorum, tag, 1)
+            await send(medianizer.setConfig, tag, [srcaddrs, tags, 1])
             await send(medianizer.poke, tag)
             await send(medianizer.poke, tag)
 
@@ -93,9 +101,10 @@ describe('medianizer', () => {
       const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1]
-      const selectors = sources.map(s => [s.address, tag])
+      const srcaddrs = sources.map(s => s.address)
+      const tags = Array(srcaddrs.length).fill(tag)
 
-      await medianizer.setSources(tag, selectors)
+      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -111,9 +120,10 @@ describe('medianizer', () => {
       const vals = [1000, 1200].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2]
-      const selectors = sources.map(s => [s.address, tag])
+      const srcaddrs = sources.map(s => s.address)
+      const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setSources(tag, selectors)
+      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -129,9 +139,10 @@ describe('medianizer', () => {
       const vals = [1000, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3]
-      const selectors = sources.map(s => [s.address, tag])
+      const srcaddrs = sources.map(s => s.address)
+      const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setSources(tag, selectors)
+      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -147,9 +158,10 @@ describe('medianizer', () => {
       const vals = [1000, 1100, 1200, 1300].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4]
-      const selectors = sources.map(s => [s.address, tag])
+      const srcaddrs = sources.map(s => s.address)
+      const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setSources(tag, selectors)
+      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -165,9 +177,10 @@ describe('medianizer', () => {
       const vals = [1000, 1100, 1200, 1300, 1400].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4, s5]
-      const selectors = sources.map(s => [s.address, tag])
+      const srcaddrs = sources.map(s => s.address)
+      const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setSources(tag, selectors)
+      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -204,9 +217,10 @@ describe('medianizer', () => {
       const vals = [1200, 1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2]
-      const selectors = sources.map(s => [s.address, tag])
+      const srcaddrs = sources.map(s => s.address)
+      const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setSources(tag, selectors)
+      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -222,9 +236,10 @@ describe('medianizer', () => {
       const vals = [1300, 1000, 1200].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3]
-      const selectors = sources.map(s => [s.address, tag])
+      const srcaddrs = sources.map(s => s.address)
+      const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setSources(tag, selectors)
+      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -240,9 +255,10 @@ describe('medianizer', () => {
       const vals = [1200, 1000, 1300, 1100].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4]
-      const selectors = sources.map(s => [s.address, tag])
+      const srcaddrs = sources.map(s => s.address)
+      const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setSources(tag, selectors)
+      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -258,9 +274,10 @@ describe('medianizer', () => {
       const vals = [1300, 1100, 1400, 1200, 1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1, s2, s3, s4, s5]
-      const selectors = sources.map(s => [s.address, tag])
+      const srcaddrs = sources.map(s => s.address)
+      const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setSources(tag, selectors)
+      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -277,10 +294,10 @@ describe('medianizer', () => {
       const vals = [1000].map(x => utils.hexZeroPad(utils.hexValue(x), 32))
       const ttl = 10 * 10 ** 12
       const sources = [s1]
-      const selectors = sources.map(s => [s.address, tag])
+      const srcaddrs = sources.map(s => s.address)
+      const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setSources(newTag, selectors)
-
+      await medianizer.setConfig(newTag, [srcaddrs, tags, 0])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
