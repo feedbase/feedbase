@@ -8,20 +8,21 @@ contract TWAP is Ward {
     struct Config {
         address source;
         bytes32 tag;
-        uint    range;
-        uint    ttl;
+        uint256 range;
+        uint256 ttl;
     }
 
-    struct Observation {
-        uint tally;
+    struct Window {
+        uint head;
+        uint tail;
         uint time;
     }
 
     error ErrRange();
     error ErrDone();
 
-    mapping(bytes32=>Config) public configs;
-    mapping(bytes32=>Observation[2]) obs;
+    mapping(bytes32 dtag => Config) public configs;
+    mapping(bytes32 dtag => Window) public windows;
     Feedbase public immutable feedbase;
 
     constructor(address _fb) Ward() {
@@ -29,17 +30,15 @@ contract TWAP is Ward {
     }
     
     function setConfig(bytes32 dtag, Config calldata _config) public _ward_ {
-        Observation storage first = obs[dtag][0];
-        Observation storage last  = obs[dtag][1];
+        Window storage window = windows[dtag];
         if (_config.range > block.timestamp) revert ErrRange();
-        first.time = block.timestamp - _config.range;
-        last.time = block.timestamp;
+        window.time = block.timestamp;
         if (configs[dtag].range > 0) {
             // new number of slots in window
             // do this so next poke result doesn't change
-            uint diff = last.tally - first.tally;
-            last.tally = diff * _config.range / configs[dtag].range;
-            first.tally = 0;
+            uint diff   = window.head - window.tail;
+            window.head = diff * _config.range / configs[dtag].range;
+            window.tail = 0;
         }
         configs[dtag] = _config;
     }
@@ -49,26 +48,21 @@ contract TWAP is Ward {
     // GPL3
     function poke(bytes32 dtag) external {
         Config storage config = configs[dtag];
-
         (bytes32 spot, uint ttl) = feedbase.pull(config.source, config.tag);
+        Window storage window = windows[dtag];
+        (uint head, uint tail) = (window.head, window.tail);
 
-        Observation storage first = obs[dtag][0];
-        Observation storage last  = obs[dtag][1];
-        uint256 elapsed    = block.timestamp - last.time;
-        uint    capped     = elapsed > config.range ? config.range : elapsed;
+        uint256 elapsed = block.timestamp - window.time;
+        uint256 capped  = elapsed > config.range ? config.range : elapsed;
         if (elapsed == 0) revert ErrDone();
-        // assume spot stayed constant since last observation in window
-        uint nexttally = last.tally + capped * uint(spot);
+        uint nexttally = head + capped * uint(spot);
 
-        // assume uniform in old window to calculate pseudo-tally
         // advance twap window by elapsed time
-        uint pseudospot = (last.tally - first.tally) / config.range;
-        uint pseudotally = first.tally + pseudospot * capped;
-        obs[dtag][0]= Observation(
-            pseudotally,
-            first.time + elapsed
-        );
-        obs[dtag][1] = Observation(nexttally, block.timestamp);
+        uint pseudospot  = (head - tail) / config.range;
+        uint pseudotally = tail + pseudospot * capped;
+        window.head = nexttally;
+        window.tail = pseudotally;
+        window.time = block.timestamp;
 
         // push twap, advance ttl from *source feed's* ttl
         if (type(uint).max - ttl < config.ttl) {
@@ -79,5 +73,4 @@ contract TWAP is Ward {
 
         feedbase.push(dtag, bytes32((nexttally - pseudotally) / config.range), ttl);
     }
-
 }
