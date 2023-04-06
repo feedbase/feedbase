@@ -285,6 +285,33 @@ describe('twap', () => {
             ;[val,] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val).toNumber()).to.be.closeTo(price.mul(3).div(2).toNumber(), 0)
         })
+
+        it('linear progression, prior pokes do not effect result', async () => {
+            let price = BigNumber.from(1000)
+            let range = 10000
+            await send(twap.setConfig, tag, [ALI, tag, BigNumber.from(range), ttl]);
+            await send(fb.push, tag, b32(price), constants.MaxUint256)
+            await send(twap.poke, tag)
+            await mine(hh, range)
+            await send(twap.poke, tag)
+
+            await send(fb.push, tag, b32(price.mul(0)), constants.MaxUint256)
+
+            // transitioning from 1000 to 0. After 20% of the range period the price should be 800, it is
+            await mine(hh, range / 5)
+            await send(twap.poke, tag)
+            let [val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.mul(8).div(10).toNumber(), 1)
+
+            // now waiting another 10% would expect price should be 70% of the original price,
+            // it's dropping by 10% of gap from last value to feed (800),
+            // so dropping by about 80 instead of 100
+            // this test fails, price progression can be slowed by poking
+            await mine(hh, range / 10)
+            await send(twap.poke, tag)
+            let [val2,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val2).toNumber()).to.be.closeTo(price.mul(7).div(10).toNumber(), 1)
+        })
     })
 })
 
