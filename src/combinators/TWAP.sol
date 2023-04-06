@@ -14,7 +14,6 @@ contract TWAP is Ward {
 
     struct Window {
         uint head;
-        uint tail;
         uint time;
     }
 
@@ -36,9 +35,7 @@ contract TWAP is Ward {
         if (configs[dtag].range > 0) {
             // new number of slots in window
             // do this so next poke result doesn't change
-            uint diff   = window.head - window.tail;
-            window.head = diff * _config.range / configs[dtag].range;
-            window.tail = 0;
+            window.head = window.head * _config.range / configs[dtag].range;
         }
         configs[dtag] = _config;
     }
@@ -50,7 +47,7 @@ contract TWAP is Ward {
         Config storage config = configs[dtag];
         (bytes32 spot, uint ttl) = feedbase.pull(config.source, config.tag);
         Window storage window = windows[dtag];
-        (uint head, uint tail) = (window.head, window.tail);
+        uint head = window.head;
 
         uint256 elapsed = block.timestamp - window.time;
         uint256 capped  = elapsed > config.range ? config.range : elapsed;
@@ -58,10 +55,9 @@ contract TWAP is Ward {
         uint nexttally = head + capped * uint(spot);
 
         // advance twap window by elapsed time
-        uint pseudospot  = (head - tail) / config.range;
-        uint pseudotally = tail + pseudospot * capped;
-        window.head = nexttally;
-        window.tail = pseudotally;
+        uint pseudospot  = head / config.range;
+        uint pseudotally = pseudospot * capped;
+        window.head = nexttally - pseudotally;
         window.time = block.timestamp;
 
         // push twap, advance ttl from *source feed's* ttl
