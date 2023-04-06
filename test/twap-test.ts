@@ -313,10 +313,10 @@ describe('twap', () => {
             want(BigNumber.from(val2).toNumber()).to.be.closeTo(price.mul(7).div(10).toNumber(), 1)
         })
 
-        it('frequent pokes', async () => {
+        it('spike with frequent pokes', async () => {
             let price = ray(1000)
             let range = 1000
-            let granularity = 10;
+            let granularity = range / 100;
             await send(twap.setConfig, tag, [ALI, tag, BigNumber.from(range), ttl]);
             await send(fb.push, tag, b32(price), constants.MaxUint256)
             await send(twap.poke, tag)
@@ -324,13 +324,41 @@ describe('twap', () => {
             await send(twap.poke, tag)
 
             await send(fb.push, tag, b32(price.mul(2)), constants.MaxUint256)
-            let time = range / granularity
+            let time = Math.floor(range / granularity)
+            let start = (await ethers.provider.getBlock('latest')).timestamp
+            let val
             for (let i = 0; i < 100000000; i += 1) {
                 await mine(hh, time - 1)
                 await send(twap.poke, tag)
+
                 let [val,] = await fb.pull(twap.address, tag)
-                console.log(i * time, val)
+                let timestamp = (await ethers.provider.getBlock('latest')).timestamp
+                console.log(timestamp - start, val)
                 if (BigNumber.from(val).gt(price.mul(199).div(100))) break;
+            }
+        })
+
+        it('dip with frequent pokes', async () => {
+            let price = ray(1000)
+            let range = 1000
+            let granularity = range / 100;
+            await send(twap.setConfig, tag, [ALI, tag, BigNumber.from(range), ttl]);
+            await send(fb.push, tag, b32(price), constants.MaxUint256)
+            await send(twap.poke, tag)
+            await mine(hh, range)
+            await send(twap.poke, tag)
+
+            await send(fb.push, tag, b32(price.div(2)), constants.MaxUint256)
+            let time = Math.floor(range / granularity)
+            let start = (await ethers.provider.getBlock('latest')).timestamp
+            for (let i = 0; i < 100000000; i += 1) {
+                await mine(hh, time - 1)
+                await send(twap.poke, tag)
+
+                let [val,] = await fb.pull(twap.address, tag)
+                let timestamp = (await ethers.provider.getBlock('latest')).timestamp
+                console.log(timestamp - start, val)
+                if (BigNumber.from(val).lt(price.mul(100).div(199))) break;
             }
         })
     })
