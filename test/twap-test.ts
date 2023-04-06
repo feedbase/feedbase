@@ -312,6 +312,27 @@ describe('twap', () => {
             let [val2,] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val2).toNumber()).to.be.closeTo(price.mul(7).div(10).toNumber(), 1)
         })
+
+        it('frequent pokes', async () => {
+            let price = BigNumber.from(1000)
+            let range = 1000
+            let granularity = 5;
+            await send(twap.setConfig, tag, [ALI, tag, BigNumber.from(range), ttl]);
+            await send(fb.push, tag, b32(price), constants.MaxUint256)
+            await send(twap.poke, tag)
+            await mine(hh, range)
+            await send(twap.poke, tag)
+
+            await send(fb.push, tag, constants.HashZero, constants.MaxUint256)
+            let time = range / granularity
+            for (let i = 0; i < 100000000; i += 1) {
+                await mine(hh, time - 1)
+                await send(twap.poke, tag)
+                let [val,] = await fb.pull(twap.address, tag)
+                console.log(i * time, val)
+                if (BigNumber.from(val).lt(price.div(100))) break;
+            }
+        })
     })
 })
 
