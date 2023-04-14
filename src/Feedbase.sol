@@ -34,4 +34,8 @@ contract Feedbase {
         _feeds[msg.sender][tag] = Feed({val: val, ttl: ttl});
         emit Push(msg.sender, tag, val, ttl);
     }
+
+    function reads(address src, bytes32 tag) external view returns (bool) {
+        return _feeds[src][tag].ttl == READ;
+    }
 }

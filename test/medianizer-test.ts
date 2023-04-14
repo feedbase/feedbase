@@ -111,7 +111,9 @@ describe('medianizer', () => {
         await con.push(tag, vals[idx], ttl)
       }))
 
+      want(await fb.reads(medianizer.address, tag)).true
       await medianizer.poke(tag)
+      want(await fb.reads(medianizer.address, tag)).false
       const [median] = await fb.pull(medianizer.address, tag)
       want(BigNumber.from(median).toNumber()).to.eql(1000)
     })

@@ -100,12 +100,15 @@ describe('divider', () => {
             await fail('ErrMatch', divider.read, tag)
 
         })
+
         it('minttl', async () => {
+            want(await fb.reads(divider.address, tag)).true
             await send(divider.setConfig, tag, [[ALI, BOB], [taga, tagb]])
             await send(fb.connect(ali).push, taga, b32(ray(50)), timestamp + 97)
             await send(fb.connect(bob).push, tagb, b32(ray(20)), timestamp + 100)
             const res = await fb.pull(divider.address, tag)
             want(res).eql([ethers.utils.hexZeroPad(ray(2.5), 32), BigNumber.from(timestamp + 97)])
+            want(await fb.reads(divider.address, tag)).true
         })
     })
 })
