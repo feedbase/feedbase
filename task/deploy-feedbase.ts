@@ -14,6 +14,7 @@ task('deploy-feedbase', 'deploy Feedbase')
     const deployer = acct.address
 
     debug(`Deploying contracts using ${deployer} to ${network.name}`)
+    const netname = network.name.replace('_fork', '');
 
     const FeedbaseArtifact = require('../artifacts/src/Feedbase.sol/Feedbase.json')
     const MedianizerArtifact = require('../artifacts/src/Medianizer.sol/Medianizer.json')
@@ -24,7 +25,7 @@ task('deploy-feedbase', 'deploy Feedbase')
     await fb.deployed()
     debug('Feedbase deployed to : ', fb.address)
 
-    const pb = new dpack.PackBuilder(network.name)
+    const pb = new dpack.PackBuilder(netname)
     await pb.packObject({
       objectname: 'feedbase',
       address: fb.address,
