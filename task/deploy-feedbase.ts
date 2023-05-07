@@ -9,12 +9,11 @@ task('deploy-feedbase', 'deploy Feedbase')
   .addOptionalParam('outfile', 'save the dpack to this path')
   .setAction(async (args: TaskArguments, hre: any) => {
     const { ethers, network } = hre
-    const netname = args.netname ? args.netname : network.name
 
     const [acct] = await hre.ethers.getSigners()
     const deployer = acct.address
 
-    debug(`Deploying contracts using ${deployer} to ${network.name}, with ${netname}'s pack`)
+    debug(`Deploying contracts using ${deployer} to ${network.name}, with ${args.netname}'s pack`)
 
     const FeedbaseArtifact = require('../artifacts/src/Feedbase.sol/Feedbase.json')
     const MedianizerArtifact = require('../artifacts/src/Medianizer.sol/Medianizer.json')
@@ -25,7 +24,7 @@ task('deploy-feedbase', 'deploy Feedbase')
     await fb.deployed()
     debug('Feedbase deployed to : ', fb.address)
 
-    const pb = new dpack.PackBuilder(netname)
+    const pb = new dpack.PackBuilder(args.netname)
     await pb.packObject({
       objectname: 'feedbase',
       address: fb.address,
