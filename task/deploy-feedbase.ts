@@ -7,6 +7,7 @@ const dpack = require('@etherpacks/dpack')
 task('deploy-feedbase', 'deploy Feedbase')
   .addFlag('stdout', 'print the dpack to stdout')
   .addOptionalParam('outfile', 'save the dpack to this path')
+  .addParam('netname', 'network name to load pack from')
   .setAction(async (args: TaskArguments, hre: any) => {
     const { ethers, network } = hre
 
