@@ -24,7 +24,7 @@ task('deploy-feedbase', 'deploy Feedbase')
     await fb.deployed()
     debug('Feedbase deployed to : ', fb.address)
 
-    const pb = new dpack.PackBuilder(network.name)
+    const pb = new dpack.PackBuilder(hre.network.name)
     await pb.packObject({
       objectname: 'feedbase',
       address: fb.address,

@@ -22,7 +22,7 @@ describe('uniswapv3', () => {
   let tag, seq, sec, ttl, val
   let ali, bob, cat
   let ALI, BOB, CAT
-  let adapt
+  let adapt, wrap
   before(async () => {
     signers = await ethers.getSigners();
     [ali, bob, cat] = signers;
@@ -31,8 +31,10 @@ describe('uniswapv3', () => {
     const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
     fb = await FeedbaseFactory.deploy()
 
+    const UniWrapperFactory = await ethers.getContractFactory('UniWrapper')
+    wrap = await UniWrapperFactory.deploy()
     const UniswapV3AdapterFactory = await ethers.getContractFactory('UniswapV3Adapter')
-    adapt = await UniswapV3AdapterFactory.deploy(fb.address)
+    adapt = await UniswapV3AdapterFactory.deploy(fb.address, wrap.address)
 
     use(0)
 
@@ -105,6 +107,10 @@ describe('uniswapv3', () => {
   it('look zero range', async function () {
       await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 0, 100, false])
       await fail("Err0Range", adapt.look, tag)
+  })
+
+  it('test uni wrapper', async () => {
+      want(await wrap.getSqrtRatioAtTick(0)).eql(BigNumber.from(2).pow(96));
   })
 
 })
