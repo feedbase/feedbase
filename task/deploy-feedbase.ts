@@ -39,6 +39,19 @@ task('deploy-feedbase', 'deploy Feedbase')
       typename: 'Divider',
       artifact: DividerArtifact
     })
+    await pb.packType({
+      typename: 'TWAP',
+      artifact: require('../artifacts/src/combinators/TWAP.sol/TWAP.json')
+    })
+ 
+    await pb.packType({
+      typename: 'UniswapV3Adapter',
+      artifact: require('../artifacts/src/adapters/UniswapV3Adapter.sol/UniswapV3Adapter.json')
+    })
+    await pb.packType({
+      typename: 'ChainlinkAdapter',
+      artifact: require('../artifacts/src/adapters/ChainlinkAdapter.sol/ChainlinkAdapter.json')
+    })
 
     const pack = await pb.build()
     const str = JSON.stringify(pack, null, 2)
