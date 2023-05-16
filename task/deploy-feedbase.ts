@@ -24,7 +24,7 @@ task('deploy-feedbase', 'deploy Feedbase')
     await fb.deployed()
     debug('Feedbase deployed to : ', fb.address)
 
-    const pb = new dpack.PackBuilder(network.name)
+    const pb = new dpack.PackBuilder(hre.network.name)
     await pb.packObject({
       objectname: 'feedbase',
       address: fb.address,
@@ -38,6 +38,19 @@ task('deploy-feedbase', 'deploy Feedbase')
     await pb.packType({
       typename: 'Divider',
       artifact: DividerArtifact
+    })
+    await pb.packType({
+      typename: 'TWAP',
+      artifact: require('../artifacts/src/combinators/TWAP.sol/TWAP.json')
+    })
+
+    await pb.packType({
+      typename: 'UniswapV3Adapter',
+      artifact: require('../artifacts/src/adapters/UniswapV3Adapter.sol/UniswapV3Adapter.json')
+    })
+    await pb.packType({
+      typename: 'ChainlinkAdapter',
+      artifact: require('../artifacts/src/adapters/ChainlinkAdapter.sol/ChainlinkAdapter.json')
     })
 
     const pack = await pb.build()

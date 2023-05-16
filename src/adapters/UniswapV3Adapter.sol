@@ -4,7 +4,6 @@ pragma solidity ^0.8.19;
 
 import "../Feedbase.sol";
 import { Ward } from '../mixin/ward.sol';
-import { TickMath } from '../lib/TickMath.sol';
 
 interface IUniswapV3Pool {
     function observe(uint32[] calldata secondsAgos) external view
@@ -12,6 +11,10 @@ interface IUniswapV3Pool {
             int56[] memory tickCumulatives,
             uint160[] memory secondsPerLiquidityCumulativeX128s
         );
+}
+
+interface IUniWrapper {
+    function getSqrtRatioAtTick(int24 tick) external view returns (uint);
 }
 
 contract UniswapV3Adapter is Ward {
@@ -27,9 +30,11 @@ contract UniswapV3Adapter is Ward {
     mapping(bytes32=>Config) public configs;
     uint constant RAY = 10 ** 27;
     uint constant X96 = 2 ** 96;
+    IUniWrapper public immutable wrap;
 
-    constructor(Feedbase _fb) Ward() {
+    constructor(Feedbase _fb, IUniWrapper _wrap) Ward() {
         feedbase = _fb;
+        wrap = _wrap;
     }
 
     function setConfig(bytes32 tag, Config memory config) public _ward_ {
@@ -50,7 +55,7 @@ contract UniswapV3Adapter is Ward {
 
         int   delt         = int(cumulatives[0]) - int(cumulatives[1]);
         int24 meantick     = int24(delt / int(uint(range)));
-        uint  sqrtPriceX96 = TickMath.getSqrtRatioAtTick(meantick);
+        uint  sqrtPriceX96 = wrap.getSqrtRatioAtTick(meantick);
         uint  priceray     = sqrtPriceX96 ** 2 / X96 * RAY / X96;
         if (config.reverse) {
             priceray = RAY * RAY / priceray;
