@@ -12,7 +12,7 @@ contract UniWrapper {
         return PoolAddress.computeAddress(factory, PoolAddress.getPoolKey(t0, t1, fee));
     }
 
-    function getSqrtRatioAtTick(int24 tick) view public returns (uint) {
+    function getSqrtRatioAtTick(int24 tick) pure public returns (uint) {
         return TickMath.getSqrtRatioAtTick(tick);
     }
 }
