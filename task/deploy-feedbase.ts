@@ -43,7 +43,7 @@ task('deploy-feedbase', 'deploy Feedbase')
       typename: 'TWAP',
       artifact: require('../artifacts/src/combinators/TWAP.sol/TWAP.json')
     })
- 
+
     await pb.packType({
       typename: 'UniswapV3Adapter',
       artifact: require('../artifacts/src/adapters/UniswapV3Adapter.sol/UniswapV3Adapter.json')
