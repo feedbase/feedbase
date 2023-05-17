@@ -27,7 +27,7 @@ contract Divider is Block, Ward {
         configs[tag] = _config;
     }
 
-    // can't have a public variable
+    // can't have public getter for struct of dynamic arrays
     function getConfig(bytes32 tag) public view returns (Config memory) {
         return configs[tag];
     }

@@ -16,7 +16,7 @@ contract Medianizer is Ward {
     }
 
     Feedbase public immutable feedbase;
-    mapping(bytes32 dtag => Config) public configs;
+    mapping(bytes32 dtag => Config) configs;
 
     constructor(address fb) Ward() {
         feedbase = Feedbase(fb);
@@ -25,6 +25,10 @@ contract Medianizer is Ward {
     function setConfig(bytes32 dtag, Config calldata _config) public _ward_ {
         if (_config.tags.length != _config.srcs.length) revert ErrConfig();
         configs[dtag] = _config;
+    }
+
+    function getConfig(bytes32 dtag) view public returns (Config memory) {
+        return configs[dtag];
     }
 
     function poke(bytes32 dtag) public {
