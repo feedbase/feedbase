@@ -36,6 +36,15 @@ describe('divider', () => {
       val = Buffer.from('11'.repeat(32), 'hex')
     })
 
+    it('getConfig', async () => {
+        let config = [
+            [ali.address, bob.address],
+            [ethers.utils.hexlify(b32('ali')), ethers.utils.hexlify(b32('bob'))]
+        ]
+        await send(divider.setConfig, b32('hello'), config)
+        want(await divider.getConfig(b32('hello'))).eql(config)
+    })
+
     it('ward setConfig', async function () {
         await fail('ErrWard', divider.connect(bob).setConfig, b32('hello'), zeroconfig)
         await send(divider.ward, BOB, true);

@@ -42,6 +42,11 @@ describe('medianizer', () => {
             await send(fb.connect(s2).push, tag, hexZeroPad(hexValue(2000), 32), timestamp + 2000)
         })
 
+        it('getConfig', async () => {
+            let config = await medianizer.getConfig(tag)
+            want(config).eql([srcaddrs, tags, BigNumber.from(1)])
+        })
+
         it("srcs length and tags length not equal", async () => {
             await fail('ErrConfig', medianizer.setConfig, tag, [[s1.address, s2.address], [tag], 1])
             await fail('ErrConfig', medianizer.setConfig, tag, [[s1.address], [tag, tag], 1])
