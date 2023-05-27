@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: MIT
-
+// SPDX-License-Identifier: AGPL-v3.0
 pragma solidity 0.8.19;
-import { Feedbase } from '../Feedbase.sol';
+
 import { Ward } from '../mixin/ward.sol';
+import { Feedbase } from '../Feedbase.sol';
 
 interface ITellor {
     function getNewValueCountbyRequestId(uint requestId) external view returns (uint);
