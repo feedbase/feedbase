@@ -328,7 +328,7 @@ export default {
       hardhat: {
           forking: {
               url: process.env["RPC_URL"],
-              blockNumber: 16445606
+              blockNumber: 17352667
           }
       }
   }

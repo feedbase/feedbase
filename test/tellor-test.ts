@@ -1,6 +1,6 @@
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
-import { send, fail, want, snapshot, revert, b32, ray, RAY } from 'minihat'
+import { send, fail, want, snapshot, revert, b32, ray, RAY, wad, WAD } from 'minihat'
 const { constants, BigNumber } = ethers
 
 const debug = require('debug')('feedbase:test')
@@ -17,7 +17,8 @@ describe('tellor', () => {
     let adapt
     let config
     let precision
-    const ETHUSD_REQID = constants.One
+    const ETHUSD_REQID = "0x83a7f3d48786ac2667503a61e8c415438ed2922eb86a2906e4ee66d9a2ce4992"
+
     before(async () => {
         signers = await ethers.getSigners();
         [ali, bob, cat] = signers;
@@ -28,7 +29,7 @@ describe('tellor', () => {
         fb = await FeedbaseFactory.deploy()
 
         const TellorAdapterFactory = await ethers.getContractFactory('TellorAdapter')
-        const TELLOR_ADDRESS = "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0"
+        const TELLOR_ADDRESS = "0xD9157453E2668B2fc45b7A803D3FEF3642430cC0"
         adapt = await TellorAdapterFactory.deploy(fb.address, TELLOR_ADDRESS)
 
         await snapshot(hh)
@@ -57,16 +58,16 @@ describe('tellor', () => {
 
 
     it('setConfig', async () => {
-        want(await adapt.configs(tag)).eql([constants.Zero, constants.Zero])
+        want(await adapt.configs(tag)).eql([constants.HashZero, constants.Zero])
         await send(adapt.setConfig, tag, config)
         want(await adapt.configs(tag)).eql(config)
     })
 
     it('look', async () => {
-        await send(adapt.setConfig, tag, config)
+        await send(adapt.setConfig, tag, ["0x83a7f3d48786ac2667503a61e8c415438ed2922eb86a2906e4ee66d9a2ce4992", config[1]])
         await send(adapt.look, tag)
         let [price, ttl] = await fb.pull(adapt.address, tag)
-        want(BigNumber.from(price).toNumber()).to.be.closeTo(1500000000, 500000000) // 6 decimals
+        want(BigNumber.from(price).div(WAD).toNumber()).to.be.closeTo(1500, 500) // 6 decimals
         want(ttl.toNumber()).to.be.lt(Date.now() / 1000) // 6 decimals
     })
 })

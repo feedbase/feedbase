@@ -5,16 +5,16 @@ import { Ward } from '../mixin/ward.sol';
 import { Feedbase } from '../Feedbase.sol';
 
 interface ITellor {
-    function getNewValueCountbyRequestId(uint requestId) external view returns (uint);
-    function getTimestampbyRequestIDandIndex(uint requestId, uint idx) external view returns (uint);
-    function retrieveData(uint requestId, uint timestamp) external view returns (uint);
+    function getNewValueCountbyQueryId(bytes32 queryId) external view returns (uint);
+    function getTimestampbyQueryIdandIndex(bytes32 queryId, uint idx) external view returns (uint);
+    function retrieveData(bytes32 queryId, uint timestamp) external view returns (bytes memory);
 }
 
 contract TellorAdapter is Ward {
     ITellor public immutable tellor;
     Feedbase public immutable fb;
     struct Config {
-        uint reqid;
+        bytes32 qid;
         uint ttl;
     }
     mapping(bytes32 tag=>Config config) public configs;
@@ -31,11 +31,11 @@ contract TellorAdapter is Ward {
 
     function look(bytes32 tag) public {
         Config storage config = configs[tag];
-        uint reqid = config.reqid;
-        uint256 count = tellor.getNewValueCountbyRequestId(reqid);
-        uint256 time = tellor.getTimestampbyRequestIDandIndex(reqid, count - 1);
-        uint256 value = tellor.retrieveData(reqid, time);
-        if (value > 0) fb.push(tag, bytes32(value), time + config.ttl);
+        bytes32 qid = config.qid;
+        uint256 count = tellor.getNewValueCountbyQueryId(qid);
+        uint256 time = tellor.getTimestampbyQueryIdandIndex(qid, count - 1);
+        bytes memory value = tellor.retrieveData(qid, time);
+        if (value.length == 32) fb.push(tag, bytes32(value), time + config.ttl);
         else revert ErrNoData();
     }
 }
