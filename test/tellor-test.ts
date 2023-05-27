@@ -69,7 +69,4 @@ describe('tellor', () => {
         want(BigNumber.from(price).toNumber()).to.be.closeTo(1500000000, 500000000) // 6 decimals
         want(ttl.toNumber()).to.be.lt(Date.now() / 1000) // 6 decimals
     })
-
 })
-
-
