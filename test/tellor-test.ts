@@ -18,6 +18,7 @@ describe('tellor', () => {
     let config
     let precision
     const ETHUSD_REQID = "0x83a7f3d48786ac2667503a61e8c415438ed2922eb86a2906e4ee66d9a2ce4992"
+    const WSTETHUSD_REQID = "0x1962cde2f19178fe2bb2229e78a6d386e6406979edc7b9a1966d89d83b3ebf2e"
 
     before(async () => {
         signers = await ethers.getSigners();
@@ -67,7 +68,11 @@ describe('tellor', () => {
         await send(adapt.setConfig, tag, [ETHUSD_REQID, config[1]])
         await send(adapt.look, tag)
         let [price, ttl] = await fb.pull(adapt.address, tag)
-        want(BigNumber.from(price).div(WAD).toNumber()).to.be.closeTo(1500, 500) // 6 decimals
-        want(ttl.toNumber()).to.be.lt(Date.now() / 1000) // 6 decimals
+        want(BigNumber.from(price).div(WAD).toNumber()).to.be.closeTo(1500, 500) // 18 decimals
+        want(ttl.toNumber()).to.be.lt(Date.now() / 1000)
+
+        await send(adapt.setConfig, b32('wsteth:usd'), [WSTETHUSD_REQID, config[1]])
+        want(BigNumber.from(price).div(WAD).toNumber()).to.be.closeTo(2000, 500)
+        want(ttl.toNumber()).to.be.lt(Date.now() / 1000)
     })
 })
