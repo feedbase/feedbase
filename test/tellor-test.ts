@@ -72,6 +72,8 @@ describe('tellor', () => {
         want(ttl.toNumber()).to.be.lt(Date.now() / 1000)
 
         await send(adapt.setConfig, b32('wsteth:usd'), [WSTETHUSD_REQID, config[1]])
+        await send(adapt.look, b32('wsteth:usd'))
+        ;[price, ttl] = await fb.pull(adapt.address, b32('wsteth:usd'))
         want(BigNumber.from(price).div(WAD).toNumber()).to.be.closeTo(2000, 500)
         want(ttl.toNumber()).to.be.lt(Date.now() / 1000)
     })
