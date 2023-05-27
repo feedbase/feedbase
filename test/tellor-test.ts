@@ -64,7 +64,7 @@ describe('tellor', () => {
     })
 
     it('look', async () => {
-        await send(adapt.setConfig, tag, ["0x83a7f3d48786ac2667503a61e8c415438ed2922eb86a2906e4ee66d9a2ce4992", config[1]])
+        await send(adapt.setConfig, tag, [ETHUSD_REQID, config[1]])
         await send(adapt.look, tag)
         let [price, ttl] = await fb.pull(adapt.address, tag)
         want(BigNumber.from(price).div(WAD).toNumber()).to.be.closeTo(1500, 500) // 6 decimals
