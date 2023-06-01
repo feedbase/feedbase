@@ -46,14 +46,9 @@ contract ChainlinkAdapter is Ward {
 
         // expand/truncate
         uint fromprecision = 10 ** agg.decimals();
-        uint toprecision = config.precision;
-        if (toprecision > fromprecision) {
-            res *= toprecision / fromprecision;
-        } else {
-            res /= fromprecision / toprecision;
-        }
+        res = res * config.precision / fromprecision;
 
         // from chainlink's timestamp
-        fb.push(tag, bytes32(uint(res)), timestamp + config.ttl);
+        fb.push(tag, bytes32(res), timestamp + config.ttl);
     }
 }
