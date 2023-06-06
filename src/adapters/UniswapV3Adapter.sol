@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-v3.0
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "../Feedbase.sol";
 import { Ward } from '../mixin/ward.sol';

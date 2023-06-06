@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-v3.0
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import { Ward } from "../mixin/ward.sol";
 import { Feedbase } from "../Feedbase.sol";
