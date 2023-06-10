@@ -1,6 +1,6 @@
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
-import { send, fail, want, snapshot, revert, b32, wad, ray, rad, WAD, RAY, RAD} from 'minihat'
+import { send, fail, want, snapshot, revert, b32, ray} from 'minihat'
 const { BigNumber } = ethers
 
 const debug = require('debug')('feedbase:test')
@@ -13,7 +13,7 @@ describe('divider', () => {
     let ALI, BOB, CAT
     let divider
     let minconfig
-    const zeroconfig = [[], [], []]
+    const zeroconfig = [[], []]
     before(async () => {
       signers = await ethers.getSigners();
       [ali, bob, cat] = signers;
@@ -23,12 +23,11 @@ describe('divider', () => {
       fb = await FeedbaseFactory.deploy()
 
       const DividerFactory = await ethers.getContractFactory('Divider')
-      divider = await DividerFactory.deploy(fb.address, RAY)
+      divider = await DividerFactory.deploy(fb.address)
 
       minconfig = [
             [ALI, BOB],
-            [ethers.utils.hexlify(b32('ali')), ethers.utils.hexlify(b32('bob'))],
-            [RAY, RAY]
+            [ethers.utils.hexlify(b32('ali')), ethers.utils.hexlify(b32('bob'))]
         ]
 
       await snapshot(hh)
@@ -46,8 +45,7 @@ describe('divider', () => {
     it('getConfig', async () => {
         let config = [
             [ali.address, bob.address],
-            [ethers.utils.hexlify(b32('ali')), ethers.utils.hexlify(b32('bob'))],
-            [RAY, WAD]
+            [ethers.utils.hexlify(b32('ali')), ethers.utils.hexlify(b32('bob'))]
         ]
         await send(divider.setConfig, b32('hello'), config)
         want(await divider.getConfig(b32('hello'))).eql(config)
@@ -64,17 +62,15 @@ describe('divider', () => {
     it('setConfig', async function () {
         want(await divider.getConfig(tag)).eql(zeroconfig)
 
-        let config = [[CAT], ['0x'+b32('hello').toString('hex')], [RAY]]
+        let config = [[CAT], ['0x'+b32('hello').toString('hex')]]
         await fail('ErrShort', divider.setConfig, tag, config)
 
         config = [[ALI, BOB, CAT],
-                  [ethers.utils.hexlify(b32('ali')), ethers.utils.hexlify(b32('bob'))],
-                  [RAY, RAY]]
+                  [ethers.utils.hexlify(b32('ali')), ethers.utils.hexlify(b32('bob'))]]
         await fail('ErrMatch', divider.setConfig, tag, config)
 
         config = [[ALI, BOB],
-                  [ethers.utils.hexlify(b32('ali')), ethers.utils.hexlify(b32('bob'))],
-                  [RAY, RAY, RAY]]
+                  [ethers.utils.hexlify(b32('ali')), ethers.utils.hexlify(b32('bob')), ethers.utils.hexlify(b32('cat'))]]
         await fail('ErrMatch', divider.setConfig, tag, config)
 
         await send(divider.setConfig, tag, minconfig)
@@ -89,7 +85,7 @@ describe('divider', () => {
         let config
         let timestamp
         beforeEach(async () => {
-            config = [[ALI, BOB, CAT], [taga, tagb, tagc], [RAY, RAY, RAY]]
+            config = [[ALI, BOB, CAT], [taga, tagb, tagc]]
             timestamp = (await ethers.provider.getBlock('latest')).timestamp
         })
 
@@ -107,7 +103,7 @@ describe('divider', () => {
 
         it('divide by zero', async () => {
             // two from same src
-            await send(divider.setConfig, tag, [[ALI, BOB, BOB], [taga, tagb, tagc], [RAY, RAY, RAY]])
+            await send(divider.setConfig, tag, [[ALI, BOB, BOB], [taga, tagb, tagc]])
 
             await send(fb.connect(ali).push, taga, b32(ray(50)), timestamp + 100)
             await send(fb.connect(bob).push, tagb, b32(ray(0)), timestamp + 102)
@@ -117,35 +113,11 @@ describe('divider', () => {
         })
 
         it('minttl', async () => {
-            await send(divider.setConfig, tag, [[ALI, BOB], [taga, tagb], [RAY, RAY]])
+            await send(divider.setConfig, tag, [[ALI, BOB], [taga, tagb]])
             await send(fb.connect(ali).push, taga, b32(ray(50)), timestamp + 97)
             await send(fb.connect(bob).push, tagb, b32(ray(20)), timestamp + 100)
             const res = await fb.pull(divider.address, tag)
             want(res).eql([ethers.utils.hexZeroPad(ray(2.5), 32), BigNumber.from(timestamp + 97)])
-        })
-
-        it('scales', async () => {
-            config = [[ALI, BOB, CAT], [taga, tagb, tagc], [WAD, RAY, RAD]]
-            await send(divider.setConfig, tag, config)
-
-            const timestamp = (await ethers.provider.getBlock('latest')).timestamp
-            await send(fb.connect(ali).push, taga, b32(wad(50)), timestamp + 100)
-            await send(fb.connect(bob).push, tagb, b32(ray(5)), timestamp + 102)
-            await send(fb.connect(cat).push, tagc, b32(rad(2)), timestamp + 200)
-
-            let res = await fb.pull(divider.address, tag)
-            want(res).eql([ethers.utils.hexZeroPad(ray(5), 32), BigNumber.from(timestamp + 100)])
-
-
-            config = [[ALI, BOB, CAT], [taga, tagb, tagc], [RAD, RAD, RAD]]
-            await send(divider.setConfig, tag, config)
-
-            await send(fb.connect(ali).push, taga, b32(rad(50)), timestamp + 100)
-            await send(fb.connect(bob).push, tagb, b32(rad(5)), timestamp + 102)
-            await send(fb.connect(cat).push, tagc, b32(rad(2)), timestamp + 200)
-
-            res = await fb.pull(divider.address, tag)
-            want(res).eql([ethers.utils.hexZeroPad(ray(5), 32), BigNumber.from(timestamp + 100)])
         })
 
         it('wrong tag', async () => {

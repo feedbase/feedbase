@@ -10,7 +10,6 @@ contract Divider is Block, Ward {
     struct Config {
         address[] sources;
         bytes32[] tags;
-        uint256[] scales;
     }
     mapping(bytes32=>Config) configs;
 
@@ -18,17 +17,16 @@ contract Divider is Block, Ward {
     error ErrShort();
 
     Feedbase public immutable feedbase;
-    uint immutable precision;
+    uint256 internal constant RAY = 10 ** 27;
 
-    constructor(address fb, uint _precision) Ward() {
+    constructor(address fb) Ward() {
         feedbase = Feedbase(fb);
-        precision = _precision;
     }
     
     function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
-        uint n = _config.scales.length;
+        uint n = _config.sources.length;
         if (n < 2) revert ErrShort();
-        if (_config.tags.length != n || _config.sources.length != n) revert ErrMatch();
+        if (_config.tags.length != n) revert ErrMatch();
         configs[tag] = _config;
     }
 
@@ -41,11 +39,11 @@ contract Divider is Block, Ward {
         Config storage config = configs[tag];
         uint n = config.sources.length;
         (val, minttl) = feedbase.pull(config.sources[0], config.tags[0]);
-        uint res = uint(val) * precision / config.scales[0];
+        uint res = uint(val);
         for (uint i = 1; i < n;) {
             (bytes32 div, uint ttl) = feedbase.pull(config.sources[i], config.tags[i]);
             if (ttl < minttl) minttl = ttl;
-            res = res * config.scales[i] / uint(div);
+            res = res * RAY / uint(div);
             unchecked{ ++i; }
         }
         val = bytes32(res);
