@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 contract Ward {
     event SetWard(address indexed caller, address indexed trusts, bool bit);
