@@ -17,6 +17,7 @@ task('deploy-feedbase', 'deploy Feedbase')
 
     const FeedbaseArtifact = require('../artifacts/src/Feedbase.sol/Feedbase.json')
     const MedianizerArtifact = require('../artifacts/src/Medianizer.sol/Medianizer.json')
+    const PlokerArtifact = require('../artifacts/src/Ploker.sol/Ploker.json')
     const DividerArtifact = require('../artifacts/src/combinators/Divider.sol/Divider.json')
     debug('Loaded artifact')
     const FeedbaseDeployer = ethers.ContractFactory.fromSolidity(FeedbaseArtifact, acct)
@@ -34,6 +35,10 @@ task('deploy-feedbase', 'deploy Feedbase')
     await pb.packType({
       typename: 'Medianizer',
       artifact: MedianizerArtifact
+    })
+    await pb.packType({
+      typename: 'Ploker',
+      artifact: PlokerArtifact
     })
     await pb.packType({
       typename: 'Divider',
