@@ -7,11 +7,11 @@ const debug = require('debug')('feedbase:test')
 
 let fb
 let signers
-describe('divider', () => {
+describe('multiplier', () => {
     let tag, seq, sec, ttl, val
     let ali, bob, cat
     let ALI, BOB, CAT
-    let divider
+    let multiplier
     let minconfig
     const zeroconfig = [[], []]
     before(async () => {
@@ -22,8 +22,8 @@ describe('divider', () => {
       const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
       fb = await FeedbaseFactory.deploy()
 
-      const DividerFactory = await ethers.getContractFactory('Divider')
-      divider = await DividerFactory.deploy(fb.address)
+      const MultiplierFactory = await ethers.getContractFactory('Multiplier')
+      multiplier = await MultiplierFactory.deploy(fb.address)
 
       minconfig = [
             [ALI, BOB],
@@ -55,39 +55,40 @@ describe('divider', () => {
         })
 
         it('three opds', async () => {
-            await send(divider.setConfig, tag, config)
+            await send(multiplier.setConfig, tag, config)
 
             const timestamp = (await ethers.provider.getBlock('latest')).timestamp
             await send(fb.connect(ali).push, taga, b32(ray(50)), timestamp + 100)
             await send(fb.connect(bob).push, tagb, b32(ray(5)), timestamp + 102)
             await send(fb.connect(cat).push, tagc, b32(ray(2)), timestamp + 200)
 
-            const res = await fb.pull(divider.address, tag)
-            want(res).eql([ethers.utils.hexZeroPad(ray(5), 32), BigNumber.from(timestamp + 100)])
+            const res = await fb.pull(multiplier.address, tag)
+            want(res).eql([ethers.utils.hexZeroPad(ray(500), 32), BigNumber.from(timestamp + 100)])
         })
 
-        it('divide by zero', async () => {
+        it('mul by zero', async () => {
             // two from same src
-            await send(divider.setConfig, tag, [[ALI, BOB, BOB], [taga, tagb, tagc]])
+            await send(multiplier.setConfig, tag, [[ALI, BOB, CAT], [taga, tagb, tagc]])
 
             await send(fb.connect(ali).push, taga, b32(ray(50)), timestamp + 100)
             await send(fb.connect(bob).push, tagb, b32(ray(0)), timestamp + 102)
             await send(fb.connect(cat).push, tagc, b32(ray(2)), timestamp + 200)
 
-            await fail('panic', divider.read, tag)
+            const res = await fb.pull(multiplier.address, tag)
+            want(res).eql([ethers.utils.hexZeroPad(ray(0), 32), BigNumber.from(timestamp + 100)])
         })
 
         it('minttl', async () => {
-            await send(divider.setConfig, tag, [[ALI, BOB], [taga, tagb]])
+            await send(multiplier.setConfig, tag, [[ALI, BOB], [taga, tagb]])
             await send(fb.connect(ali).push, taga, b32(ray(50)), timestamp + 97)
             await send(fb.connect(bob).push, tagb, b32(ray(20)), timestamp + 100)
-            const res = await fb.pull(divider.address, tag)
-            want(res).eql([ethers.utils.hexZeroPad(ray(2.5), 32), BigNumber.from(timestamp + 97)])
+            const res = await fb.pull(multiplier.address, tag)
+            want(res).eql([ethers.utils.hexZeroPad(ray(1000), 32), BigNumber.from(timestamp + 97)])
         })
 
         it('wrong tag', async () => {
             // should get an error rather than returning 0 value
-            await fail('panic', divider.read, b32('unset'))
+            await fail('panic', multiplier.read, b32('unset'))
         })
     })
 })
