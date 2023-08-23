@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.19;
 
-import './mixin/Block.sol';
+import './mixin/Read.sol';
 
 contract Feedbase {
 
@@ -25,7 +25,7 @@ contract Feedbase {
     function pull(address src, bytes32 tag) public view returns (bytes32 val, uint256 ttl) {
         Feed storage feed = _feeds[src][tag];
         ttl = feed.ttl;
-        if (ttl == READ) (val, ttl) = Block(src).read(tag);
+        if (ttl == READ) (val, ttl) = Read(src).read(tag);
         else val = feed.val;
     }
 

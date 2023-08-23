@@ -73,7 +73,6 @@ describe('chainlink', () => {
 
   it('look expand', async function () {
       await send(adapt.setConfig, tag, [XAU_USD_AGG_ADDR, BigNumber.from(ttl), precision])
-      await send(adapt.look, tag)
       let [price, TTL] = await fb.pull(adapt.address, tag)
       // XAU-USD price around 1900 lately
       want(BigNumber.from(price).div(RAY).toNumber()).to.be.closeTo(2000, 500)
@@ -81,7 +80,6 @@ describe('chainlink', () => {
 
   it('look truncate', async function () {
       await send(adapt.setConfig, tag, [XAU_USD_AGG_ADDR, BigNumber.from(ttl), 1])
-      await send(adapt.look, tag)
       let [price, TTL] = await fb.pull(adapt.address, tag)
       // XAU-USD price around 1900 lately
       want(BigNumber.from(price).toNumber()).to.be.closeTo(2000, 500)
