@@ -75,14 +75,14 @@ describe('uniswapv3', () => {
   })
 
   it('look reverse', async function () {
-      await adapt.setConfig(tag, [ETH_USD_POOL_ADDR, 500, 100, true])
+      const conf_ttl = 100
+      await adapt.setConfig(tag, [ETH_USD_POOL_ADDR, 500, conf_ttl, true])
 
-      let look = await send(adapt.look, tag)
       let [price, ttl] = await fb.pull(adapt.address, tag)
 
       want(BigNumber.from(price).gt(constants.Zero)).true
-      let timestamp = (await ethers.provider.getBlock(look.blockNumber)).timestamp;
-      want(ttl).eql(BigNumber.from(timestamp + 100))
+      const timestamp = (await ethers.provider.getBlock("latest")).timestamp
+      want(ttl).eql(BigNumber.from(timestamp + conf_ttl))
       // USDC only has 6 decimals
       let ethusd = BigNumber.from(price).div(BigNumber.from(10).pow(15));
       want(ethusd.gt(1000)).true
@@ -92,11 +92,10 @@ describe('uniswapv3', () => {
   it('look normal', async function () {
       await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 500, 100, false])
 
-      let look = await send(adapt.look, tag)
       let [price, ttl] = await fb.pull(adapt.address, tag)
 
       want(BigNumber.from(price).gt(constants.Zero)).true
-      let timestamp = (await ethers.provider.getBlock(look.blockNumber)).timestamp;
+      const timestamp = (await ethers.provider.getBlock("latest")).timestamp
       want(ttl).eql(BigNumber.from(timestamp + 100))
       // USDC has 6 decimals, WBTC has 8...scale down by RAY/(10^diff)
       let btcusd = BigNumber.from(price).div(BigNumber.from(10).pow(25));
@@ -106,7 +105,8 @@ describe('uniswapv3', () => {
 
   it('look zero range', async function () {
       await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 0, 100, false])
-      await fail("Err0Range", adapt.look, tag)
+      const errZeroRangeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Err0Range()")).slice(0, 10)
+      await want(fb.pull(adapt.address, tag)).to.be.rejectedWith(errZeroRangeHash)
   })
 
   it('test uni wrapper', async () => {

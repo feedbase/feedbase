@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.19;
 
-import { Block } from '../mixin/Block.sol';
+import { Block } from '../mixin/Read.sol';
 
 contract Multiplier is Block {
     constructor(address fb) Block(fb) {}

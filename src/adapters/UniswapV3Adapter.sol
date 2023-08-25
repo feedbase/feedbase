@@ -17,7 +17,7 @@ interface IUniWrapper {
     function getSqrtRatioAtTick(int24 tick) external view returns (uint);
 }
 
-contract UniswapV3Adapter is Ward {
+contract UniswapV3Adapter is Read, Ward {
     struct Config {
         address pool;
         uint    range;
@@ -41,7 +41,7 @@ contract UniswapV3Adapter is Ward {
         configs[tag] = config;
     }
 
-    function look(bytes32 tag) public {
+    function read(bytes32 tag) public view override returns (bytes32 val, uint256 minttl) {
         Config storage config = configs[tag];
         address apool = config.pool;
         if (address(0) == apool) revert ErrNoPool();
@@ -60,6 +60,7 @@ contract UniswapV3Adapter is Ward {
         if (config.reverse) {
             priceray = RAY * RAY / priceray;
         }
-        feedbase.push(tag, bytes32(priceray), block.timestamp + config.ttl);
+        val = bytes32(priceray);
+        minttl = block.timestamp + config.ttl;
     }
 }

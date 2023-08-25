@@ -5,7 +5,11 @@ pragma solidity ^0.8.19;
 import '../Feedbase.sol';
 import { Ward }  from '../mixin/ward.sol';
 
-abstract contract Block is Ward {
+interface Read {
+    function read(bytes32 tag) external view returns (bytes32 val, uint256 ttl);
+}
+
+abstract contract Block is Read, Ward {
     struct Config {
         address[] sources;
         bytes32[] tags;
@@ -33,6 +37,4 @@ abstract contract Block is Ward {
     function getConfig(bytes32 tag) public view returns (Config memory) {
         return configs[tag];
     }
-
-    function read(bytes32 tag) virtual external view returns (bytes32 val, uint256 ttl);
 }
