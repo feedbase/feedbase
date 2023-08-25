@@ -105,7 +105,8 @@ describe('uniswapv3', () => {
 
   it('look zero range', async function () {
       await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 0, 100, false])
-      await want(fb.pull(adapt.address, tag)).to.be.rejected;
+      const errZeroRangeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Err0Range()")).slice(0, 10)
+      await want(fb.pull(adapt.address, tag)).to.be.rejectedWith(errZeroRangeHash)
   })
 
   it('test uni wrapper', async () => {
