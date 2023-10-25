@@ -2,7 +2,7 @@
 
 // Copyright (C) 2021-2023 halys
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.0;
 
 import { Ward } from './mixin/ward.sol';
 
