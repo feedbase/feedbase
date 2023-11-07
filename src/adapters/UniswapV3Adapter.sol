@@ -24,13 +24,16 @@ contract UniswapV3Adapter is Read, Ward {
         uint    ttl;
         bool    reverse;
     }
+
     error ErrNoPool();
     error Err0Range();
-    Feedbase public immutable feedbase;
-    mapping(bytes32=>Config) public configs;
+
+    IUniWrapper public immutable wrap;
+    Feedbase    public immutable feedbase;
+    mapping(bytes32=>Config)     configs;
+
     uint constant RAY = 10 ** 27;
     uint constant X96 = 2 ** 96;
-    IUniWrapper public immutable wrap;
 
     constructor(Feedbase _fb, IUniWrapper _wrap) Ward() {
         feedbase = _fb;
@@ -39,6 +42,10 @@ contract UniswapV3Adapter is Read, Ward {
 
     function setConfig(bytes32 tag, Config memory config) public _ward_ {
         configs[tag] = config;
+    }
+
+    function getConfig(bytes32 tag) public view returns (Config memory config) {
+        return configs[tag];
     }
 
     function read(bytes32 tag) public view override returns (bytes32 val, uint256 minttl) {

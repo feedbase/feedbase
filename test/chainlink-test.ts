@@ -72,9 +72,9 @@ describe('chainlink', () => {
   })
 
   it('setConfig', async function () {
-      want(await adapt.configs(tag)).eql([constants.AddressZero, constants.Zero, constants.Zero])
+      want(await adapt.getConfig(tag)).eql([constants.AddressZero, constants.Zero, constants.Zero])
       await send(adapt.setConfig, tag, config)
-      want(await adapt.configs(tag)).eql(config)
+      want(await adapt.getConfig(tag)).eql(config)
   })
 
   it('look expand', async function () {

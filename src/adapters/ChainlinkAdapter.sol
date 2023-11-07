@@ -27,15 +27,19 @@ contract ChainlinkAdapter is Read, Ward {
     }
     error ErrNegPrice();
 
-    Feedbase public fb;
-    mapping(bytes32=>Config) public configs;
+    Feedbase public immutable feedbase;
+    mapping(bytes32=>Config)  configs;
 
-    constructor(address _fb) Ward() {
-        fb  = Feedbase(_fb);
+    constructor(address _feedbase) Ward() {
+        feedbase  = Feedbase(_feedbase);
     }
 
     function setConfig(bytes32 tag, Config calldata config) public _ward_ {
         configs[tag] = config;
+    }
+
+    function getConfig(bytes32 tag) public view returns (Config memory) {
+        return configs[tag];
     }
 
     function read(bytes32 tag) public view override returns (bytes32 val, uint256 minttl) {
