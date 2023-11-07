@@ -1,10 +1,9 @@
-import { constants } from 'buffer'
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 import { send, fail, revert, snapshot, want } from 'minihat'
 
 const debug = require('debug')('feedbase:test')
-const { BigNumber, utils } = ethers
+const { BigNumber, utils, constants } = ethers
 const { formatBytes32String, hexZeroPad, hexValue } = utils
 
 describe('medianizer', () => {
@@ -54,6 +53,12 @@ describe('medianizer', () => {
             await fail('ErrConfig', medianizer.setConfig, tag, [[], [tag], 1])
         })
 
+        it('quorum bounds', async () => {
+            await fail('ErrZeroQuorum', medianizer.setConfig, tag, [[s1.address], [tag], 0])
+            await send(medianizer.setConfig, tag, [[s1.address], [tag], 1])
+            await send(medianizer.setConfig, tag, [[s1.address], [tag], constants.MaxUint256])
+        })
+
         it('stale src feed', async () => {
             debug('both vals live')
             await hh.network.provider.request({
@@ -77,7 +82,7 @@ describe('medianizer', () => {
             await fail('ErrQuorum', medianizer.poke, tag)
         })
 
-        it('quorum', async () => {
+        it('quorum must be met', async () => {
             await send(medianizer.setConfig, tag, [srcaddrs, tags, 3])
             await fail('ErrQuorum', medianizer.poke, tag)
 
@@ -100,6 +105,7 @@ describe('medianizer', () => {
             await send(medianizer.poke, tag)
             await fail('ErrQuorum', medianizer.poke, tag) // err order
         })
+
     })
 
     it('One value', async () => {
@@ -109,7 +115,7 @@ describe('medianizer', () => {
       const srcaddrs = sources.map(s => s.address)
       const tags = Array(srcaddrs.length).fill(tag)
 
-      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
+      await medianizer.setConfig(tag, [srcaddrs, tags, 1])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -128,7 +134,7 @@ describe('medianizer', () => {
       const srcaddrs = sources.map(s => s.address)
       const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
+      await medianizer.setConfig(tag, [srcaddrs, tags, 1])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -147,7 +153,7 @@ describe('medianizer', () => {
       const srcaddrs = sources.map(s => s.address)
       const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
+      await medianizer.setConfig(tag, [srcaddrs, tags, 1])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -166,7 +172,7 @@ describe('medianizer', () => {
       const srcaddrs = sources.map(s => s.address)
       const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
+      await medianizer.setConfig(tag, [srcaddrs, tags, 1])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -185,7 +191,7 @@ describe('medianizer', () => {
       const srcaddrs = sources.map(s => s.address)
       const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
+      await medianizer.setConfig(tag, [srcaddrs, tags, 1])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -225,7 +231,7 @@ describe('medianizer', () => {
       const srcaddrs = sources.map(s => s.address)
       const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
+      await medianizer.setConfig(tag, [srcaddrs, tags, 1])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -244,7 +250,7 @@ describe('medianizer', () => {
       const srcaddrs = sources.map(s => s.address)
       const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
+      await medianizer.setConfig(tag, [srcaddrs, tags, 1])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -263,7 +269,7 @@ describe('medianizer', () => {
       const srcaddrs = sources.map(s => s.address)
       const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
+      await medianizer.setConfig(tag, [srcaddrs, tags, 1])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -282,7 +288,7 @@ describe('medianizer', () => {
       const srcaddrs = sources.map(s => s.address)
       const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setConfig(tag, [srcaddrs, tags, 0])
+      await medianizer.setConfig(tag, [srcaddrs, tags, 1])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)
@@ -302,7 +308,7 @@ describe('medianizer', () => {
       const srcaddrs = sources.map(s => s.address)
       const tags = Array(srcaddrs.length).fill(tag)
       
-      await medianizer.setConfig(newTag, [srcaddrs, tags, 0])
+      await medianizer.setConfig(newTag, [srcaddrs, tags, 1])
 
       await Promise.all(sources.map(async (src, idx) => {
         const con = fb.connect(src)

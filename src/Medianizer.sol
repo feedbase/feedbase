@@ -7,6 +7,7 @@ import { Ward } from './mixin/ward.sol';
 
 contract Medianizer is Ward {
     error ErrQuorum();
+    error ErrZeroQuorum();
     error ErrConfig();
 
     struct Config {
@@ -24,6 +25,7 @@ contract Medianizer is Ward {
 
     function setConfig(bytes32 dtag, Config calldata _config) public _ward_ {
         if (_config.tags.length != _config.srcs.length) revert ErrConfig();
+        if (_config.quorum == 0) revert ErrZeroQuorum();
         configs[dtag] = _config;
     }
 
