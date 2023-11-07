@@ -48,6 +48,11 @@ contract ChainlinkAdapter is Read, Ward {
         // expand/truncate
         uint fromprecision = 10 ** agg.decimals();
         val = bytes32(res * config.precision / fromprecision);
-        minttl = timestamp + config.ttl;
+
+        // handle a feed with updatedAt set to max uint
+        unchecked {
+            minttl = timestamp + config.ttl;
+            if (minttl < timestamp) minttl = type(uint).max;
+        }
     }
 }

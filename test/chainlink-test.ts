@@ -18,10 +18,12 @@ const use = (n) => {
 
 describe('chainlink', () => {
   const XAU_USD_AGG_ADDR = "0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6"
+  const MAX_AGG_TAG = b32("updatedAtMax")
+
   let tag, seq, sec, ttl, val
   let ali, bob, cat
   let ALI, BOB, CAT
-  let adapt
+  let adapt, agg
   let config
   let precision
   before(async () => {
@@ -34,6 +36,10 @@ describe('chainlink', () => {
 
     const ChainlinkAdapterFactory = await ethers.getContractFactory('ChainlinkAdapter')
     adapt = await ChainlinkAdapterFactory.deploy(fb.address)
+
+    const MockCLAggFactory = await ethers.getContractFactory('MockChainlinkAggregator')
+    agg = await MockCLAggFactory.deploy(fb.address, ALI, b32('updatedAtMax'), 8)
+    await agg.deployed();
 
     use(0)
 
@@ -83,6 +89,14 @@ describe('chainlink', () => {
       let [price, TTL] = await fb.pull(adapt.address, tag)
       // XAU-USD price around 1900 lately
       want(BigNumber.from(price).toNumber()).to.be.closeTo(2000, 500)
+  })
+
+  it('read max ttl', async function () {
+      await send(fb.push, MAX_AGG_TAG, b32(ethers.constants.Two), ethers.constants.MaxUint256)
+      await send(adapt.setConfig, MAX_AGG_TAG, [agg.address, BigNumber.from(ttl), 1])
+      let [, resTTL] = await fb.pull(adapt.address, MAX_AGG_TAG)
+      // chainlinks updatedAt + adapters TTL overflowed uint256, check it was handled and clamped
+      want(resTTL.toHexString()).to.be.equal(ethers.constants.MaxUint256.toHexString())
   })
 
   // TODO test negative price, like oil or something
