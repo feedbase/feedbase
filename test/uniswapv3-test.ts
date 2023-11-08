@@ -65,11 +65,11 @@ describe('uniswapv3', () => {
   })
 
   it('setConfig', async function () {
-      want(await adapt.configs(tag)).eql(
+      want(await adapt.getConfig(tag)).eql(
           [constants.AddressZero, BigNumber.from(0), BigNumber.from(0), false]
       )
       await send(adapt.setConfig, tag, [CAT, 2, 3, true])
-      want(await adapt.configs(tag)).eql(
+      want(await adapt.getConfig(tag)).eql(
           [CAT, BigNumber.from(2), BigNumber.from(3), true]
       )
   })

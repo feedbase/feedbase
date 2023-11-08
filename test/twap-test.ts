@@ -45,10 +45,10 @@ describe('twap', () => {
 
     it('setConfig', async function () {
         const config = [CAT, tag, constants.One, constants.One]
-        want(await twap.configs(tag)).eql(zeroconfig)
+        want(await twap.getConfig(tag)).eql(zeroconfig)
         await send(twap.setConfig, tag, config)
         const expectedConfig = [CAT, tag_hex, constants.One, constants.One]
-        want(await twap.configs(tag)).eql(expectedConfig)
+        want(await twap.getConfig(tag)).eql(expectedConfig)
     })
 
     it('setConfig range', async function () {

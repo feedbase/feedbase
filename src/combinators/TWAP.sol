@@ -20,8 +20,9 @@ contract TWAP is Ward {
     error ErrRange();
     error ErrDone();
 
-    mapping(bytes32 dtag => Config) public configs;
+    mapping(bytes32 dtag => Config)        configs;
     mapping(bytes32 dtag => Window) public windows;
+
     Feedbase public immutable feedbase;
 
     constructor(address _fb) Ward() {
@@ -38,6 +39,10 @@ contract TWAP is Ward {
             window.head = window.head * _config.range / configs[dtag].range;
         }
         configs[dtag] = _config;
+    }
+
+    function getConfig(bytes32 tag) public view returns (Config memory) {
+        return configs[tag];
     }
 
     // modified from reflexer ChainlinkTWAP
