@@ -3,7 +3,7 @@
 pragma solidity ^0.8.19;
 
 import '../Feedbase.sol';
-import { Ward }  from '../mixin/ward.sol';
+import { Ward } from '../mixin/ward.sol';
 
 interface Read {
     function read(bytes32 tag) external view returns (bytes32 val, uint256 ttl);

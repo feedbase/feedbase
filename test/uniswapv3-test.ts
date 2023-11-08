@@ -34,7 +34,7 @@ describe('uniswapv3', () => {
     const UniWrapperFactory = await ethers.getContractFactory('UniWrapper')
     wrap = await UniWrapperFactory.deploy()
     const UniswapV3AdapterFactory = await ethers.getContractFactory('UniswapV3Adapter')
-    adapt = await UniswapV3AdapterFactory.deploy(fb.address, wrap.address)
+    adapt = await UniswapV3AdapterFactory.deploy(wrap.address)
 
     use(0)
 

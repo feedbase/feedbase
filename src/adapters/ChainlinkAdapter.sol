@@ -3,7 +3,6 @@ pragma solidity ^0.8.19;
 
 import { Read } from "../mixin/Read.sol";
 import { Ward } from "../mixin/ward.sol";
-import { Feedbase } from "../Feedbase.sol";
 
 interface AggregatorInterface {
     function decimals() external view returns (uint8);
@@ -27,12 +26,7 @@ contract ChainlinkAdapter is Read, Ward {
     }
     error ErrNegPrice();
 
-    Feedbase public immutable feedbase;
-    mapping(bytes32=>Config)  configs;
-
-    constructor(address _feedbase) Ward() {
-        feedbase  = Feedbase(_feedbase);
-    }
+    mapping(bytes32=>Config) configs;
 
     function setConfig(bytes32 tag, Config calldata config) public _ward_ {
         configs[tag] = config;

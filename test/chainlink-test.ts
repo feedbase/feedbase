@@ -35,7 +35,7 @@ describe('chainlink', () => {
     fb = await FeedbaseFactory.deploy()
 
     const ChainlinkAdapterFactory = await ethers.getContractFactory('ChainlinkAdapter')
-    adapt = await ChainlinkAdapterFactory.deploy(fb.address)
+    adapt = await ChainlinkAdapterFactory.deploy()
 
     const MockCLAggFactory = await ethers.getContractFactory('MockChainlinkAggregator')
     agg = await MockCLAggFactory.deploy(fb.address, ALI, b32('updatedAtMax'), 8)
