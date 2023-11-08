@@ -10,8 +10,7 @@ interface Combinator {
     function poke(bytes32) external;
 }
 
-// looker and poker
-contract Ploker is Ward {
+contract Poker is Ward {
     struct Config {
         address[] combinators;
         bytes32[] combinatortags;
@@ -29,7 +28,7 @@ contract Ploker is Ward {
         configs[tag].combinatortags = _config.combinatortags;
     }
 
-    function ploke(bytes32 tag) public {
+    function poke(bytes32 tag) public {
         Config storage config = configs[tag];
         if (config.combinators.length == 0) revert ErrNoConfig();
         for (uint i = 0; i < config.combinators.length; i++) {
