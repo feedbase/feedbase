@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.19;
 
-import "../Feedbase.sol";
+import "../mixin/Read.sol";
 import { Ward } from '../mixin/ward.sol';
 
 interface IUniswapV3Pool {
@@ -29,14 +29,12 @@ contract UniswapV3Adapter is Read, Ward {
     error Err0Range();
 
     IUniWrapper public immutable wrap;
-    Feedbase    public immutable feedbase;
     mapping(bytes32=>Config)     configs;
 
     uint constant RAY = 10 ** 27;
     uint constant X96 = 2 ** 96;
 
-    constructor(Feedbase _fb, IUniWrapper _wrap) Ward() {
-        feedbase = _fb;
+    constructor(IUniWrapper _wrap) Ward() {
         wrap = _wrap;
     }
 
@@ -54,7 +52,7 @@ contract UniswapV3Adapter is Read, Ward {
         if (address(0) == apool) revert ErrNoPool();
 
         uint32[] memory times = new uint32[](2);
-        uint32 range  = uint32(config.range);
+        uint32 range = uint32(config.range);
         if (range == 0) revert Err0Range();
         times[0] = 0;
         times[1] = range;
