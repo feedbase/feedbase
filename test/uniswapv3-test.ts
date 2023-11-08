@@ -126,7 +126,4 @@ describe('uniswapv3', () => {
       want(btcusd.gt(20000)).true
       want(btcusd.lt(30000)).true
   })
-
-
-
 })
