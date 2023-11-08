@@ -37,15 +37,15 @@ contract ChainlinkAdapter is Read, Ward {
     }
 
     function read(bytes32 tag) public view override returns (bytes32 val, uint256 minttl) {
-        Config storage config = configs[tag];
+        Config storage config   = configs[tag];
         AggregatorInterface agg = AggregatorInterface(config.agg);
+
         (, int256 _res, , uint256 timestamp, ) = agg.latestRoundData();
         if (_res < 0) revert ErrNegPrice();
         uint res = uint(_res);
 
         // expand/truncate
-        uint fromprecision = 10 ** agg.decimals();
-        val = bytes32(res * config.precision / fromprecision);
+        val = bytes32(res * config.precision / 10 ** agg.decimals());
 
         // handle a feed with updatedAt set to max uint
         unchecked {

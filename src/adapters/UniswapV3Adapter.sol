@@ -46,25 +46,35 @@ contract UniswapV3Adapter is Read, Ward {
         return configs[tag];
     }
 
-    function read(bytes32 tag) public view override returns (bytes32 val, uint256 ttl) {
+    function read(bytes32 tag)
+      public view override returns (bytes32 val, uint256 ttl) {
         Config storage config = configs[tag];
-        address apool = config.pool;
+        uint32         range  = uint32(config.range);
+        address        apool  = config.pool;
         if (address(0) == apool) revert ErrNoPool();
 
+        // array of timestamps to get cumulative tick data
+        // need the latest and the window's start
         uint32[] memory times = new uint32[](2);
-        uint32 range = uint32(config.range);
         if (range == 0) revert Err0Range();
         times[0] = 0;
         times[1] = range;
+
+        // sum of tick data from (last_stamp, last_stamp - range)
         (int56[] memory cumulatives,) = IUniswapV3Pool(apool).observe(times);
 
+        // mean tick
         int   delt         = int(cumulatives[0]) - int(cumulatives[1]);
         int24 meantick     = int24(delt / int(uint(range)));
+
+        // mean tick's corresponding price
         uint  sqrtPriceX96 = wrap.getSqrtRatioAtTick(meantick);
         uint  priceray     = sqrtPriceX96 ** 2 / X96 * RAY / X96;
+
         if (config.reverse) {
             priceray = RAY * RAY / priceray;
         }
+
         val = bytes32(priceray);
 
         unchecked {
