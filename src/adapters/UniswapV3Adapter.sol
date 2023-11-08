@@ -46,7 +46,7 @@ contract UniswapV3Adapter is Read, Ward {
         return configs[tag];
     }
 
-    function read(bytes32 tag) public view override returns (bytes32 val, uint256 minttl) {
+    function read(bytes32 tag) public view override returns (bytes32 val, uint256 ttl) {
         Config storage config = configs[tag];
         address apool = config.pool;
         if (address(0) == apool) revert ErrNoPool();
@@ -66,6 +66,10 @@ contract UniswapV3Adapter is Read, Ward {
             priceray = RAY * RAY / priceray;
         }
         val = bytes32(priceray);
-        minttl = block.timestamp + config.ttl;
+
+        unchecked {
+            ttl = block.timestamp + config.ttl;
+            if (ttl < block.timestamp) ttl = type(uint).max;
+        }
     }
 }

@@ -113,4 +113,20 @@ describe('uniswapv3', () => {
       want(await wrap.getSqrtRatioAtTick(0)).eql(BigNumber.from(2).pow(96));
   })
 
+
+  it('ttl clamp at uint max', async () => {
+      await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 500, constants.MaxUint256, false])
+
+      let [price, ttl] = await fb.pull(adapt.address, tag)
+
+      want(BigNumber.from(price).gt(constants.Zero)).true
+      const timestamp = (await ethers.provider.getBlock("latest")).timestamp
+      want(ttl).eql(constants.MaxUint256)
+      let btcusd = BigNumber.from(price).div(BigNumber.from(10).pow(25));
+      want(btcusd.gt(20000)).true
+      want(btcusd.lt(30000)).true
+  })
+
+
+
 })
