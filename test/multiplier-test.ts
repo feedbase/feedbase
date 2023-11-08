@@ -92,5 +92,3 @@ describe('multiplier', () => {
         })
     })
 })
-
-
