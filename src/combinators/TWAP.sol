@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import '../Feedbase.sol';
 import { Ward } from '../mixin/ward.sol';
+import 'hardhat/console.sol';
 
 contract TWAP is Ward {
     struct Config {
@@ -55,7 +56,7 @@ contract TWAP is Ward {
     // sum of prices over time, take the estimated change in the sum over the
     // window, and use that to calculate the mean
     //
-    // the main difference here is that window stores `head`, the change
+    // the main difference here is that window stores `head`, an adjusted change
     // in sum since window start, instead of the sum itself
     function poke(bytes32 dtag) external {
         Config storage config    = configs[dtag];
@@ -70,20 +71,16 @@ contract TWAP is Ward {
         uint256 capped  = elapsed > config.range ? config.range : elapsed;
         if (elapsed == 0) revert ErrDone();
 
-        // nexttally is like head, but over a bigger window
-        uint nexttally = head + capped * uint(spot);
+        // estimate previous window spot, and checkpoint for new window start
+        uint pseudospot = head / config.range;
+        uint checkpoint = pseudospot * capped;
 
-        // advance twap window by elapsed time
-        // pseudotally is roughly where the integral was
-        // when timestamp == start of new window
-        //
-        // since next head and previous head both are integrals assuming 0 at start
-        // of window, need to subtract pseudotally to get head
-        uint pseudospot  = head / config.range;
-        uint pseudotally = pseudospot * capped;
-        uint nexthead    = nexttally - pseudotally;
-        window.head      = nexthead;
-        window.time      = block.timestamp;
+        // since head is a sum assuming 0 at window start,
+        // need to subtract checkpoint to get head
+        uint nexthead  = head + (capped * (uint(spot) + pseudospot)) / 2;
+        nexthead      -= checkpoint;
+        window.head    = nexthead;
+        window.time    = block.timestamp;
 
         // handle a feed with updatedAt set to max uint
         unchecked {
