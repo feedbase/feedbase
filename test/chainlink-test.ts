@@ -101,5 +101,3 @@ describe('chainlink', () => {
 
   // TODO test negative price, like oil or something
 })
-
-

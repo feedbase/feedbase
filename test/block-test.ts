@@ -77,5 +77,3 @@ describe('block', () => {
         want(await block.getConfig(tag)).eql(minconfig)
     })
 })
-
-
