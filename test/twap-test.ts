@@ -12,7 +12,8 @@ describe('twap', () => {
     let ali, bob, cat
     let ALI, BOB, CAT
     let twap
-    const zeroconfig = [constants.AddressZero, constants.HashZero, constants.Zero, constants.Zero]
+    const THO = BigNumber.from(10 ** 3)
+    const zeroconfig = [constants.AddressZero, constants.HashZero, constants.Zero, constants.Zero, constants.Zero]
     before(async () => {
       signers = await ethers.getSigners();
       [ali, bob, cat] = signers;
@@ -44,17 +45,17 @@ describe('twap', () => {
     })
 
     it('setConfig', async function () {
-        const config = [CAT, tag, constants.One, constants.One]
+        const config = [CAT, tag, constants.One, THO, constants.One]
         want(await twap.getConfig(tag)).eql(zeroconfig)
         await send(twap.setConfig, tag, config)
-        const expectedConfig = [CAT, tag_hex, constants.One, constants.One]
+        const expectedConfig = [CAT, tag_hex, constants.One, THO, constants.One]
         want(await twap.getConfig(tag)).eql(expectedConfig)
     })
 
     it('setConfig range', async function () {
         let timestamp = (await ethers.provider.getBlock('latest')).timestamp
-        await fail("ErrRange", twap.setConfig, tag, [CAT,constants.HashZero, timestamp + 2, 100])
-        await send(twap.setConfig, tag, [CAT, constants.HashZero, timestamp + 1, 100])
+        await fail("ErrRange", twap.setConfig, tag, [CAT,constants.HashZero, timestamp + 2, THO, 100])
+        await send(twap.setConfig, tag, [CAT, constants.HashZero, timestamp + 1, THO, 100])
     })
 
     describe('poke', () => {
@@ -65,7 +66,7 @@ describe('twap', () => {
         let range = BigNumber.from(100)
         let ttl = BigNumber.from(1000)
         beforeEach(async () => {
-            config = [ALI, tag, range, ttl]
+            config = [ALI, tag, range, 10 ** 3, ttl]
             timestamp = (await ethers.provider.getBlock('latest')).timestamp
         })
 
@@ -119,7 +120,7 @@ describe('twap', () => {
         })
 
         it("advance, but not past max ttl", async () => {
-            await send(twap.setConfig, dtag, [ALI, tag, range, BigNumber.from(46)])
+            await send(twap.setConfig, dtag, [ALI, tag, range, THO, BigNumber.from(46)])
             await send(fb.push, tag, b32(ray(1)), constants.MaxUint256.sub(45))
             await send(twap.poke, dtag)
             let [,twapttl] = await fb.pull(twap.address, dtag)
@@ -173,7 +174,7 @@ describe('twap', () => {
             // sometimes need to subtract 1 from expected output for rounding
 
             let price = ray(45)
-            await send(twap.setConfig, dtag, [ALI, tag, constants.One, ttl]);
+            await send(twap.setConfig, dtag, [ALI, tag, constants.One, THO, ttl]);
             await send(fb.push, tag, b32(price), constants.MaxUint256)
 
             await cycle(1, 300, dtag)
@@ -216,7 +217,7 @@ describe('twap', () => {
             await send(twap.poke, dtag);
 
             let [val_pre,] = await fb.pull(twap.address, dtag)
-            await send(twap.setConfig, dtag, [ALI, tag, range / 10, 20000])
+            await send(twap.setConfig, dtag, [ALI, tag, range / 10, THO, 20000])
             await send(twap.poke, dtag);
             ;[val,] = await fb.pull(twap.address, dtag)
             want(BigNumber.from(val)).to.eql(BigNumber.from(val_pre))
@@ -227,7 +228,7 @@ describe('twap', () => {
             want(BigNumber.from(val)).to.eql(ray(3).sub(1))
 
             const newTag = Buffer.from('OTHERTAG'.padStart(32, '\0'))
-            await send(twap.setConfig, newTag, [ALI, tag, range / 10, 20000])
+            await send(twap.setConfig, newTag, [ALI, tag, range / 10, THO, 20000])
             await send(fb.push, tag, b32(ray(72)), constants.MaxUint256.sub(45))
             await mine(hh, range / 10);
             await send(twap.poke, newTag)
@@ -240,7 +241,7 @@ describe('twap', () => {
         it('big window gradual increase to new price', async () => {
             let price = BigNumber.from(100)
             let range = 100000
-            await send(twap.setConfig, dtag, [ALI, tag, BigNumber.from(range), ttl]);
+            await send(twap.setConfig, dtag, [ALI, tag, BigNumber.from(range), THO, ttl]);
             await send(fb.push, tag, b32(price), constants.MaxUint256)
             await send(twap.poke, dtag)
 
@@ -293,7 +294,7 @@ describe('twap', () => {
         it('assume current spot for elapsed time, not last spot', async () => {
             let price = BigNumber.from(100)
             let range = 100000
-            await send(twap.setConfig, tag, [ALI, tag, BigNumber.from(range), ttl]);
+            await send(twap.setConfig, tag, [ALI, tag, BigNumber.from(range), THO, ttl]);
             await send(fb.push, tag, b32(price), constants.MaxUint256)
             await send(twap.poke, tag)
             await mine(hh, range)
@@ -318,6 +319,127 @@ describe('twap', () => {
             await send(twap.poke, tag)
             ;[val,] = await fb.pull(twap.address, tag)
             want(BigNumber.from(val).toNumber()).to.be.closeTo(price.mul(3).div(4).toNumber(), 0)
+        })
+
+        it('current value weighted 0', async () => {
+            let price = BigNumber.from(100)
+            let range = 100000
+            // set weight to 0
+            await send(twap.setConfig, tag, [ALI, tag, BigNumber.from(range), 0, ttl]);
+
+            // push initial price and poke
+            await send(fb.push, tag, b32(price), constants.MaxUint256)
+            await send(twap.poke, tag)
+
+            // wait full range, pump price and poke again
+            await mine(hh, range)
+            await send(fb.push, tag, b32(price.mul(2)), constants.MaxUint256)
+            await send(twap.poke, tag)
+
+            // should just be last spot price
+            let [val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val)).eql(price.mul(2))
+
+            // ok but what if wait half range this time...
+            await mine(hh, range / 2)
+            await send(fb.push, tag, b32(constants.Zero), constants.MaxUint256)
+            await send(twap.poke, tag)
+
+            // it poked in the middle of a window, so should only change by about half
+            let [val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.toNumber(), 1)
+
+            // cycling should eventually reach 0
+            await cycle(range / 2, 10, tag)
+            let [val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val).toNumber()).eql(0)
+        })
+
+        it('old value weighted low', async () => {
+            let price = BigNumber.from(100)
+            let range = 100000
+            // set weight to 0, wait for range
+            await send(twap.setConfig, tag, [ALI, tag, BigNumber.from(range), THO.div(2), ttl]);
+            await mine(hh, range)
+
+            // push initial price and poke
+            // output should be (0 * 1/2 + price * 1)/1.5 = price/1.5
+            await send(fb.push, tag, b32(price), constants.MaxUint256)
+            await send(twap.poke, tag)
+            ;[val,] = await fb.pull(twap.address, tag)
+            let res = BigNumber.from(val)
+            want(res).eql(price.mul(2).div(3))
+
+            // wait full range, pump price and poke again
+            await mine(hh, range)
+            await send(fb.push, tag, b32(res.mul(2)), constants.MaxUint256)
+            await send(twap.poke, tag)
+
+            // should average in the new spot
+            // output should be (res * 1/2 + res * 2) / 1.5 = res * 5/3
+            ;[val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val)).eql(res.mul(5).div(3))
+            res = BigNumber.from(val)
+
+            // ok but what if wait half range this time...
+            await mine(hh, range / 2)
+            await send(fb.push, tag, b32(constants.Zero), constants.MaxUint256)
+            await send(twap.poke, tag)
+
+            // it poked in the middle of a window, so should only change by about half
+            // of what it would normally
+            // output should be 2 * ((res * 1/2 + 0) / 1.5) = res * 2/3
+            let [val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val)).to.eql(res.mul(2).div(3))
+
+            // cycling should eventually reach 0
+            await cycle(range / 2, 13, tag)
+            let [val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val).toNumber()).eql(0)
+        })
+
+        it('old value weighted high', async () => {
+            let price = BigNumber.from(100)
+            let range = 100000
+            // set weight to 0, wait for range
+            await send(twap.setConfig, tag, [ALI, tag, BigNumber.from(range), THO.mul(2), ttl]);
+            await mine(hh, range)
+
+            // push initial price and poke
+            // output should be (0 * 2 + price * 1)/3 = price/3
+            await send(fb.push, tag, b32(price), constants.MaxUint256)
+            await send(twap.poke, tag)
+            ;[val,] = await fb.pull(twap.address, tag)
+            let res = BigNumber.from(val)
+            want(res).eql(price.div(3))
+
+            // wait full range, pump price and poke again
+            await mine(hh, range)
+            await send(fb.push, tag, b32(res.mul(2)), constants.MaxUint256)
+            await send(twap.poke, tag)
+
+            // should average in the new spot
+            // output should be (res * 2 + res * 2) / 3 = res * 4/3
+            ;[val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val)).eql(res.mul(4).div(3))
+            res = BigNumber.from(val)
+
+            // ok but what if wait half range this time...
+            await mine(hh, range / 2)
+            await send(fb.push, tag, b32(constants.Zero), constants.MaxUint256)
+            await send(twap.poke, tag)
+
+            // it poked in the middle of a window, so should only change by about half
+            // of what it would normally
+            // with full window hop should be 2 * ((res * 1/2 + 0) / 1.5) = res * 2/3
+            // with half window hop should be res - 0.5 * (res - res * 2/3) = res * 5/6
+            let [val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val)).to.eql(res.mul(5).div(6))
+
+            // cycling should eventually reach 0
+            await cycle(range / 2, 25, tag)
+            let [val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val).toNumber()).eql(0)
         })
     })
 })
