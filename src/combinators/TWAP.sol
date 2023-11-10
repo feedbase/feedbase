@@ -3,7 +3,6 @@ pragma solidity ^0.8.19;
 
 import '../Feedbase.sol';
 import { Ward } from '../mixin/ward.sol';
-import 'hardhat/console.sol';
 
 contract TWAP is Ward {
     struct Config {
