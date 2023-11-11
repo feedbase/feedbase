@@ -23,8 +23,8 @@ contract TWAP is Ward {
     error ErrRange();
     error ErrDone();
 
-    mapping(bytes32 dtag => Config)        configs;
-    mapping(bytes32 dtag => Window) public windows;
+    mapping(bytes32 outtag => Config)        configs;
+    mapping(bytes32 outtag => Window) public windows;
 
     Feedbase public immutable feedbase;
 
@@ -32,22 +32,22 @@ contract TWAP is Ward {
         feedbase = Feedbase(_fb);
     }
     
-    function setConfig(bytes32 dtag, Config calldata _config) public _ward_ {
+    function setConfig(bytes32 outtag, Config calldata _config) public _ward_ {
         if (_config.range > block.timestamp) revert ErrRange();
 
-        Window storage window = windows[dtag];
+        Window storage window = windows[outtag];
         window.time           = block.timestamp;
-        if (configs[dtag].range > 0) {
+        if (configs[outtag].range > 0) {
             // new number of slots in window
             // do this so next poke result doesn't change
-            window.head = window.head * _config.range / configs[dtag].range;
+            window.head = window.head * _config.range / configs[outtag].range;
         }
 
-        configs[dtag] = _config;
+        configs[outtag] = _config;
     }
 
-    function getConfig(bytes32 tag) public view returns (Config memory) {
-        return configs[tag];
+    function getConfig(bytes32 outtag) public view returns (Config memory) {
+        return configs[outtag];
     }
 
     // modified from reflexer ChainlinkTWAP
@@ -60,9 +60,9 @@ contract TWAP is Ward {
     //
     // the main difference here is that window stores `head`, an adjusted change
     // in sum since window start, instead of the sum itself
-    function poke(bytes32 dtag) external {
-        Config storage config    = configs[dtag];
-        Window storage window    = windows[dtag];
+    function poke(bytes32 outtag) external {
+        Config storage config    = configs[outtag];
+        Window storage window    = windows[outtag];
 
         // pull latest spot
         (bytes32 spot, uint ttl) = feedbase.pull(config.source, config.tag);
@@ -94,6 +94,6 @@ contract TWAP is Ward {
         }
 
         // have the integral's change over this window; push the mean
-        feedbase.push(dtag, bytes32(nexthead / config.range), ttl);
+        feedbase.push(outtag, bytes32(nexthead / config.range), ttl);
     }
 }

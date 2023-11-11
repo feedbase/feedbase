@@ -17,24 +17,24 @@ contract Medianizer is Ward {
     }
 
     Feedbase public immutable feedbase;
-    mapping(bytes32 dtag => Config) configs;
+    mapping(bytes32 outtag => Config) configs;
 
     constructor(address fb) Ward() {
         feedbase = Feedbase(fb);
     }
 
-    function setConfig(bytes32 dtag, Config calldata _config) public _ward_ {
+    function setConfig(bytes32 outtag, Config calldata _config) public _ward_ {
         if (_config.tags.length != _config.srcs.length) revert ErrConfig();
         if (_config.quorum == 0) revert ErrZeroQuorum();
-        configs[dtag] = _config;
+        configs[outtag] = _config;
     }
 
-    function getConfig(bytes32 dtag) view public returns (Config memory) {
-        return configs[dtag];
+    function getConfig(bytes32 outtag) view public returns (Config memory) {
+        return configs[outtag];
     }
 
-    function poke(bytes32 dtag) public {
-        Config storage config = configs[dtag];
+    function poke(bytes32 outtag) public {
+        Config storage config = configs[outtag];
 
         uint len = config.srcs.length;
         if (len == 0) revert ErrQuorum();
@@ -45,10 +45,7 @@ contract Medianizer is Ward {
 
         // copy unexpired feeds into a sorted list
         for(uint256 i = 0; i < len; i++) {
-            address src = config.srcs[i];
-            bytes32 tag = config.tags[i];
-
-            (bytes32 val, uint256 _ttl) = feedbase.pull(src, tag);
+            (bytes32 val, uint256 _ttl) = feedbase.pull(config.srcs[i], config.tags[i]);
             if (block.timestamp > _ttl) {
                 // expired
                 continue;
@@ -93,6 +90,6 @@ contract Medianizer is Ward {
             median = data[(liveIdx - 1) / 2];
         }
 
-        feedbase.push(dtag, median, minttl);
+        feedbase.push(outtag, median, minttl);
     }
 }
