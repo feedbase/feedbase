@@ -69,9 +69,16 @@ describe('twap', () => {
             timestamp = (await ethers.provider.getBlock('latest')).timestamp
         })
 
+        const cycle = async (range, n, dtag) => {
+            for (let i = 0; i < n; i++) {
+                await mine(hh, range)
+                await send(twap.poke, dtag)
+            }
+        }
+
         it('big poke success', async () => {
             await send(twap.setConfig, dtag, config)
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 40; i++) {
                 let price = Math.floor((Math.random() * 0.1 + 0.95) * 500)
                 await send(fb.push, tag, b32(BigNumber.from(price)), constants.MaxUint256)
                 await send(twap.poke, dtag)
@@ -126,24 +133,33 @@ describe('twap', () => {
             await send(twap.setConfig, dtag, config)
             await send(fb.push, tag, b32(ray(1)), constants.MaxUint256.sub(45))
             await send(twap.poke, dtag)
-            await mine(hh, range.toNumber())
+
+            // twap output gradually approaches spot when spot constant
+            await cycle(range.toNumber(), 10, dtag);
+
+            let [val,] = await fb.pull(twap.address, dtag)
+            want(BigNumber.from(val).lt(ray(1))).true
+
+            await cycle(range.toNumber(), 90, dtag)
+
+            ;[val,] = await fb.pull(twap.address, dtag)
+            want(BigNumber.from(val)).eql(ray(1))
+
+
             await send(twap.poke, dtag)
             await send(fb.push, tag, b32(ray(3)), constants.MaxUint256.sub(45))
-            await send(twap.poke, dtag)
-
             // pseudo clamps to last
             await mine(hh, range.toNumber() * 1000000000)
             await send(twap.poke, dtag)
-            let [val,] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val)).to.eql(ray(3))
+            ;[val,] = await fb.pull(twap.address, dtag)
+            want(BigNumber.from(val)).to.eql(ray((3 + 1) / 2))
 
             // clamp edge
             await send(fb.push, tag, b32(ray(7)), constants.MaxUint256.sub(45))
-            await send(twap.poke, dtag)
             await mine(hh, range.toNumber())
             await send(twap.poke, dtag)
             ;[val,] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val)).to.eql(ray(7))
+            want(BigNumber.from(val)).to.eql(ray(7 + 2).div(2))
 
             // no clamp if waited less than range
             await send(fb.push, tag, b32(ray(10)), constants.MaxUint256.sub(45))
@@ -154,23 +170,26 @@ describe('twap', () => {
         })
 
         it('tiny window', async () => {
-            let price = BigNumber.from(45)
+            // sometimes need to subtract 1 from expected output for rounding
+
+            let price = ray(45)
             await send(twap.setConfig, dtag, [ALI, tag, constants.One, ttl]);
             await send(fb.push, tag, b32(price), constants.MaxUint256)
-            await send(twap.poke, dtag)
-            let [val,] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val)).to.eql(price)
 
+            await cycle(1, 300, dtag)
+
+            let [val,] = await fb.pull(twap.address, dtag)
+            want(BigNumber.from(val)).to.eql(price.sub(1))
 
             // should still assume last price continues
             await send(twap.poke, dtag)
             ;[val,] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val)).to.eql(price)
+            want(BigNumber.from(val)).to.eql(price.sub(1))
 
 
             await send(twap.poke, dtag)
             ;[val,] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val)).to.eql(price)
+            want(BigNumber.from(val)).to.eql(price.sub(1))
 
             // skip a bunch of blocks then try again
             await mine(hh, 10)
@@ -179,37 +198,41 @@ describe('twap', () => {
             await mine(hh, 10)
             await send(twap.poke, dtag)
             ;[val,] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val)).to.eql(price.mul(2))
+            want(BigNumber.from(val)).to.eql(price.mul(3).div(2).add(price.mul(2)).div(2).sub(1))
         })
 
         it('reconfig', async () => {
             await send(twap.setConfig, dtag, config)
             await send(fb.push, tag, b32(ray(1)), constants.MaxUint256.sub(45))
-            await send(twap.poke, dtag)
-            await mine(hh, range.toNumber())
-            await send(twap.poke, dtag)
+
+            await cycle(range.toNumber(), 90, dtag)
+
+            let [val,] = await fb.pull(twap.address, dtag)
+            want(BigNumber.from(val)).to.eql(ray(1).sub(1))
+
             await send(fb.push, tag, b32(ray(3)), constants.MaxUint256.sub(45))
-            await send(twap.poke, dtag)
-            await mine(hh, range.toNumber())
+            await cycle(range.toNumber(), 90, dtag)
+
             await send(twap.poke, dtag);
 
+            let [val_pre,] = await fb.pull(twap.address, dtag)
             await send(twap.setConfig, dtag, [ALI, tag, range / 10, 20000])
             await send(twap.poke, dtag);
             ;[val,] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val)).to.eql(ray(3))
+            want(BigNumber.from(val)).to.eql(BigNumber.from(val_pre))
+
             await mine(hh, range.toNumber() / 10)
             await send(twap.poke, dtag);
             ;[val,] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val)).to.eql(ray(3))
-            
+            want(BigNumber.from(val)).to.eql(ray(3).sub(1))
+
             const newTag = Buffer.from('OTHERTAG'.padStart(32, '\0'))
             await send(twap.setConfig, newTag, [ALI, tag, range / 10, 20000])
             await send(fb.push, tag, b32(ray(72)), constants.MaxUint256.sub(45))
-            await send(twap.poke, newTag)
             await mine(hh, range / 10);
             await send(twap.poke, newTag)
             ;[val,] = await fb.pull(twap.address, newTag)
-            want(BigNumber.from(val)).to.eql(ray(72))
+            want(BigNumber.from(val)).to.eql(ray(72).div(2))
 
         })
 
@@ -225,32 +248,36 @@ describe('twap', () => {
 
             await send(twap.poke, dtag)
             let [val] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.div(2).toNumber(), 5)
+            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.div(4).toNumber(), 5)
+
+            await cycle(range / 2, 90, dtag)
 
             await mine(hh, range)
             await send(twap.poke, dtag)
             ;[val,] = await fb.pull(twap.address, dtag)
             want(BigNumber.from(val).toNumber()).to.be.closeTo(price.toNumber(), 5)
 
+
             await send(fb.push, tag, b32(price.div(2)), constants.MaxUint256)
             await send(twap.poke, dtag)
             await mine(hh, range / 2)
             await send(twap.poke, dtag)
             ;[val,] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.mul(3).div(4).toNumber(), 5)
-            await mine(hh, range / 2)
-            await send(twap.poke, dtag)
+            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.mul(7).div(8).toNumber(), 5)
+
+            await cycle(range / 2, 4, dtag)
+
             ;[val,] = await fb.pull(twap.address, dtag)
             want(BigNumber.from(val).toNumber()).to.be.closeTo(price.div(2).toNumber(), 15)
 
-            await mine(hh, range / 2)
-            await send(twap.poke, dtag)
+            await cycle(range / 2, 2, dtag)
+
             ;[val,] = await fb.pull(twap.address, dtag)
             want(BigNumber.from(val).toNumber()).to.be.closeTo(price.div(2).toNumber(), 6)
 
+            await cycle(range / 2, 10, dtag)
+
             // takes a bit longer than trad twap
-            await mine(hh, range)
-            await send(twap.poke, dtag)
             ;[val,] = await fb.pull(twap.address, dtag)
             want(BigNumber.from(val).toNumber()).to.be.closeTo(price.div(2).toNumber(), 0)
 
@@ -260,7 +287,7 @@ describe('twap', () => {
             await mine(hh, range * 10)
             await send(twap.poke, dtag)
             ;[val,] = await fb.pull(twap.address, dtag)
-            want(BigNumber.from(val)).eql(price)
+            want(BigNumber.from(val)).eql(price.mul(3).div(4))
         })
 
         it('assume current spot for elapsed time, not last spot', async () => {
@@ -274,8 +301,9 @@ describe('twap', () => {
             await send(twap.poke, tag)
 
             // ignores the first value
+            // only outputs half spot, because it gradually approaches
             let [val,] = await fb.pull(twap.address, tag)
-            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.mul(2).toNumber(), 0)
+            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.toNumber(), 0)
 
             await mine(hh, range / 2)
             await send(fb.push, tag, b32(price), constants.MaxUint256)
@@ -283,7 +311,13 @@ describe('twap', () => {
 
             // assumes uniform price * 2 in last window
             ;[val,] = await fb.pull(twap.address, tag)
-            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.mul(3).div(2).toNumber(), 0)
+            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.toNumber(), 0)
+
+            await mine(hh, range / 2)
+            await send(fb.push, tag, b32(constants.Zero), constants.MaxUint256)
+            await send(twap.poke, tag)
+            ;[val,] = await fb.pull(twap.address, tag)
+            want(BigNumber.from(val).toNumber()).to.be.closeTo(price.mul(3).div(4).toNumber(), 0)
         })
     })
 })
