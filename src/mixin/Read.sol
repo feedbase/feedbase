@@ -26,7 +26,8 @@ abstract contract Block is Read, Ward {
         feedbase = Feedbase(fb);
     }
     
-    function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
+    function setConfig(bytes32 tag, Config calldata _config)
+      external payable _ward_ {
         uint n = _config.sources.length;
         if (n < 2) revert ErrShort();
         if (_config.tags.length != n) revert ErrMatch();
@@ -34,7 +35,7 @@ abstract contract Block is Read, Ward {
     }
 
     // can't have public getter for struct of dynamic arrays
-    function getConfig(bytes32 tag) public view returns (Config memory) {
+    function getConfig(bytes32 tag) external view returns (Config memory) {
         return configs[tag];
     }
 }

@@ -28,15 +28,18 @@ contract ChainlinkAdapter is Read, Ward {
 
     mapping(bytes32=>Config) configs;
 
-    function setConfig(bytes32 tag, Config calldata config) public _ward_ {
+    function setConfig(bytes32 tag, Config calldata config)
+      external payable _ward_ {
         configs[tag] = config;
     }
 
-    function getConfig(bytes32 tag) public view returns (Config memory) {
+    function getConfig(bytes32 tag)
+      external view returns (Config memory) {
         return configs[tag];
     }
 
-    function read(bytes32 tag) public view override returns (bytes32 val, uint256 minttl) {
+    function read(bytes32 tag)
+      external view override returns (bytes32 val, uint256 minttl) {
         Config storage config   = configs[tag];
         AggregatorInterface agg = AggregatorInterface(config.agg);
 

@@ -32,7 +32,7 @@ contract Feedbase {
         else val = feed.val;
     }
 
-    function push(bytes32 tag, bytes32 val, uint256 ttl) external {
+    function push(bytes32 tag, bytes32 val, uint256 ttl) external payable {
         if (ttl == READ) revert ErrTTL();
         _feeds[msg.sender][tag] = Feed({val: val, ttl: ttl});
         emit Push(msg.sender, tag, val, ttl);

@@ -15,7 +15,7 @@ contract BasicReceiverFactory {
         feedbase = fb;
     }
 
-    function build() public returns (BasicReceiver) {
+    function build() external payable returns (BasicReceiver) {
         BasicReceiver o = new BasicReceiver(feedbase);
         built[address(o)] = true;
         emit Built(msg.sender, address(o));
@@ -67,7 +67,8 @@ contract BasicReceiver is Ward {
     }
 
     // EIP712 digest
-    function digest(bytes32 tag, uint sec, uint ttl, bytes32 val) public view returns (bytes32) {
+    function digest(bytes32 tag, uint sec, uint ttl, bytes32 val)
+      public view returns (bytes32) {
         string memory header = "\x19Ethereum Signed Message:\n32";
         bytes32 sighash = keccak256(abi.encodePacked(header,
           keccak256(abi.encodePacked(
@@ -84,8 +85,7 @@ contract BasicReceiver is Ward {
         uint256 ttl,
         bytes32 val,
         uint8 v, bytes32 r, bytes32 s
-    ) public
-    {
+    ) external payable {
         bytes32 sighash = digest(tag, sec, ttl, val);
         address signer = ecrecover(sighash, v, r, s);
 
@@ -100,7 +100,7 @@ contract BasicReceiver is Ward {
         feedbase.push(tag, val, ttl);
     }
 
-    function setSigner(address who, bool what) public _ward_ {
+    function setSigner(address who, bool what) external payable _ward_ {
         isSigner[who] = what;
     }
 }

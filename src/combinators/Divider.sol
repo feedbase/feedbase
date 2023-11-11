@@ -8,7 +8,7 @@ contract Divider is Block {
     constructor(address fb) Block(fb) {}
 
     function read(bytes32 tag)
-      public view override returns (bytes32 val, uint256 minttl)
+      external view override returns (bytes32 val, uint256 minttl)
     {
         Config storage config = configs[tag];
 
