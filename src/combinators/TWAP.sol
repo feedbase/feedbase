@@ -9,6 +9,7 @@ contract TWAP is Ward {
         address source; // feedbase src
         bytes32 tag;    // feedbase tag
         uint256 range;  // [s] window size
+        uint256 weight; // [mln] weight, 3 decimals
         uint256 ttl;    // [s] ttl advance from latest spot
     }
 
@@ -16,6 +17,8 @@ contract TWAP is Ward {
         uint head; // [ray] sum(p(t), 0, now) - sum(p(t), 0, t - range)
         uint time; // [s] head's last update timestamp
     }
+
+    uint constant THO = 10 ** 3;
 
     error ErrRange();
     error ErrDone();
@@ -76,7 +79,9 @@ contract TWAP is Ward {
 
         // since head is a sum assuming 0 at window start,
         // need to subtract checkpoint to get head
-        uint nexthead  = head + (capped * (uint(spot) + pseudospot)) / 2;
+        uint denom     = config.weight + THO;
+        uint numer     = pseudospot * config.weight + uint(spot) * THO;
+        uint nexthead  = head + capped * numer / denom;
         nexthead      -= checkpoint;
         window.head    = nexthead;
         window.time    = block.timestamp;
