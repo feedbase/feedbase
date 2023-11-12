@@ -32,7 +32,8 @@ contract TWAP is Ward {
         feedbase = Feedbase(_fb);
     }
     
-    function setConfig(bytes32 outtag, Config calldata _config) public _ward_ {
+    function setConfig(bytes32 outtag, Config calldata _config)
+      external payable _ward_ {
         if (_config.range > block.timestamp) revert ErrRange();
 
         Window storage window = windows[outtag];
@@ -46,7 +47,7 @@ contract TWAP is Ward {
         configs[outtag] = _config;
     }
 
-    function getConfig(bytes32 outtag) public view returns (Config memory) {
+    function getConfig(bytes32 outtag) external view returns (Config memory) {
         return configs[outtag];
     }
 
@@ -60,7 +61,7 @@ contract TWAP is Ward {
     //
     // the main difference here is that window stores `head`, an adjusted change
     // in sum since window start, instead of the sum itself
-    function poke(bytes32 outtag) external {
+    function poke(bytes32 outtag) external payable {
         Config storage config    = configs[outtag];
         Window storage window    = windows[outtag];
 

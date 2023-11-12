@@ -23,17 +23,18 @@ contract Medianizer is Ward {
         feedbase = Feedbase(fb);
     }
 
-    function setConfig(bytes32 outtag, Config calldata _config) public _ward_ {
+    function setConfig(bytes32 outtag, Config calldata _config)
+      external payable _ward_ {
         if (_config.tags.length != _config.srcs.length) revert ErrConfig();
         if (_config.quorum == 0) revert ErrZeroQuorum();
         configs[outtag] = _config;
     }
 
-    function getConfig(bytes32 outtag) view public returns (Config memory) {
+    function getConfig(bytes32 outtag) external view returns (Config memory) {
         return configs[outtag];
     }
 
-    function poke(bytes32 outtag) public {
+    function poke(bytes32 outtag) external payable {
         Config storage config = configs[outtag];
 
         uint len = config.srcs.length;

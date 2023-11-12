@@ -19,16 +19,16 @@ contract Poker is Ward {
     mapping(bytes32 tag => Config) configs;
     error ErrNoConfig();
 
-    function getConfig(bytes32 tag) view public returns (Config memory) {
+    function getConfig(bytes32 tag) external view returns (Config memory) {
         return configs[tag];
     }
 
-    function setConfig(bytes32 tag, Config memory _config) _ward_ public {
+    function setConfig(bytes32 tag, Config memory _config) external payable _ward_ {
         configs[tag].combinators = _config.combinators;
         configs[tag].combinatortags = _config.combinatortags;
     }
 
-    function poke(bytes32 tag) public {
+    function poke(bytes32 tag) external payable {
         Config storage config = configs[tag];
         if (config.combinators.length == 0) revert ErrNoConfig();
         for (uint i = 0; i < config.combinators.length; i++) {

@@ -39,12 +39,13 @@ contract Progression is Ward {
         feedbase = _fb;
     }
 
-    function setConfig(bytes32 tag, Config calldata _config) public _ward_ {
+    function setConfig(bytes32 tag, Config calldata _config)
+      external payable _ward_ {
         configs[tag] = _config;
     }
 
     // smooth progression with rebalancing
-    function poke(bytes32 tag) public {
+    function poke(bytes32 tag) external payable {
         Config storage config = configs[tag];
         Cache storage cache = caches[tag];
         uint stretch = config.end - config.start;

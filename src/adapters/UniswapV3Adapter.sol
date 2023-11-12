@@ -38,16 +38,16 @@ contract UniswapV3Adapter is Read, Ward {
         wrap = _wrap;
     }
 
-    function setConfig(bytes32 tag, Config memory config) public _ward_ {
+    function setConfig(bytes32 tag, Config memory config) external payable _ward_ {
         configs[tag] = config;
     }
 
-    function getConfig(bytes32 tag) public view returns (Config memory config) {
+    function getConfig(bytes32 tag) external view returns (Config memory config) {
         return configs[tag];
     }
 
     function read(bytes32 tag)
-      public view override returns (bytes32 val, uint256 ttl) {
+      external view override returns (bytes32 val, uint256 ttl) {
         Config storage config = configs[tag];
         uint32         range  = uint32(config.range);
         address        apool  = config.pool;
