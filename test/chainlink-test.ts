@@ -52,7 +52,7 @@ describe('chainlink', () => {
     sec = Math.floor(Date.now() / 1000)
     ttl = 10000000000000
     val = Buffer.from('11'.repeat(32), 'hex')
-    config = [XAU_USD_AGG_ADDR, BigNumber.from(1), BigNumber.from(2)]
+    config = [XAU_USD_AGG_ADDR, BigNumber.from(1)]
     precision = ray(1)
   })
 
@@ -72,23 +72,16 @@ describe('chainlink', () => {
   })
 
   it('setConfig', async function () {
-      want(await adapt.getConfig(tag)).eql([constants.AddressZero, constants.Zero, constants.Zero])
+      want(await adapt.getConfig(tag)).eql([constants.AddressZero, constants.Zero])
       await send(adapt.setConfig, tag, config)
       want(await adapt.getConfig(tag)).eql(config)
   })
 
   it('look expand', async function () {
-      await send(adapt.setConfig, tag, [XAU_USD_AGG_ADDR, BigNumber.from(ttl), precision])
+      await send(adapt.setConfig, tag, [XAU_USD_AGG_ADDR, BigNumber.from(ttl)])
       let [price, TTL] = await fb.pull(adapt.address, tag)
       // XAU-USD price around 1900 lately
       want(BigNumber.from(price).div(RAY).toNumber()).to.be.closeTo(2000, 500)
-  })
-
-  it('look truncate', async function () {
-      await send(adapt.setConfig, tag, [XAU_USD_AGG_ADDR, BigNumber.from(ttl), 1])
-      let [price, TTL] = await fb.pull(adapt.address, tag)
-      // XAU-USD price around 1900 lately
-      want(BigNumber.from(price).toNumber()).to.be.closeTo(2000, 500)
   })
 
   it('read max ttl', async function () {

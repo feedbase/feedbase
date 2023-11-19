@@ -22,11 +22,12 @@ contract ChainlinkAdapter is Read, Ward {
     struct Config {
         address agg;
         uint    ttl;
-        uint    precision;
     }
     error ErrNegPrice();
 
     mapping(bytes32=>Config) configs;
+
+    uint constant RAY = 10 ** 27;
 
     function setConfig(bytes32 tag, Config calldata config)
       external payable _ward_ {
@@ -48,7 +49,7 @@ contract ChainlinkAdapter is Read, Ward {
         uint res = uint(_res);
 
         // expand/truncate
-        val = bytes32(res * config.precision / 10 ** agg.decimals());
+        val = bytes32(res * RAY / 10 ** agg.decimals());
 
         // handle a feed with updatedAt set to max uint
         unchecked {
