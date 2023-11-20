@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.19;
 
-import './mixin/Read.sol';
+import { Read } from './mixin/Read.sol';
 
 contract Feedbase {
 
