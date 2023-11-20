@@ -49,7 +49,7 @@ contract ChainlinkAdapter is Read, Ward {
         uint res = uint(_res);
 
         // expand/truncate
-        val = bytes32(res * RAY / 10 ** agg.decimals());
+        val = bytes32(res * RAY / (10 ** agg.decimals()));
 
         // handle a feed with updatedAt set to max uint
         unchecked {

@@ -69,7 +69,7 @@ contract UniswapV3Adapter is Read, Ward {
 
         // mean tick's corresponding price
         uint  sqrtPriceX96 = wrap.getSqrtRatioAtTick(meantick);
-        uint  priceray     = sqrtPriceX96 ** 2 / X96 * RAY / X96;
+        uint  priceray     = (sqrtPriceX96 ** 2) / X96 * RAY / X96;
 
         if (config.reverse) {
             priceray = RAY * RAY / priceray;
