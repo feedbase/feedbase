@@ -7,10 +7,10 @@ pragma solidity ^0.8.19;
 import { Feedbase } from "../Feedbase.sol";
 
 contract MockChainlinkAggregator {
-    Feedbase public fb;
-    address public src;
-    bytes32 public tag;
-    uint public decimals;
+    Feedbase public immutable fb;
+    address  public immutable src;
+    bytes32  public immutable tag;
+    uint256  public immutable decimals;
 
     constructor(Feedbase _fb, address _src, bytes32 _tag, uint _decimals) {
         fb = _fb;
