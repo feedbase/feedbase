@@ -40,7 +40,7 @@ contract ChainlinkAdapter is Read, Ward {
     }
 
     function read(bytes32 tag)
-      external view override returns (bytes32 val, uint256 minttl) {
+      external view override returns (bytes32 val, uint256 ttl) {
         Config storage config   = configs[tag];
         AggregatorInterface agg = AggregatorInterface(config.agg);
 
@@ -49,12 +49,12 @@ contract ChainlinkAdapter is Read, Ward {
         uint res = uint(_res);
 
         // expand/truncate
-        val = bytes32(res * RAY / 10 ** agg.decimals());
+        val = bytes32(res * RAY / (10 ** agg.decimals()));
 
         // handle a feed with updatedAt set to max uint
         unchecked {
-            minttl = timestamp + config.ttl;
-            if (minttl < timestamp) minttl = type(uint).max;
+            ttl = timestamp + config.ttl;
+            if (ttl < timestamp) ttl = type(uint).max;
         }
     }
 }

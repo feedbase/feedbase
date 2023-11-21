@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.19;
 
-import "../mixin/Read.sol";
+import { Read } from "../mixin/Read.sol";
 import { Ward } from '../mixin/ward.sol';
 
 interface IUniswapV3Pool {
@@ -19,10 +19,10 @@ interface IUniWrapper {
 
 contract UniswapV3Adapter is Read, Ward {
     struct Config {
-        address pool;
-        uint    range;
-        uint    ttl;
-        bool    reverse;
+        address pool;    // univ3 pool address
+        uint    range;   // twap window size
+        uint    ttl;     // how much to advance ttl from uni twap output ttl
+        bool    reverse; // true if token0 > token1
     }
 
     error ErrNoPool();
@@ -68,9 +68,11 @@ contract UniswapV3Adapter is Read, Ward {
         int24 meantick     = int24(delt / int(uint(range)));
 
         // mean tick's corresponding price
+        // square the sqrt price, then scale it to ray
         uint  sqrtPriceX96 = wrap.getSqrtRatioAtTick(meantick);
-        uint  priceray     = sqrtPriceX96 ** 2 / X96 * RAY / X96;
+        uint  priceray     = (sqrtPriceX96 ** 2) / X96 * RAY / X96;
 
+        // invert price if token0 > token1
         if (config.reverse) {
             priceray = RAY * RAY / priceray;
         }

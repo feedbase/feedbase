@@ -1,6 +1,6 @@
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
-import { send, fail, want, snapshot, revert, b32, ray, RAY } from 'minihat'
+import { send, fail, want, snapshot, revert, b32, ray, RAY, rad } from 'minihat'
 const { constants, BigNumber } = ethers
 
 const debug = require('debug')('feedbase:test')
@@ -84,13 +84,34 @@ describe('chainlink', () => {
       want(BigNumber.from(price).div(RAY).toNumber()).to.be.closeTo(2000, 500)
   })
 
-  it('read max ttl', async function () {
-      await send(fb.push, MAX_AGG_TAG, b32(ethers.constants.Two), ethers.constants.MaxUint256)
-      await send(adapt.setConfig, MAX_AGG_TAG, [agg.address, BigNumber.from(ttl), 1])
-      let [, resTTL] = await fb.pull(adapt.address, MAX_AGG_TAG)
-      // chainlinks updatedAt + adapters TTL overflowed uint256, check it was handled and clamped
-      want(resTTL.toHexString()).to.be.equal(ethers.constants.MaxUint256.toHexString())
+  it('look truncate', async function () {
+    // create a rad precision aggregator
+    const MockCLAggFactory = await ethers.getContractFactory('MockChainlinkAggregator')
+    const radagg = await MockCLAggFactory.deploy(fb.address, ALI, tag, 45)
+    await send(fb.push, tag, b32(rad(2)), constants.MaxUint256)
+    await send(adapt.setConfig, tag, [radagg.address, BigNumber.from(ttl)])
+
+    // should truncate rad to ray
+    let [price, TTL] = await fb.pull(adapt.address, tag)
+    want(BigNumber.from(price)).eql(ray(2))
   })
 
-  // TODO test negative price, like oil or something
+  it('read max ttl', async function () {
+      await send(fb.push, MAX_AGG_TAG, b32(constants.Two), constants.MaxUint256)
+      await send(adapt.setConfig, MAX_AGG_TAG, [agg.address, BigNumber.from(ttl)])
+      let [, resTTL] = await fb.pull(adapt.address, MAX_AGG_TAG)
+      // chainlinks updatedAt + adapters TTL overflowed uint256, check it was handled and clamped
+      want(resTTL.toHexString()).to.be.equal(constants.MaxUint256.toHexString())
+  })
+
+  it('negative price', async () => {
+    await send(fb.push, MAX_AGG_TAG, b32(constants.Two.pow(255)), constants.MaxUint256)
+    await send(adapt.setConfig, MAX_AGG_TAG, [agg.address, BigNumber.from(ttl)])
+
+    // should fail to adapt prices that are < 1, oil prices forex
+    const errNegPriceHash = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("ErrNegPrice()")
+    ).slice(0, 10)
+    await want(fb.pull(adapt.address, MAX_AGG_TAG)).to.be.rejectedWith(errNegPriceHash)
+  })
 })

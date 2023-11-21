@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.19;
 
+// tools for ward (root user) management
 contract Ward {
     event SetWard(address indexed caller, address indexed trusts, bool bit);
     error ErrWard(address caller, address object, bytes4 sig);

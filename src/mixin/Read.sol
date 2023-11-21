@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.19;
 
-import '../Feedbase.sol';
+import { Feedbase } from '../Feedbase.sol';
 import { Ward } from '../mixin/ward.sol';
 
 interface Read {
