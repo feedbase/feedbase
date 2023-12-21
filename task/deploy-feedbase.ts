@@ -15,47 +15,46 @@ task('deploy-feedbase', 'deploy Feedbase')
 
     debug(`Deploying contracts using ${deployer} to ${network.name}`)
 
-    const FeedbaseArtifact = require('../artifacts/src/Feedbase.sol/Feedbase.json')
-    const MedianizerArtifact = require('../artifacts/src/combinators/Medianizer.sol/Medianizer.json')
-    const PokerArtifact = require('../artifacts/src/Poker.sol/Poker.json')
-    const DividerArtifact = require('../artifacts/src/combinators/Divider.sol/Divider.json')
-    debug('Loaded artifact')
-    const FeedbaseDeployer = ethers.ContractFactory.fromSolidity(FeedbaseArtifact, acct)
-    const fb = await FeedbaseDeployer.deploy()
-    await fb.deployed()
-    debug('Feedbase deployed to : ', fb.address)
+    const contracts = [
+      { typename: 'Feedbase',         artifact: require('../artifacts/src/Feedbase.sol/Feedbase.json') },
+      { typename: 'Multiplier',       artifact: require('../artifacts/src/combinators/Multiplier.sol/Multiplier.json'),          arg: 'Feedbase' },
+      { typename: 'Divider',          artifact: require('../artifacts/src/combinators/Divider.sol/Divider.json'),                arg: 'Feedbase' },
+      { typename: 'UniWrapper',       artifact: require('../artifacts/src/adapters/UniWrapper.sol/UniWrapper.json') },
+      { typename: 'UniswapV3Adapter', artifact: require('../artifacts/src/adapters/UniswapV3Adapter.sol/UniswapV3Adapter.json'), arg: 'UniWrapper' },
+      { typename: 'ChainlinkAdapter', artifact: require('../artifacts/src/adapters/ChainlinkAdapter.sol/ChainlinkAdapter.json') }
+    ]
+    debug('Loaded artifacts')
 
     const pb = new dpack.PackBuilder(hre.network.name)
-    await pb.packObject({
-      objectname: 'feedbase',
-      address: fb.address,
-      typename: 'Feedbase',
-      artifact: FeedbaseArtifact
-    }, true) // alsoPackType
+    const deployedAddresses = {}
+
+    for (const { typename, artifact, arg } of contracts) {
+      const Deployer = ethers.ContractFactory.fromSolidity(artifact, acct)
+      const deployArg = arg ? [deployedAddresses[arg]] : []
+      const deployedContract = await Deployer.deploy(...deployArg)
+      await deployedContract.deployed()
+      deployedAddresses[typename] = deployedContract.address
+      debug(`${typename} deployed to: `, deployedContract.address)
+      await pb.packObject({
+        objectname: typename.toLowerCase(),
+        address: deployedContract.address,
+        typename: typename,
+        artifact: artifact
+      }, true)
+    }
+
+    // add types of feedbase components which may be deployed later to pack
     await pb.packType({
       typename: 'Medianizer',
-      artifact: MedianizerArtifact
+      artifact: require('../artifacts/src/combinators/Medianizer.sol/Medianizer.json')
     })
     await pb.packType({
       typename: 'Poker',
-      artifact: PokerArtifact
-    })
-    await pb.packType({
-      typename: 'Divider',
-      artifact: DividerArtifact
+      artifact: require('../artifacts/src/Poker.sol/Poker.json')
     })
     await pb.packType({
       typename: 'TWAP',
       artifact: require('../artifacts/src/combinators/TWAP.sol/TWAP.json')
-    })
-
-    await pb.packType({
-      typename: 'UniswapV3Adapter',
-      artifact: require('../artifacts/src/adapters/UniswapV3Adapter.sol/UniswapV3Adapter.json')
-    })
-    await pb.packType({
-      typename: 'ChainlinkAdapter',
-      artifact: require('../artifacts/src/adapters/ChainlinkAdapter.sol/ChainlinkAdapter.json')
     })
 
     const pack = await pb.build()

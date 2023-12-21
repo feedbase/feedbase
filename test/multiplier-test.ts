@@ -2,6 +2,7 @@ import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 import { send, fail, want, snapshot, revert, b32, ray} from 'minihat'
 const { BigNumber } = ethers
+const dpack = require('@etherpacks/dpack')
 
 const debug = require('debug')('feedbase:test')
 
@@ -12,23 +13,16 @@ describe('multiplier', () => {
     let ali, bob, cat
     let ALI, BOB, CAT
     let multiplier
-    let minconfig
-    const zeroconfig = [[], []]
+    let dapp
     before(async () => {
       signers = await ethers.getSigners();
       [ali, bob, cat] = signers;
       [ALI, BOB, CAT] = [ali.address, bob.address, cat.address]
 
-      const FeedbaseFactory = await ethers.getContractFactory('Feedbase')
-      fb = await FeedbaseFactory.deploy()
-
-      const MultiplierFactory = await ethers.getContractFactory('Multiplier')
-      multiplier = await MultiplierFactory.deploy(fb.address)
-
-      minconfig = [
-            [ALI, BOB],
-            [ethers.utils.hexlify(b32('ali')), ethers.utils.hexlify(b32('bob'))]
-        ]
+      const pack = await hh.run('deploy-feedbase');
+      dapp = await dpack.load(pack, ethers, ali)
+      fb         = dapp.feedbase
+      multiplier = dapp.multiplier
 
       await snapshot(hh)
     })
