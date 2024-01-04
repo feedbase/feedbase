@@ -57,26 +57,26 @@ describe('uniswapv3', () => {
       await fail('ErrWard', adapt.connect(cat).ward, CAT, true);
 
       await send(adapt.ward, BOB, true);
-      await send(adapt.connect(bob).setConfig, b32('hello'), [CAT, 2, 3, true])
+      await send(adapt.connect(bob).setConfig, b32('hello'), [CAT, true, 2, 3])
 
       await send(adapt.ward, BOB, false)
-      await fail('ErrWard', adapt.connect(bob).setConfig, b32('hello'), [CAT, 2, 3, true])
+      await fail('ErrWard', adapt.connect(bob).setConfig, b32('hello'), [CAT, true, 2, 3])
       await fail('ErrWard', adapt.connect(bob).ward, CAT, false)
   })
 
   it('setConfig', async function () {
       want(await adapt.getConfig(tag)).eql(
-          [constants.AddressZero, BigNumber.from(0), BigNumber.from(0), false]
+          [constants.AddressZero, false, BigNumber.from(0), BigNumber.from(0)]
       )
-      await send(adapt.setConfig, tag, [CAT, 2, 3, true])
+      await send(adapt.setConfig, tag, [CAT, true, 2, 3])
       want(await adapt.getConfig(tag)).eql(
-          [CAT, BigNumber.from(2), BigNumber.from(3), true]
+          [CAT, true, BigNumber.from(2), BigNumber.from(3)]
       )
   })
 
   it('look reverse', async function () {
       const conf_ttl = 100
-      await adapt.setConfig(tag, [ETH_USD_POOL_ADDR, 500, conf_ttl, true])
+      await adapt.setConfig(tag, [ETH_USD_POOL_ADDR, true, 500, conf_ttl])
 
       let [price, ttl] = await fb.pull(adapt.address, tag)
 
@@ -90,7 +90,7 @@ describe('uniswapv3', () => {
   })
 
   it('look normal', async function () {
-      await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 500, 100, false])
+      await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, false, 500, 100])
 
       let [price, ttl] = await fb.pull(adapt.address, tag)
 
@@ -104,7 +104,7 @@ describe('uniswapv3', () => {
   })
 
   it('look zero range', async function () {
-      await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 0, 100, false])
+      await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, false, 0, 100])
       const errZeroRangeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Err0Range()")).slice(0, 10)
       await want(fb.pull(adapt.address, tag)).to.be.rejectedWith(errZeroRangeHash)
   })
@@ -115,7 +115,7 @@ describe('uniswapv3', () => {
 
 
   it('ttl clamp at uint max', async () => {
-      await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, 500, constants.MaxUint256, false])
+      await adapt.setConfig(tag, [BTC_USD_POOL_ADDR, false, 500, constants.MaxUint256])
 
       let [price, ttl] = await fb.pull(adapt.address, tag)
 
