@@ -20,9 +20,9 @@ interface IUniWrapper {
 contract UniswapV3Adapter is Read, Ward {
     struct Config {
         address pool;    // univ3 pool address
+        bool    reverse; // true if token0 > token1
         uint    range;   // twap window size
         uint    ttl;     // how much to advance ttl from uni twap output ttl
-        bool    reverse; // true if token0 > token1
     }
 
     error ErrNoPool();
