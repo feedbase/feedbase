@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-v3.0
+// Copyright (C) 2021-2024 halys
 
 pragma solidity ^0.8.19;
 
