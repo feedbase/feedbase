@@ -1,6 +1,8 @@
 import '@nomiclabs/hardhat-ethers'
 
 import './task/deploy-feedbase.ts'
+import './task/deploy-par-adapter.ts'
+
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
