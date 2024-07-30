@@ -59,3 +59,7 @@ Here are some more ideas of what you can build:
 The problem of selecting which `src` values to count as unique data sources can be solved in many ways.
 Existing governance solutions, like Chainlink's multisig or Uniswap's token-vote, are one example.
 An approval voting system like the one used in the Rico system is another promising approach.
+
+### Notice
+
+See NOTICE file for copyrights and credits.

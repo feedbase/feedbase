@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
-// Copyright (C) 2021-2024 halys
+
+// Copyright (C) 2024 Free Software Foundation, in loving memory of Nikolai
 
 pragma solidity ^0.8.19;
 
