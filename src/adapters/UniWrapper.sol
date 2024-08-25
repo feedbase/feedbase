@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Copyright (C) 2024 Free Software Foundation, in loving memory of Nikolai
+// Copyright (C) 2024 Free Software Foundation, in memoriam of Nikolai Mushegian
 
 pragma solidity 0.7.6;
 import { PoolAddress, INonfungiblePositionManager, PositionValue } from '@uniswap/v3-periphery/contracts/libraries/PositionValue.sol';
